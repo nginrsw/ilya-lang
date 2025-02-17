@@ -1,6 +1,6 @@
 # Ilya
 
-Ilya Ilyukhin Programming Language is a personal fork of Lua, The Name is Inspired by an Anime Character `Ilya Ilyukhin`. it's modified
+Ilya Programming Language is a personal fork of Lua, The Name is Inspired by an Anime Character `Ilya Ilyukhin`. it's modified
 slightly to make it easier for myself to learn, write, and personalize.
 
 For now, only two changes have been made:
