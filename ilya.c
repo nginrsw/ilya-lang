@@ -588,10 +588,10 @@ static int addreturn (ilya_State *L) {
 
 
 static void checklocal (const char *line) {
-  static const size_t szloc = sizeof("locked") - 1;
+  static const size_t szloc = sizeof("lock") - 1;
   static const char space[] = " \t";
   line += strspn(line, space);  /* skip spaces */
-  if (strncmp(line, "locked", szloc) == 0 &&  /* "locked"? */
+  if (strncmp(line, "lock", szloc) == 0 &&  /* "lock"? */
       strchr(space, *(line + szloc)) != NULL) {  /* followed by a space? */
     ilya_writestringerror("%s\n",
       "warning: locals do not survive across lines in interactive mode");

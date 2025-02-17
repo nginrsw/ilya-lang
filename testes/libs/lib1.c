@@ -12,7 +12,7 @@ static const struct luaL_Reg funcs[] = {
 };
 
 
-/* function used by lib11.c */
+/* fn used by lib11.c */
 LUAMOD_API int lib1_export (ilya_State *L) {
   ilya_pushstring(L, "exported");
   return 1;

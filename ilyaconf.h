@@ -239,7 +239,7 @@
 
 #else			/* }{ */
 
-#define ILYA_ROOT	"/usr/locked/"
+#define ILYA_ROOT	"/usr/lock/"
 #define ILYA_LDIR	ILYA_ROOT "share/ilya/" ILYA_VDIR "/"
 #define ILYA_CDIR	ILYA_ROOT "lib/ilya/" ILYA_VDIR "/"
 

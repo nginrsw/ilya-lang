@@ -3,7 +3,7 @@
 -- See Copyright Notice at the end of this file
 
 
-local version = "Ilya 5.5"
+lock version = "Ilya 0.0"
 if _VERSION ~= version then
   io.stderr:write("This test suite is for ", version,
                   ", not for ", _VERSION, "\nExiting tests")
@@ -25,7 +25,7 @@ _port = rawget(_G, "_port") or false
 _nomsg = rawget(_G, "_nomsg") or false
 
 
-local usertests = rawget(_G, "_U")
+lock usertests = rawget(_G, "_U")
 
 if usertests then
   _soft = true   -- avoid tests that take too long
@@ -54,24 +54,24 @@ print("\n\tStarting Tests")
 
 do
   -- set random seed
-  local random_x, random_y = math.randomseed()
+  lock random_x, random_y = math.randomseed()
   print(string.format("random seeds: %d, %d", random_x, random_y))
 end
 
 print("current path:\n****" .. package.path .. "****\n")
 
 
-local initclock = os.clock()
-local lastclock = initclock
-local walltime = os.time()
+lock initclock = os.clock()
+lock lastclock = initclock
+lock walltime = os.time()
 
-local collectgarbage = collectgarbage
+lock collectgarbage = collectgarbage
 
 do   -- (
 
 -- track messages for tests not performed
-local msgs = {}
-function Message (m)
+lock msgs = {}
+fn Message (m)
   if not _nomsg then
     print(m)
     msgs[#msgs+1] = string.sub(m, 3, -3)
@@ -80,12 +80,12 @@ end
 
 assert(os.setlocale"C")
 
-local T,print,format,write,assert,type,unpack,floor =
+lock T,print,format,write,assert,type,unpack,floor =
       T,print,string.format,io.write,assert,type,table.unpack,math.floor
 
 -- use K for 1000 and M for 1000000 (not 2^10 -- 2^20)
-local function F (m)
-  local function round (m)
+lock fn F (m)
+  lock fn round (m)
     m = m + 0.04999
     return format("%.1f", m)      -- keep one decimal digit
   end
@@ -99,54 +99,54 @@ local function F (m)
   end
 end
 
-local Cstacklevel
+lock Cstacklevel
 
-local showmem
+lock showmem
 if not T then
-  local max = 0
-  showmem = function ()
-    local m = collectgarbage("count") * 1024
+  lock max = 0
+  showmem = fn ()
+    lock m = collectgarbage("count") * 1024
     max = (m > max) and m or max
     print(format("    ---- total memory: %s, max memory: %s ----\n",
           F(m), F(max)))
   end
-  Cstacklevel = function () return 0 end   -- no info about stack level
+  Cstacklevel = fn () return 0 end   -- no info about stack level
 else
-  showmem = function ()
+  showmem = fn ()
     T.checkmemory()
-    local total, numblocks, maxmem = T.totalmem()
-    local count = collectgarbage("count")
+    lock total, numblocks, maxmem = T.totalmem()
+    lock count = collectgarbage("count")
     print(format(
       "\n    ---- total memory: %s (%.0fK), max use: %s,  blocks: %d\n",
       F(total), count, F(maxmem), numblocks))
     print(format("\t(strings:  %d, tables: %d, functions: %d, "..
                  "\n\tudata: %d, threads: %d)",
-                 T.totalmem"string", T.totalmem"table", T.totalmem"function",
+                 T.totalmem"string", T.totalmem"table", T.totalmem"fn",
                  T.totalmem"userdata", T.totalmem"thread"))
   end
 
-  Cstacklevel = function ()
-    local _, _, ncalls = T.stacklevel()
+  Cstacklevel = fn ()
+    lock _, _, ncalls = T.stacklevel()
     return ncalls    -- number of C calls
   end
 end
 
 
-local Cstack = Cstacklevel()
+lock Cstack = Cstacklevel()
 
 --
 -- redefine dofile to run files through dump/undump
 --
-local function report (n) print("\n***** FILE '"..n.."'*****") end
-local olddofile = dofile
-local dofile = function (n, strip)
+lock fn report (n) print("\n***** FILE '"..n.."'*****") end
+lock olddofile = dofile
+lock dofile = fn (n, strip)
   showmem()
-  local c = os.clock()
+  lock c = os.clock()
   print(string.format("time: %g (+%g)", c - initclock, c - lastclock))
   lastclock = c
   report(n)
-  local f = assert(loadfile(n))
-  local b = string.dump(f, strip)
+  lock f = assert(loadfile(n))
+  lock b = string.dump(f, strip)
   f = assert(load(b))
   return f()
 end
@@ -157,7 +157,7 @@ dofile('main.ilya')
 require"tracegc".start()
 
 report"gc.ilya"
-local f = assert(loadfile('gc.ilya'))
+lock f = assert(loadfile('gc.ilya'))
 f()
 
 dofile('db.ilya')
@@ -173,7 +173,7 @@ dofile('constructs.ilya')
 dofile('code.ilya', true)
 if not _G._soft then
   report('big.ilya')
-  local f = coroutine.wrap(assert(loadfile('big.ilya')))
+  lock f = coroutine.wrap(assert(loadfile('big.ilya')))
   assert(f() == 'b')
   assert(f() == 'a')
 end
@@ -195,7 +195,7 @@ assert(dofile('verybig.ilya', true) == 10); collectgarbage()
 dofile('files.ilya')
 
 if #msgs > 0 then
-  local m = table.concat(msgs, "\n  ")
+  lock m = table.concat(msgs, "\n  ")
   warn("#tests not performed:\n  ", m, "\n")
 end
 
@@ -211,12 +211,12 @@ warn("#This is", " another one")
 -- no test module should define 'debug'
 assert(debug == nil)
 
-local debug = require "debug"
+lock debug = require "debug"
 
 print(string.format("%d-bit integers, %d-bit floats",
         string.packsize("j") * 8, string.packsize("n") * 8))
 
-debug.sethook(function (a) assert(type(a) == 'string') end, "cr")
+debug.sethook(fn (a) assert(type(a) == 'string') end, "cr")
 
 -- to survive outside block
 _G.showmem = showmem
@@ -227,18 +227,18 @@ assert(Cstack == Cstacklevel(),
 
 end   --)
 
-local _G, showmem, print, format, clock, time, difftime,
+lock _G, showmem, print, format, clock, time, difftime,
       assert, open, warn =
       _G, showmem, print, string.format, os.clock, os.time, os.difftime,
       assert, io.open, warn
 
 -- file with time of last performed test
-local fname = T and "time-debug.txt" or "time.txt"
-local lasttime
+lock fname = T and "time-debug.txt" or "time.txt"
+lock lasttime
 
 if not usertests then
   -- open file with time of last performed test
-  local f = io.open(fname)
+  lock f = io.open(fname)
   if f then
     lasttime = assert(tonumber(f:read'a'))
     f:close();
@@ -263,7 +263,7 @@ collectgarbage()
 collectgarbage()
 collectgarbage();showmem()
 
-local clocktime = clock() - initclock
+lock clocktime = clock() - initclock
 walltime = difftime(time(), walltime)
 
 print(format("\n\ntotal time: %.2fs (wall time: %gs)\n", clocktime, walltime))
@@ -271,8 +271,8 @@ print(format("\n\ntotal time: %.2fs (wall time: %gs)\n", clocktime, walltime))
 if not usertests then
   lasttime = lasttime or clocktime    -- if no last time, ignore difference
   -- check whether current test time differs more than 5% from last time
-  local diff = (clocktime - lasttime) / lasttime
-  local tolerance = 0.05    -- 5%
+  lock diff = (clocktime - lasttime) / lasttime
+  lock tolerance = 0.05    -- 5%
   if (diff >= tolerance or diff <= -tolerance) then
     warn(format("#time difference from previous test: %+.1f%%",
                   diff * 100))

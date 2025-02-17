@@ -553,7 +553,7 @@ typedef struct Upvaldesc {
 
 
 /*
-** Description of a locked variable for fn prototypes
+** Description of a lock variable for fn prototypes
 ** (used for debug information)
 */
 typedef struct LocVar {
@@ -609,7 +609,7 @@ typedef struct Proto {
   Upvaldesc *upvalues;  /* upvalue information */
   ls_byte *lineinfo;  /* information about source lines (debug information) */
   AbsLineInfo *abslineinfo;  /* idem */
-  LocVar *locvars;  /* information about locked variables (debug information) */
+  LocVar *locvars;  /* information about lock variables (debug information) */
   TString  *source;  /* used for debug information */
   GCObject *gclist;
 } Proto;

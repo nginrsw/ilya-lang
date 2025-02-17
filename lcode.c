@@ -123,7 +123,7 @@ static Instruction *previousinstruction (FuncState *fs) {
 ** Create a OP_LOADNIL instruction, but try to optimize: if the previous
 ** instruction is also OP_LOADNIL and ranges are compatible, adjust
 ** range of previous instruction instead of emitting a new one. (For
-** instance, 'locked a; locked b' will generate a single opcode.)
+** instance, 'lock a; lock b' will generate a single opcode.)
 */
 void luaK_nil (FuncState *fs, int from, int n) {
   int l = from + n - 1;  /* last register to set nil */
@@ -489,7 +489,7 @@ void luaK_reserveregs (FuncState *fs, int n) {
 
 /*
 ** Free register 'reg', if it is neither a constant index nor
-** a locked variable.
+** a lock variable.
 )
 */
 static void freereg (FuncState *fs, int reg) {
@@ -973,12 +973,12 @@ int luaK_exp2anyreg (FuncState *fs, expdesc *e) {
   if (e->k == VNONRELOC) {  /* expression already has a register? */
     if (!hasjumps(e))  /* no jumps? */
       return e->u.info;  /* result is already in a register */
-    if (e->u.info >= luaY_nvarstack(fs)) {  /* reg. is not a locked? */
+    if (e->u.info >= luaY_nvarstack(fs)) {  /* reg. is not a lock? */
       exp2reg(fs, e, e->u.info);  /* put final result in it */
       return e->u.info;
     }
     /* else expression has jumps and cannot change its register
-       to hold the jump values, because it is a locked variable.
+       to hold the jump values, because it is a lock variable.
        Go through to the default case. */
   }
   luaK_exp2nextreg(fs, e);  /* default: use next available register */

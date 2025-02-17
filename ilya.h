@@ -494,7 +494,7 @@ ILYA_API int (ilya_gethookcount) (ilya_State *L);
 struct ilya_Debug {
   int event;
   const char *name;	/* (n) */
-  const char *namewhat;	/* (n) 'global', 'locked', 'field', 'method' */
+  const char *namewhat;	/* (n) 'global', 'lock', 'field', 'method' */
   const char *what;	/* (S) 'Ilya', 'C', 'main', 'tail' */
   const char *source;	/* (S) */
   size_t srclen;	/* (S) */

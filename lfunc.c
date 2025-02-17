@@ -294,7 +294,7 @@ void luaF_freeproto (ilya_State *L, Proto *f) {
 
 
 /*
-** Look for n-th locked variable at line 'line' in fn 'func'.
+** Look for n-th lock variable at line 'line' in fn 'func'.
 ** Returns NULL if not found.
 */
 const char *luaF_getlocalname (const Proto *f, int local_number, int pc) {

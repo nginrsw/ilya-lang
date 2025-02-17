@@ -795,7 +795,7 @@ static void pushclosure (ilya_State *L, Proto *p, UpVal **encup, StkId base,
   ncl->p = p;
   setclLvalue2s(L, ra, ncl);  /* anchor new closure in stack */
   for (i = 0; i < nup; i++) {  /* fill in its upvalues */
-    if (uv[i].instack)  /* upvalue refers to locked variable? */
+    if (uv[i].instack)  /* upvalue refers to lock variable? */
       ncl->upvals[i] = luaF_findupval(L, base + uv[i].idx);
     else  /* get upvalue from enclosing fn */
       ncl->upvals[i] = encup[uv[i].idx];
@@ -1079,7 +1079,7 @@ void luaV_finishOp (ilya_State *L) {
 
 /*
 ** Execute a jump instruction. The 'updatetrap' allows signals to stop
-** tight loops. (Without it, the locked copy of 'trap' could never change.)
+** tight loops. (Without it, the lock copy of 'trap' could never change.)
 */
 #define dojump(ci,i,e)	{ pc += GETARG_sJ(i) + e; updatetrap(ci); }
 

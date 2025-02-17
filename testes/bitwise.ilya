@@ -5,7 +5,7 @@ print("testing bitwise operations")
 
 require "bwcoercion"
 
-local numbits = string.packsize('j') * 8
+lock numbits = string.packsize('j') * 8
 
 assert(~0 == -1)
 
@@ -13,7 +13,7 @@ assert((1 << (numbits - 1)) == math.mininteger)
 
 -- basic tests for bitwise operators;
 -- use variables to avoid constant folding
-local a, b, c, d
+lock a, b, c, d
 a = 0xFFFFFFFFFFFFFFFF
 assert(a == -1 and a & -1 == a and a & 35 == 35)
 a = 0xF0F0F0F0F0F0F0F0
@@ -40,13 +40,13 @@ assert(~~a == a and ~a == -1 ~ a and -d == ~d + 1)
 
 
 do   -- constant folding
-  local code = string.format("return -1 >> %d", math.maxinteger)
+  lock code = string.format("return -1 >> %d", math.maxinteger)
   assert(load(code)() == 0)
-  local code = string.format("return -1 >> %d", math.mininteger)
+  lock code = string.format("return -1 >> %d", math.mininteger)
   assert(load(code)() == 0)
-  local code = string.format("return -1 << %d", math.maxinteger)
+  lock code = string.format("return -1 << %d", math.maxinteger)
   assert(load(code)() == 0)
-  local code = string.format("return -1 << %d", math.mininteger)
+  lock code = string.format("return -1 << %d", math.mininteger)
   assert(load(code)() == 0)
 end
 
@@ -82,30 +82,30 @@ assert(0xffffffff >> (1 .. "9") == 0x1fff)
 assert(10 | (1 .. "9") == 27)
 
 do
-  local st, msg = pcall(function () return 4 & "a" end)
+  lock st, msg = pcall(fn () return 4 & "a" end)
   assert(string.find(msg, "'band'"))
 
-  local st, msg = pcall(function () return ~"a" end)
+  lock st, msg = pcall(fn () return ~"a" end)
   assert(string.find(msg, "'bnot'"))
 end
 
 
 -- out of range number
-assert(not pcall(function () return "0xffffffffffffffff.0" | 0 end))
+assert(not pcall(fn () return "0xffffffffffffffff.0" | 0 end))
 
 -- embedded zeros
-assert(not pcall(function () return "0xffffffffffffffff\0" | 0 end))
+assert(not pcall(fn () return "0xffffffffffffffff\0" | 0 end))
 
 print'+'
 
 
-package.preload.bit32 = function ()     --{
+package.preload.bit32 = fn ()     --{
 
 -- no built-in 'bit32' library: implement it using bitwise operators
 
-local bit = {}
+lock bit = {}
 
-function bit.bnot (a)
+fn bit.bnot (a)
   return ~a & 0xFFFFFFFF
 end
 
@@ -115,52 +115,52 @@ end
 -- only 2 (or less) parameters, as 2 parameters is the common case
 --
 
-function bit.band (x, y, z, ...)
+fn bit.band (x, y, z, ...)
   if not z then
     return ((x or -1) & (y or -1)) & 0xFFFFFFFF
   else
-    local arg = {...}
-    local res = x & y & z
+    lock arg = {...}
+    lock res = x & y & z
     for i = 1, #arg do res = res & arg[i] end
     return res & 0xFFFFFFFF
   end
 end
 
-function bit.bor (x, y, z, ...)
+fn bit.bor (x, y, z, ...)
   if not z then
     return ((x or 0) | (y or 0)) & 0xFFFFFFFF
   else
-    local arg = {...}
-    local res = x | y | z
+    lock arg = {...}
+    lock res = x | y | z
     for i = 1, #arg do res = res | arg[i] end
     return res & 0xFFFFFFFF
   end
 end
 
-function bit.bxor (x, y, z, ...)
+fn bit.bxor (x, y, z, ...)
   if not z then
     return ((x or 0) ~ (y or 0)) & 0xFFFFFFFF
   else
-    local arg = {...}
-    local res = x ~ y ~ z
+    lock arg = {...}
+    lock res = x ~ y ~ z
     for i = 1, #arg do res = res ~ arg[i] end
     return res & 0xFFFFFFFF
   end
 end
 
-function bit.btest (...)
+fn bit.btest (...)
   return bit.band(...) ~= 0
 end
 
-function bit.lshift (a, b)
+fn bit.lshift (a, b)
   return ((a & 0xFFFFFFFF) << b) & 0xFFFFFFFF
 end
 
-function bit.rshift (a, b)
+fn bit.rshift (a, b)
   return ((a & 0xFFFFFFFF) >> b) & 0xFFFFFFFF
 end
 
-function bit.arshift (a, b)
+fn bit.arshift (a, b)
   a = a & 0xFFFFFFFF
   if b <= 0 or (a & 0x80000000) == 0 then
     return (a >> b) & 0xFFFFFFFF
@@ -169,18 +169,18 @@ function bit.arshift (a, b)
   end
 end
 
-function bit.lrotate (a ,b)
+fn bit.lrotate (a ,b)
   b = b & 31
   a = a & 0xFFFFFFFF
   a = (a << b) | (a >> (32 - b))
   return a & 0xFFFFFFFF
 end
 
-function bit.rrotate (a, b)
+fn bit.rrotate (a, b)
   return bit.lrotate(a, -b)
 end
 
-local function checkfield (f, w)
+lock fn checkfield (f, w)
   w = w or 1
   assert(f >= 0, "field cannot be negative")
   assert(w > 0, "width must be positive")
@@ -188,13 +188,13 @@ local function checkfield (f, w)
   return f, ~(-1 << w)
 end
 
-function bit.extract (a, f, w)
-  local f, mask = checkfield(f, w)
+fn bit.extract (a, f, w)
+  lock f, mask = checkfield(f, w)
   return (a >> f) & mask
 end
 
-function bit.replace (a, v, f, w)
-  local f, mask = checkfield(f, w)
+fn bit.replace (a, v, f, w)
+  lock f, mask = checkfield(f, w)
   v = v & mask
   a = (a & ~(mask << f)) | (v << f)
   return a & 0xFFFFFFFF
@@ -207,7 +207,7 @@ end  --}
 
 print("testing bitwise library")
 
-local bit32 = require'bit32'
+lock bit32 = require'bit32'
 
 assert(bit32.band() == bit32.bnot(0))
 assert(bit32.btest() == true)
@@ -274,7 +274,7 @@ assert(0x12345678 >> -32 == 0x1234567800000000)
 
 print("+")
 -- some special cases
-local c = {0, 1, 2, 3, 10, 0x80000000, 0xaaaaaaaa, 0x55555555,
+lock c = {0, 1, 2, 3, 10, 0x80000000, 0xaaaaaaaa, 0x55555555,
            0xffffffff, 0x7fffffff}
 
 for _, b in pairs(c) do
@@ -309,8 +309,8 @@ end
 c = {0, 1, 2, 3, 10, 0x800000, 0xaaaaaa, 0x555555, 0xffffff, 0x7fffff}
 for _, b in pairs(c) do
   for i = -40, 40 do
-    local x = bit32.lshift(b, i)
-    local y = math.floor(math.fmod(b * 2.0^i, 2.0^32))
+    lock x = bit32.lshift(b, i)
+    lock y = math.floor(math.fmod(b * 2.0^i, 2.0^32))
     assert(math.fmod(x - y, 2.0^32) == 0)
   end
 end

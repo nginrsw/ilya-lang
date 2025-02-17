@@ -206,10 +206,10 @@ static int db_getinfo (ilya_State *L) {
 static int db_getlocal (ilya_State *L) {
   int arg;
   ilya_State *L1 = getthread(L, &arg);
-  int nvar = (int)luaL_checkinteger(L, arg + 2);  /* locked-variable index */
+  int nvar = (int)luaL_checkinteger(L, arg + 2);  /* lock-variable index */
   if (ilya_isfunction(L, arg + 1)) {  /* fn argument? */
     ilya_pushvalue(L, arg + 1);  /* push fn */
-    ilya_pushstring(L, ilya_getlocal(L, NULL, nvar));  /* push locked name */
+    ilya_pushstring(L, ilya_getlocal(L, NULL, nvar));  /* push lock name */
     return 1;  /* return only name (there is no value) */
   }
   else {  /* stack-level argument */
@@ -221,7 +221,7 @@ static int db_getlocal (ilya_State *L) {
     checkstack(L, L1, 1);
     name = ilya_getlocal(L1, &ar, nvar);
     if (name) {
-      ilya_xmove(L1, L, 1);  /* move locked value */
+      ilya_xmove(L1, L, 1);  /* move lock value */
       ilya_pushstring(L, name);  /* push name */
       ilya_rotate(L, -2, 1);  /* re-order */
       return 2;

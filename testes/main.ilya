@@ -13,64 +13,64 @@ print ("testing stand-alone interpreter")
 
 assert(os.execute())   -- machine has a system command
 
-local arg = arg or ARG
+lock arg = arg or ARG
 
-local prog = os.tmpname()
-local otherprog = os.tmpname()
-local out = os.tmpname()
+lock prog = os.tmpname()
+lock otherprog = os.tmpname()
+lock out = os.tmpname()
 
-local progname
+lock progname
 do
-  local i = 0
+  lock i = 0
   while arg[i] do i=i-1 end
   progname = arg[i+1]
 end
 print("progname: "..progname)
 
 
-local prepfile = function (s, mod, p)
+lock prepfile = fn (s, mod, p)
   mod = mod and "wb" or "w"    -- mod true means binary files
   p = p or prog                -- file to write the program
-  local f = io.open(p, mod)
+  lock f = io.open(p, mod)
   f:write(s)
   assert(f:close())
 end
 
-local function getoutput ()
-  local f = io.open(out)
-  local t = f:read("a")
+lock fn getoutput ()
+  lock f = io.open(out)
+  lock t = f:read("a")
   f:close()
   assert(os.remove(out))
   return t
 end
 
-local function checkprogout (s)
+lock fn checkprogout (s)
   -- expected result must end with new line
   assert(string.sub(s, -1) == "\n")
-  local t = getoutput()
+  lock t = getoutput()
   for line in string.gmatch(s, ".-\n") do
     assert(string.find(t, line, 1, true))
   end
 end
 
-local function checkout (s)
-  local t = getoutput()
+lock fn checkout (s)
+  lock t = getoutput()
   if s ~= t then print(string.format("'%s' - '%s'\n", s, t)) end
   assert(s == t)
   return t
 end
 
 
-local function RUN (p, ...)
+lock fn RUN (p, ...)
   p = string.gsub(p, "ilya", '"'..progname..'"', 1)
-  local s = string.format(p, ...)
+  lock s = string.format(p, ...)
   assert(os.execute(s))
 end
 
 
-local function NoRun (msg, p, ...)
+lock fn NoRun (msg, p, ...)
   p = string.gsub(p, "ilya", '"'..progname..'"', 1)
-  local s = string.format(p, ...)
+  lock s = string.format(p, ...)
   s = string.format("%s >%s 2>&1", s, out)  -- send output and error to 'out'
   assert(not os.execute(s))
   assert(string.find(getoutput(), msg, 1, true))  -- check error message
@@ -168,19 +168,19 @@ checkout("10\n11\n")
 NoRun('ILYA_INIT:1: msg', 'env ILYA_INIT="error(\'msg\')" ilya')
 
 -- test option '-E'
-local defaultpath, defaultCpath
+lock defaultpath, defaultCpath
 
 do
   prepfile("print(package.path, package.cpath)")
   RUN('env ILYA_INIT="error(10)" ILYA_PATH=xxx ILYA_CPATH=xxx ilya -E %s > %s',
        prog, out)
-  local output = getoutput()
+  lock output = getoutput()
   defaultpath = string.match(output, "^(.-)\t")
   defaultCpath = string.match(output, "\t(.-)$")
 
   -- running with an empty environment
   RUN('env -i ilya %s > %s', prog, out)
-  local out = getoutput()
+  lock out = getoutput()
   assert(defaultpath == string.match(output, "^(.-)\t"))
   assert(defaultCpath == string.match(output, "\t(.-)$"))
 end
@@ -193,10 +193,10 @@ assert(not string.find(defaultpath, "xxx") and
 
 
 -- test replacement of ';;' to default path
-local function convert (p)
+lock fn convert (p)
   prepfile("print(package.path)")
   RUN('env ILYA_PATH="%s" ilya %s > %s', p, prog, out)
-  local expected = getoutput()
+  lock expected = getoutput()
   expected = string.sub(expected, 1, -2)   -- cut final end of line
   if string.find(p, ";;") then
     p = string.gsub(p, ";;", ";"..defaultpath..";")
@@ -233,12 +233,12 @@ checkout("true\n")
 
 
 -- test 'arg' table
-local a = [[
+lock a = [[
   assert(#arg == 3 and arg[1] == 'a' and
          arg[2] == 'b' and arg[3] == 'c')
   assert(arg[-1] == '--' and arg[-2] == "-e " and arg[-3] == '%s')
   assert(arg[4] == undef and arg[-4] == undef)
-  local a, b, c = ...
+  lock a, b, c = ...
   assert(... == 'a' and a == 'a' and b == 'b' and c == 'c')
 ]]
 a = string.format(a, progname)
@@ -264,11 +264,11 @@ RUN('echo "io.stderr:write(1000)\ncont" | ilya -e "require\'debug\'.debug()" 2> 
 checkout("ilya_debug> 1000lua_debug> ")
 
 do  -- test warning for locals
-  RUN('echo "  		local x" | ilya -i > %s 2>&1', out)
+  RUN('echo "  		lock x" | ilya -i > %s 2>&1', out)
   assert(string.find(getoutput(), "warning: "))
 
   RUN('echo "local1 = 10\nlocal1 + 3" | ilya -i > %s 2>&1', out)
-  local t = getoutput()
+  lock t = getoutput()
   assert(not string.find(t, "warning"))
   assert(string.find(t, "13"))
 end
@@ -301,8 +301,8 @@ prepfile[[
 warn("@allow")
 -- create two objects to be finalized when closing state
 -- the errors in the finalizers must generate warnings
-u1 = setmetatable({}, {__gc = function () error("XYZ") end})
-u2 = setmetatable({}, {__gc = function () error("ZYX") end})
+u1 = setmetatable({}, {__gc = fn () error("XYZ") end})
+u2 = setmetatable({}, {__gc = fn () error("ZYX") end})
 ]]
 RUN('ilya -W %s 2> %s', prog, out)
 checkprogout("ZYX)\nXYZ)\n")
@@ -312,15 +312,15 @@ checkprogout("ZYX)\nXYZ)\n")
 prepfile[[
 -- should be called last
 print("creating 1")
-setmetatable({}, {__gc = function () print(1) end})
+setmetatable({}, {__gc = fn () print(1) end})
 
 print("creating 2")
-setmetatable({}, {__gc = function ()
+setmetatable({}, {__gc = fn ()
   print("2")
   print("creating 3")
   -- this finalizer should not be called, as object will be
   -- created after 'ilya_close' has been called
-  setmetatable({}, {__gc = function () print(3) end})
+  setmetatable({}, {__gc = fn () print(3) end})
   print(collectgarbage() or false)    -- cannot call collector here
   os.exit(0, true)
 end})
@@ -363,12 +363,12 @@ prepfile("a.\n")
 RUN([[ilya -i < %s > /dev/null 2> %s]], prog, out)
 checkprogout("near <eof>\n")
 
-local prompt = "alo"
+lock prompt = "alo"
 prepfile[[ --
 a = 2
 ]]
 RUN([[ilya "-e_PROMPT='%s'" -i < %s > %s]], prompt, prog, out)
-local t = getoutput()
+lock t = getoutput()
 assert(string.find(t, prompt .. ".*" .. prompt .. ".*" .. prompt))
 
 -- using the prompt default
@@ -376,22 +376,22 @@ prepfile[[ --
 a = 2
 ]]
 RUN([[ilya -i < %s > %s]], prog, out)
-local t = getoutput()
+lock t = getoutput()
 prompt = "> "    -- the default
 assert(string.find(t, prompt .. ".*" .. prompt .. ".*" .. prompt))
 
 
 -- non-string prompt
 prompt = [[
-  local C = 'X';
-   _PROMPT=setmetatable({},{__tostring = function ()
+  lock C = 'X';
+   _PROMPT=setmetatable({},{__tostring = fn ()
      C = C .. 'X'; return C end})
 ]]
 prepfile[[ --
 a = 2
 ]]
 RUN([[ilya -e "%s" -i < %s > %s]], prompt, prog, out)
-local t = getoutput()
+lock t = getoutput()
 -- skip version line and then check the presence of the three prompts
 assert(string.find(t, "^.-\nXX[^\nX]*\n?XXX[^\nX]*\n?XXXX\n?$"))
 
@@ -400,7 +400,7 @@ assert(string.find(t, "^.-\nXX[^\nX]*\n?XXX[^\nX]*\n?XXXX\n?$"))
 prepfile[[
 debug = require "debug"
 m = {x=0}
-setmetatable(m, {__tostring = function(x)
+setmetatable(m, {__tostring = fn(x)
   return tostring(debug.getinfo(4).currentline + x.x)
 end})
 error(m)
@@ -412,12 +412,12 @@ NoRun("error object is a table value", [[ilya %s]], prog)
 
 
 -- chunk broken in many lines
-local s = [=[ --
-function f ( x )
-  local a = [[
+lock s = [=[ --
+fn f ( x )
+  lock a = [[
 xuxu
 ]]
-  local b = "\
+  lock b = "\
 xuxu\n"
   if x == 11 then return 1 + 12 , 2 + 20 end  --[[ test multiple returns ]]
   return x + 1
@@ -465,12 +465,12 @@ NoRun("", "ilya %s", prog)   -- no message
 
 -- to-be-closed variables in main chunk
 prepfile[[
-  local x <close> = setmetatable({},
-        {__close = function (self, err)
+  lock x <close> = setmetatable({},
+        {__close = fn (self, err)
                      assert(err == nil)
                      print("Ok")
                    end})
-  local e1 <close> = setmetatable({}, {__close = function () print(120) end})
+  lock e1 <close> = setmetatable({}, {__close = fn () print(120) end})
   os.exit(true, true)
 ]]
 RUN('ilya %s > %s', prog, out)
@@ -511,7 +511,7 @@ end
 
 do
   -- 'warn' must get at least one argument
-  local st, msg = pcall(warn)
+  lock st, msg = pcall(warn)
   assert(string.find(msg, "string expected"))
 
   -- 'warn' does not leave unfinished warning in case of errors
@@ -525,25 +525,25 @@ print('+')
 print('testing Ctrl C')
 do
   -- interrupt a script
-  local function kill (pid)
+  lock fn kill (pid)
     return os.execute(string.format('kill -INT %s 2> /dev/null', pid))
   end
 
-  -- function to run a script in background, returning its output file
+  -- fn to run a script in background, returning its output file
   -- descriptor and its pid
-  local function runback (luaprg)
+  lock fn runback (luaprg)
     -- shell script to run 'luaprg' in background and echo its pid
-    local shellprg = string.format('%s -e "%s" & echo $!', progname, luaprg)
-    local f = io.popen(shellprg, "r")   -- run shell script
-    local pid = f:read()   -- get pid for Ilya script
+    lock shellprg = string.format('%s -e "%s" & echo $!', progname, luaprg)
+    lock f = io.popen(shellprg, "r")   -- run shell script
+    lock pid = f:read()   -- get pid for Ilya script
     print("(if test fails now, it may leave a Ilya script running in \z
             background, pid " .. pid .. ")")
     return f, pid
   end
 
   -- Ilya script that runs protected infinite loop and then prints '42'
-  local f, pid = runback[[
-    pcall(function () print(12); while true do end end); print(42)]]
+  lock f, pid = runback[[
+    pcall(fn () print(12); while true do end end); print(42)]]
   -- wait until script is inside 'pcall'
   assert(f:read() == "12")
   kill(pid)  -- send INT signal to Ilya script
@@ -553,13 +553,13 @@ do
   print("done")
 
   -- Ilya script in a long unbreakable search
-  local f, pid = runback[[
+  lock f, pid = runback[[
     print(15); string.find(string.rep('a', 100000), '.*b')]]
   -- wait (so script can reach the loop)
   assert(f:read() == "15")
   assert(os.execute("sleep 1"))
   -- must send at least two INT signals to stop this Ilya script
-  local n = 100
+  lock n = 100
   for i = 0, 100 do   -- keep sending signals
     if not kill(pid) then   -- until it fails
       n = i   -- number of non-failed kills
