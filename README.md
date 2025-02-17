@@ -35,4 +35,4 @@ Everything else remains the same as in the original Ilya language.
 
 Now, you can run the `ilya` command from anywhere in your terminal!
 
-Try making a file named `file.ilya`, type `io.write("Hello Ilya")` inside it, and run it with `ilya file.ilya` in your terminal.
+Try making a file named `file.ilya`, type `io.write("Hello Ilya\n")` inside it, and run it with `ilya file.ilya` in your terminal.
