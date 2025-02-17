@@ -8,7 +8,7 @@ For now, only two changes have been made:
 - The reserved word `local` has been replaced with `lock`.
 - The reserved word `function` has been replaced with `fn`.
 
-Everything else remains the same as in the original Ilya language.
+Everything else remains the same as in the original Lua language.
 
 ---
 
