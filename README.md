@@ -16,7 +16,7 @@ Everything else remains the same as in the original Ilya language.
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/ilya.git
+   git clone https://github.com/nginrsw/ilya.git
    cd ilya
    ```
 
