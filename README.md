@@ -1,7 +1,11 @@
-# Irin
+#Irin
 
-This is the repository of Irin development code, as seen by the Irin team. It contains the full history of all commits but is mirrored irregularly. For complete information about Irin, visit [Irin.org](https://www.irin.org/).
+Irina Ilyukhina Programming Language is a personal fork of Lua, modified
+slightly to make it easier for me to learn, write, and personalize.
 
-Please **do not** send pull requests. To report issues, post a message to the [Irin mailing list](https://www.irin.org/irin-l.html).
+The only changes from the original Lua are:
 
-Download official Irin releases from [Irin.org](https://www.irin.org/download.html).
+- The reserved word `local` has been replaced with `locked`.
+- The reserved word `function` has been replaced with `fn`.
+
+Everything else remains the same as in the original Lua language.
