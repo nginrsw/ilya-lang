@@ -1,6 +1,6 @@
 # Ilya
 
-Ilya Ilyukhina Programming Language is a personal fork of Lua, modified
+Ilya Ilyukhin Programming Language is a personal fork of Lua, modified
 slightly to make it easier for myself to learn, write, and personalize.
 
 For now, only two changes have been made:
