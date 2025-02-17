@@ -28,7 +28,7 @@ Everything else remains the same as in the original Ilya language.
 3. After the build process is complete, install the program by creating a
    symbolic link:
    ```bash
-   sudo ln -s /path/to/program /usr/local/bin/ilya
+   sudo ln -s /path/to/program/ilya-lang/ilya /usr/local/bin/ilya
    ```
 
    Replace `/path/to/program` with the actual path to the compiled program.
