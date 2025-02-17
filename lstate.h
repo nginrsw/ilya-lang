@@ -1,13 +1,13 @@
 /*
 ** $Id: lstate.h $
 ** Global State
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lstate_h
 #define lstate_h
 
-#include "irin.h"
+#include "ilya.h"
 
 
 /* Some header files included here need this definition */
@@ -20,7 +20,7 @@ typedef struct CallInfo CallInfo;
 
 
 /*
-** Some notes about garbage-collected objects: All objects in Irin must
+** Some notes about garbage-collected objects: All objects in Ilya must
 ** be kept somehow accessible until being freed, so all objects always
 ** belong to one (and only one) of these lists, using field 'next' of
 ** the 'CommonHeader' for the link:
@@ -119,11 +119,11 @@ typedef struct CallInfo CallInfo;
 
 
 
-struct irin_longjmp;  /* defined in ldo.c */
+struct ilya_longjmp;  /* defined in ldo.c */
 
 
 /*
-** Atomic type (relative to signals) to better ensure that 'irin_sethook'
+** Atomic type (relative to signals) to better ensure that 'ilya_sethook'
 ** is thread safe
 */
 #if !defined(l_signalT)
@@ -153,7 +153,7 @@ struct irin_longjmp;  /* defined in ldo.c */
 #endif
 
 
-#define BASIC_STACK_SIZE        (2*IRIN_MINSTACK)
+#define BASIC_STACK_SIZE        (2*ILYA_MINSTACK)
 
 #define stacksize(th)	cast_int((th)->stack_last.p - (th)->stack.p)
 
@@ -174,7 +174,7 @@ typedef struct stringtable {
 /*
 ** Information about a call.
 ** About union 'u':
-** - field 'l' is used only for Irin functions;
+** - field 'l' is used only for Ilya functions;
 ** - field 'c' is used only for C functions.
 ** About union 'u2':
 ** - field 'funcidx' is used only by C functions while doing a
@@ -189,15 +189,15 @@ struct CallInfo {
   StkIdRel top;  /* top for this fn */
   struct CallInfo *previous, *next;  /* dynamic call link */
   union {
-    struct {  /* only for Irin functions */
+    struct {  /* only for Ilya functions */
       const Instruction *savedpc;
       volatile l_signalT trap;  /* fn is tracing lines/counts */
       int nextraargs;  /* # of extra arguments in vararg functions */
     } l;
     struct {  /* only for C functions */
-      irin_KFunction k;  /* continuation in case of yields */
+      ilya_KFunction k;  /* continuation in case of yields */
       ptrdiff_t old_errfunc;
-      irin_KContext ctx;  /* context info. in case of yields */
+      ilya_KContext ctx;  /* context info. in case of yields */
     } c;
   } u;
   union {
@@ -249,7 +249,7 @@ struct CallInfo {
 #define CIST_HOOKYIELD	(CIST_TAIL << 1)
 /* fn "called" a finalizer */
 #define CIST_FIN	(CIST_HOOKYIELD << 1)
-#if defined(IRIN_COMPAT_LT_LE)
+#if defined(ILYA_COMPAT_LT_LE)
 /* using __lt for __le */
 #define CIST_LEQ	(CIST_FIN << 1)
 #endif
@@ -260,7 +260,7 @@ struct CallInfo {
 /*
 ** Field CIST_RECST stores the "recover status", used to keep the error
 ** status while closing to-be-closed variables in coroutines, so that
-** Irin can correctly resume after an yield from a __close method called
+** Ilya can correctly resume after an yield from a __close method called
 ** because of an error.  (Three bits are enough for error status.)
 */
 #define getcistrecst(ci)     (((ci)->callstatus >> CIST_RECST) & 7)
@@ -270,10 +270,10 @@ struct CallInfo {
                                 | (cast(l_uint32, st) << CIST_RECST)))
 
 
-/* active fn is a Irin fn */
+/* active fn is a Ilya fn */
 #define isLua(ci)	(!((ci)->callstatus & CIST_C))
 
-/* call is running Irin code (not a hook) */
+/* call is running Ilya code (not a hook) */
 #define isLuacode(ci)	(!((ci)->callstatus & (CIST_C | CIST_HOOKED)))
 
 
@@ -287,7 +287,7 @@ struct CallInfo {
 ** 'global state', shared by all threads of this state
 */
 typedef struct global_State {
-  irin_Alloc frealloc;  /* fn to reallocate memory */
+  ilya_Alloc frealloc;  /* fn to reallocate memory */
   void *ud;         /* auxiliary data to 'frealloc' */
   l_mem GCtotalbytes;  /* number of bytes currently allocated + debt */
   l_mem GCdebt;  /* bytes counted but not yet allocated */
@@ -297,7 +297,7 @@ typedef struct global_State {
   TValue l_registry;
   TValue nilvalue;  /* a nil value */
   unsigned int seed;  /* randomized seed for hashes */
-  lu_byte gcparams[IRIN_GCPN];
+  lu_byte gcparams[ILYA_GCPN];
   lu_byte currentwhite;
   lu_byte gcstate;  /* state of garbage collector */
   lu_byte gckind;  /* kind of GC running */
@@ -322,14 +322,14 @@ typedef struct global_State {
   GCObject *finobjsur;  /* list of survival objects with finalizers */
   GCObject *finobjold1;  /* list of old1 objects with finalizers */
   GCObject *finobjrold;  /* list of really old objects with finalizers */
-  struct irin_State *twups;  /* list of threads with open upvalues */
-  irin_CFunction panic;  /* to be called in unprotected errors */
-  struct irin_State *mainthread;
+  struct ilya_State *twups;  /* list of threads with open upvalues */
+  ilya_CFunction panic;  /* to be called in unprotected errors */
+  struct ilya_State *mainthread;
   TString *memerrmsg;  /* message for memory-allocation errors */
   TString *tmname[TM_N];  /* array with tag-method names */
-  struct Table *mt[IRIN_NUMTYPES];  /* metatables for basic types */
+  struct Table *mt[ILYA_NUMTYPES];  /* metatables for basic types */
   TString *strcache[STRCACHE_N][STRCACHE_M];  /* cache for strings in API */
-  irin_WarnFunction warnf;  /* warning fn */
+  ilya_WarnFunction warnf;  /* warning fn */
   void *ud_warn;         /* auxiliary data to 'warnf' */
 } global_State;
 
@@ -337,7 +337,7 @@ typedef struct global_State {
 /*
 ** 'per thread' state
 */
-struct irin_State {
+struct ilya_State {
   CommonHeader;
   lu_byte status;
   lu_byte allowhook;
@@ -350,10 +350,10 @@ struct irin_State {
   UpVal *openupval;  /* list of open upvalues in this stack */
   StkIdRel tbclist;  /* list of to-be-closed variables */
   GCObject *gclist;
-  struct irin_State *twups;  /* list of threads with open upvalues */
-  struct irin_longjmp *errorJmp;  /* current error recover point */
-  CallInfo base_ci;  /* CallInfo for first level (C calling Irin) */
-  volatile irin_Hook hook;
+  struct ilya_State *twups;  /* list of threads with open upvalues */
+  struct ilya_longjmp *errorJmp;  /* current error recover point */
+  CallInfo base_ci;  /* CallInfo for first level (C calling Ilya) */
+  volatile ilya_Hook hook;
   ptrdiff_t errfunc;  /* current error handling fn (stack index) */
   l_uint32 nCcalls;  /* number of nested (non-yieldable | C)  calls */
   int oldpc;  /* last pc traced */
@@ -392,7 +392,7 @@ union GCUnion {
   union Closure cl;
   struct Table h;
   struct Proto p;
-  struct irin_State th;  /* thread */
+  struct ilya_State th;  /* thread */
   struct UpVal upv;
 };
 
@@ -406,23 +406,23 @@ union GCUnion {
 
 /* macros to convert a GCObject into a specific value */
 #define gco2ts(o)  \
-	check_exp(novariant((o)->tt) == IRIN_TSTRING, &((cast_u(o))->ts))
-#define gco2u(o)  check_exp((o)->tt == IRIN_VUSERDATA, &((cast_u(o))->u))
-#define gco2lcl(o)  check_exp((o)->tt == IRIN_VLCL, &((cast_u(o))->cl.l))
-#define gco2ccl(o)  check_exp((o)->tt == IRIN_VCCL, &((cast_u(o))->cl.c))
+	check_exp(novariant((o)->tt) == ILYA_TSTRING, &((cast_u(o))->ts))
+#define gco2u(o)  check_exp((o)->tt == ILYA_VUSERDATA, &((cast_u(o))->u))
+#define gco2lcl(o)  check_exp((o)->tt == ILYA_VLCL, &((cast_u(o))->cl.l))
+#define gco2ccl(o)  check_exp((o)->tt == ILYA_VCCL, &((cast_u(o))->cl.c))
 #define gco2cl(o)  \
-	check_exp(novariant((o)->tt) == IRIN_TFUNCTION, &((cast_u(o))->cl))
-#define gco2t(o)  check_exp((o)->tt == IRIN_VTABLE, &((cast_u(o))->h))
-#define gco2p(o)  check_exp((o)->tt == IRIN_VPROTO, &((cast_u(o))->p))
-#define gco2th(o)  check_exp((o)->tt == IRIN_VTHREAD, &((cast_u(o))->th))
-#define gco2upv(o)	check_exp((o)->tt == IRIN_VUPVAL, &((cast_u(o))->upv))
+	check_exp(novariant((o)->tt) == ILYA_TFUNCTION, &((cast_u(o))->cl))
+#define gco2t(o)  check_exp((o)->tt == ILYA_VTABLE, &((cast_u(o))->h))
+#define gco2p(o)  check_exp((o)->tt == ILYA_VPROTO, &((cast_u(o))->p))
+#define gco2th(o)  check_exp((o)->tt == ILYA_VTHREAD, &((cast_u(o))->th))
+#define gco2upv(o)	check_exp((o)->tt == ILYA_VUPVAL, &((cast_u(o))->upv))
 
 
 /*
-** macro to convert a Irin object into a GCObject
-** (The access to 'tt' tries to ensure that 'v' is actually a Irin object.)
+** macro to convert a Ilya object into a GCObject
+** (The access to 'tt' tries to ensure that 'v' is actually a Ilya object.)
 */
-#define obj2gco(v)	check_exp((v)->tt >= IRIN_TSTRING, &(cast_u(v)->gc))
+#define obj2gco(v)	check_exp((v)->tt >= ILYA_TSTRING, &(cast_u(v)->gc))
 
 
 /* actual number of total memory allocated */
@@ -430,15 +430,15 @@ union GCUnion {
 
 
 LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
-LUAI_FUNC void luaE_freethread (irin_State *L, irin_State *L1);
-LUAI_FUNC lu_mem luaE_threadsize (irin_State *L);
-LUAI_FUNC CallInfo *luaE_extendCI (irin_State *L);
-LUAI_FUNC void luaE_shrinkCI (irin_State *L);
-LUAI_FUNC void luaE_checkcstack (irin_State *L);
-LUAI_FUNC void luaE_incCstack (irin_State *L);
-LUAI_FUNC void luaE_warning (irin_State *L, const char *msg, int tocont);
-LUAI_FUNC void luaE_warnerror (irin_State *L, const char *where);
-LUAI_FUNC int luaE_resetthread (irin_State *L, int status);
+LUAI_FUNC void luaE_freethread (ilya_State *L, ilya_State *L1);
+LUAI_FUNC lu_mem luaE_threadsize (ilya_State *L);
+LUAI_FUNC CallInfo *luaE_extendCI (ilya_State *L);
+LUAI_FUNC void luaE_shrinkCI (ilya_State *L);
+LUAI_FUNC void luaE_checkcstack (ilya_State *L);
+LUAI_FUNC void luaE_incCstack (ilya_State *L);
+LUAI_FUNC void luaE_warning (ilya_State *L, const char *msg, int tocont);
+LUAI_FUNC void luaE_warnerror (ilya_State *L, const char *where);
+LUAI_FUNC int luaE_resetthread (ilya_State *L, int status);
 
 
 #endif

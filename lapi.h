@@ -1,7 +1,7 @@
 /*
 ** $Id: lapi.h $
-** Auxiliary functions from Irin API
-** See Copyright Notice in irin.h
+** Auxiliary functions from Ilya API
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lapi_h
@@ -12,11 +12,11 @@
 #include "lstate.h"
 
 
-#if defined(IRIN_USE_APICHECK)
+#if defined(ILYA_USE_APICHECK)
 #include <assert.h>
 #define api_check(l,e,msg)	assert(e)
 #else	/* for testing */
-#define api_check(l,e,msg)	((void)(l), irin_assert((e) && msg))
+#define api_check(l,e,msg)	((void)(l), ilya_assert((e) && msg))
 #endif
 
 
@@ -27,12 +27,12 @@
 
 
 /*
-** macros that are executed whenever program enters the Irin core
-** ('irin_lock') and leaves the core ('irin_unlock')
+** macros that are executed whenever program enters the Ilya core
+** ('ilya_lock') and leaves the core ('ilya_unlock')
 */
-#if !defined(irin_lock)
-#define irin_lock(L)	((void) 0)
-#define irin_unlock(L)	((void) 0)
+#if !defined(ilya_lock)
+#define ilya_lock(L)	((void) 0)
+#define ilya_unlock(L)	((void) 0)
 #endif
 
 
@@ -43,7 +43,7 @@
 ** increases its stack space ('L->ci->top.p').
 */
 #define adjustresults(L,nres) \
-    { if ((nres) <= IRIN_MULTRET && L->ci->top.p < L->top.p) \
+    { if ((nres) <= ILYA_MULTRET && L->ci->top.p < L->top.p) \
 	L->ci->top.p = L->top.p; }
 
 

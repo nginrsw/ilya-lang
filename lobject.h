@@ -1,7 +1,7 @@
 /*
 ** $Id: lobject.h $
-** Type definitions for Irin objects
-** See Copyright Notice in irin.h
+** Type definitions for Ilya objects
+** See Copyright Notice in ilya.h
 */
 
 
@@ -13,27 +13,27 @@
 
 
 #include "llimits.h"
-#include "irin.h"
+#include "ilya.h"
 
 
 /*
 ** Extra types for collectable non-values
 */
-#define IRIN_TUPVAL	IRIN_NUMTYPES  /* upvalues */
-#define IRIN_TPROTO	(IRIN_NUMTYPES+1)  /* fn prototypes */
-#define IRIN_TDEADKEY	(IRIN_NUMTYPES+2)  /* removed keys in tables */
+#define ILYA_TUPVAL	ILYA_NUMTYPES  /* upvalues */
+#define ILYA_TPROTO	(ILYA_NUMTYPES+1)  /* fn prototypes */
+#define ILYA_TDEADKEY	(ILYA_NUMTYPES+2)  /* removed keys in tables */
 
 
 
 /*
-** number of all possible types (including IRIN_TNONE but excluding DEADKEY)
+** number of all possible types (including ILYA_TNONE but excluding DEADKEY)
 */
-#define IRIN_TOTALTYPES		(IRIN_TPROTO + 2)
+#define ILYA_TOTALTYPES		(ILYA_TPROTO + 2)
 
 
 /*
 ** tags for Tagged Values have the following use of bits:
-** bits 0-3: actual tag (a IRIN_T* constant)
+** bits 0-3: actual tag (a ILYA_T* constant)
 ** bits 4-5: variant bits
 ** bit 6: whether value is collectable
 */
@@ -44,21 +44,21 @@
 
 
 /*
-** Union of all Irin values
+** Union of all Ilya values
 */
 typedef union Value {
   struct GCObject *gc;    /* collectable objects */
   void *p;         /* light userdata */
-  irin_CFunction f; /* light C functions */
-  irin_Integer i;   /* integer numbers */
-  irin_Number n;    /* float numbers */
+  ilya_CFunction f; /* light C functions */
+  ilya_Integer i;   /* integer numbers */
+  ilya_Number n;    /* float numbers */
   /* not used, but may avoid warnings for uninitialized value */
   lu_byte ub;
 } Value;
 
 
 /*
-** Tagged Values. This is the basic representation of values in Irin:
+** Tagged Values. This is the basic representation of values in Ilya:
 ** an actual value plus a tag with its type.
 */
 
@@ -104,7 +104,7 @@ typedef struct TValue {
 ** macros using this one to be used where L is not available.
 */
 #define checkliveness(L,obj) \
-	((void)L, irin_longassert(!iscollectable(obj) || \
+	((void)L, ilya_longassert(!iscollectable(obj) || \
 		(righttt(obj) && (L == NULL || !isdead(G(L),gcvalue(obj))))))
 
 
@@ -118,7 +118,7 @@ typedef struct TValue {
 #define setobj(L,obj1,obj2) \
 	{ TValue *io1=(obj1); const TValue *io2=(obj2); \
           io1->value_ = io2->value_; settt_(io1, io2->tt_); \
-	  checkliveness(L,io1); irin_assert(!isnonstrictnil(io1)); }
+	  checkliveness(L,io1); ilya_assert(!isnonstrictnil(io1)); }
 
 /*
 ** Different types of assignments, according to source and destination.
@@ -138,7 +138,7 @@ typedef struct TValue {
 
 
 /*
-** Entries in a Irin stack. Field 'tbclist' forms a list of all
+** Entries in a Ilya stack. Field 'tbclist' forms a list of all
 ** to-be-closed variables active in this stack. Dummy entries are
 ** used when the distance between two tbc variables does not fit
 ** in an unsigned short. They are represented by delta==0, and
@@ -180,38 +180,38 @@ typedef union {
 */
 
 /* Standard nil */
-#define IRIN_VNIL	makevariant(IRIN_TNIL, 0)
+#define ILYA_VNIL	makevariant(ILYA_TNIL, 0)
 
 /* Empty slot (which might be different from a slot containing nil) */
-#define IRIN_VEMPTY	makevariant(IRIN_TNIL, 1)
+#define ILYA_VEMPTY	makevariant(ILYA_TNIL, 1)
 
 /* Value returned for a key not found in a table (absent key) */
-#define IRIN_VABSTKEY	makevariant(IRIN_TNIL, 2)
+#define ILYA_VABSTKEY	makevariant(ILYA_TNIL, 2)
 
 /* Special variant to signal that a fast get is accessing a non-table */
-#define IRIN_VNOTABLE    makevariant(IRIN_TNIL, 3)
+#define ILYA_VNOTABLE    makevariant(ILYA_TNIL, 3)
 
 
 /* macro to test for (any kind of) nil */
-#define ttisnil(v)		checktype((v), IRIN_TNIL)
+#define ttisnil(v)		checktype((v), ILYA_TNIL)
 
 /*
 ** Macro to test the result of a table access. Formally, it should
-** distinguish between IRIN_VEMPTY/IRIN_VABSTKEY/IRIN_VNOTABLE and
-** other tags. As currently nil is equivalent to IRIN_VEMPTY, it is
+** distinguish between ILYA_VEMPTY/ILYA_VABSTKEY/ILYA_VNOTABLE and
+** other tags. As currently nil is equivalent to ILYA_VEMPTY, it is
 ** simpler to just test whether the value is nil.
 */
-#define tagisempty(tag)		(novariant(tag) == IRIN_TNIL)
+#define tagisempty(tag)		(novariant(tag) == ILYA_TNIL)
 
 
 /* macro to test for a standard nil */
-#define ttisstrictnil(o)	checktag((o), IRIN_VNIL)
+#define ttisstrictnil(o)	checktag((o), ILYA_VNIL)
 
 
-#define setnilvalue(obj) settt_(obj, IRIN_VNIL)
+#define setnilvalue(obj) settt_(obj, ILYA_VNIL)
 
 
-#define isabstkey(v)		checktag((v), IRIN_VABSTKEY)
+#define isabstkey(v)		checktag((v), ILYA_VABSTKEY)
 
 
 /*
@@ -229,11 +229,11 @@ typedef union {
 
 
 /* macro defining a value corresponding to an absent key */
-#define ABSTKEYCONSTANT		{NULL}, IRIN_VABSTKEY
+#define ABSTKEYCONSTANT		{NULL}, ILYA_VABSTKEY
 
 
 /* mark an entry as empty */
-#define setempty(v)		settt_(v, IRIN_VEMPTY)
+#define setempty(v)		settt_(v, ILYA_VEMPTY)
 
 
 
@@ -247,21 +247,21 @@ typedef union {
 */
 
 
-#define IRIN_VFALSE	makevariant(IRIN_TBOOLEAN, 0)
-#define IRIN_VTRUE	makevariant(IRIN_TBOOLEAN, 1)
+#define ILYA_VFALSE	makevariant(ILYA_TBOOLEAN, 0)
+#define ILYA_VTRUE	makevariant(ILYA_TBOOLEAN, 1)
 
-#define ttisboolean(o)		checktype((o), IRIN_TBOOLEAN)
-#define ttisfalse(o)		checktag((o), IRIN_VFALSE)
-#define ttistrue(o)		checktag((o), IRIN_VTRUE)
+#define ttisboolean(o)		checktype((o), ILYA_TBOOLEAN)
+#define ttisfalse(o)		checktag((o), ILYA_VFALSE)
+#define ttistrue(o)		checktag((o), ILYA_VTRUE)
 
 
 #define l_isfalse(o)	(ttisfalse(o) || ttisnil(o))
-#define tagisfalse(t)	((t) == IRIN_VFALSE || novariant(t) == IRIN_TNIL)
+#define tagisfalse(t)	((t) == ILYA_VFALSE || novariant(t) == ILYA_TNIL)
 
 
 
-#define setbfvalue(obj)		settt_(obj, IRIN_VFALSE)
-#define setbtvalue(obj)		settt_(obj, IRIN_VTRUE)
+#define setbfvalue(obj)		settt_(obj, ILYA_VFALSE)
+#define setbtvalue(obj)		settt_(obj, ILYA_VTRUE)
 
 /* }================================================================== */
 
@@ -272,15 +272,15 @@ typedef union {
 ** ===================================================================
 */
 
-#define IRIN_VTHREAD		makevariant(IRIN_TTHREAD, 0)
+#define ILYA_VTHREAD		makevariant(ILYA_TTHREAD, 0)
 
-#define ttisthread(o)		checktag((o), ctb(IRIN_VTHREAD))
+#define ttisthread(o)		checktag((o), ctb(ILYA_VTHREAD))
 
 #define thvalue(o)	check_exp(ttisthread(o), gco2th(val_(o).gc))
 
 #define setthvalue(L,obj,x) \
-  { TValue *io = (obj); irin_State *x_ = (x); \
-    val_(io).gc = obj2gco(x_); settt_(io, ctb(IRIN_VTHREAD)); \
+  { TValue *io = (obj); ilya_State *x_ = (x); \
+    val_(io).gc = obj2gco(x_); settt_(io, ctb(ILYA_VTHREAD)); \
     checkliveness(L,io); }
 
 #define setthvalue2s(L,o,t)	setthvalue(L,s2v(o),t)
@@ -333,12 +333,12 @@ typedef struct GCObject {
 */
 
 /* Variant tags for numbers */
-#define IRIN_VNUMINT	makevariant(IRIN_TNUMBER, 0)  /* integer numbers */
-#define IRIN_VNUMFLT	makevariant(IRIN_TNUMBER, 1)  /* float numbers */
+#define ILYA_VNUMINT	makevariant(ILYA_TNUMBER, 0)  /* integer numbers */
+#define ILYA_VNUMFLT	makevariant(ILYA_TNUMBER, 1)  /* float numbers */
 
-#define ttisnumber(o)		checktype((o), IRIN_TNUMBER)
-#define ttisfloat(o)		checktag((o), IRIN_VNUMFLT)
-#define ttisinteger(o)		checktag((o), IRIN_VNUMINT)
+#define ttisnumber(o)		checktype((o), ILYA_TNUMBER)
+#define ttisfloat(o)		checktag((o), ILYA_VNUMFLT)
+#define ttisinteger(o)		checktag((o), ILYA_VNUMINT)
 
 #define nvalue(o)	check_exp(ttisnumber(o), \
 	(ttisinteger(o) ? cast_num(ivalue(o)) : fltvalue(o)))
@@ -349,16 +349,16 @@ typedef struct GCObject {
 #define ivalueraw(v)	((v).i)
 
 #define setfltvalue(obj,x) \
-  { TValue *io=(obj); val_(io).n=(x); settt_(io, IRIN_VNUMFLT); }
+  { TValue *io=(obj); val_(io).n=(x); settt_(io, ILYA_VNUMFLT); }
 
 #define chgfltvalue(obj,x) \
-  { TValue *io=(obj); irin_assert(ttisfloat(io)); val_(io).n=(x); }
+  { TValue *io=(obj); ilya_assert(ttisfloat(io)); val_(io).n=(x); }
 
 #define setivalue(obj,x) \
-  { TValue *io=(obj); val_(io).i=(x); settt_(io, IRIN_VNUMINT); }
+  { TValue *io=(obj); val_(io).i=(x); settt_(io, ILYA_VNUMINT); }
 
 #define chgivalue(obj,x) \
-  { TValue *io=(obj); irin_assert(ttisinteger(io)); val_(io).i=(x); }
+  { TValue *io=(obj); ilya_assert(ttisinteger(io)); val_(io).i=(x); }
 
 /* }================================================================== */
 
@@ -370,12 +370,12 @@ typedef struct GCObject {
 */
 
 /* Variant tags for strings */
-#define IRIN_VSHRSTR	makevariant(IRIN_TSTRING, 0)  /* short strings */
-#define IRIN_VLNGSTR	makevariant(IRIN_TSTRING, 1)  /* long strings */
+#define ILYA_VSHRSTR	makevariant(ILYA_TSTRING, 0)  /* short strings */
+#define ILYA_VLNGSTR	makevariant(ILYA_TSTRING, 1)  /* long strings */
 
-#define ttisstring(o)		checktype((o), IRIN_TSTRING)
-#define ttisshrstring(o)	checktag((o), ctb(IRIN_VSHRSTR))
-#define ttislngstring(o)	checktag((o), ctb(IRIN_VLNGSTR))
+#define ttisstring(o)		checktype((o), ILYA_TSTRING)
+#define ttisshrstring(o)	checktag((o), ctb(ILYA_VSHRSTR))
+#define ttislngstring(o)	checktag((o), ctb(ILYA_VLNGSTR))
 
 #define tsvalueraw(v)	(gco2ts((v).gc))
 
@@ -412,7 +412,7 @@ typedef struct TString {
     struct TString *hnext;  /* linked list for hash table */
   } u;
   char *contents;  /* pointer to content in long strings */
-  irin_Alloc falloc;  /* deallocation fn for external strings */
+  ilya_Alloc falloc;  /* deallocation fn for external strings */
   void *ud;  /* user data for external strings */
 } TString;
 
@@ -455,12 +455,12 @@ typedef struct TString {
 ** Light userdata should be a variant of userdata, but for compatibility
 ** reasons they are also different types.
 */
-#define IRIN_VLIGHTUSERDATA	makevariant(IRIN_TLIGHTUSERDATA, 0)
+#define ILYA_VLIGHTUSERDATA	makevariant(ILYA_TLIGHTUSERDATA, 0)
 
-#define IRIN_VUSERDATA		makevariant(IRIN_TUSERDATA, 0)
+#define ILYA_VUSERDATA		makevariant(ILYA_TUSERDATA, 0)
 
-#define ttislightuserdata(o)	checktag((o), IRIN_VLIGHTUSERDATA)
-#define ttisfulluserdata(o)	checktag((o), ctb(IRIN_VUSERDATA))
+#define ttislightuserdata(o)	checktag((o), ILYA_VLIGHTUSERDATA)
+#define ttisfulluserdata(o)	checktag((o), ctb(ILYA_VUSERDATA))
 
 #define pvalue(o)	check_exp(ttislightuserdata(o), val_(o).p)
 #define uvalue(o)	check_exp(ttisfulluserdata(o), gco2u(val_(o).gc))
@@ -468,11 +468,11 @@ typedef struct TString {
 #define pvalueraw(v)	((v).p)
 
 #define setpvalue(obj,x) \
-  { TValue *io=(obj); val_(io).p=(x); settt_(io, IRIN_VLIGHTUSERDATA); }
+  { TValue *io=(obj); val_(io).p=(x); settt_(io, ILYA_VLIGHTUSERDATA); }
 
 #define setuvalue(L,obj,x) \
   { TValue *io = (obj); Udata *x_ = (x); \
-    val_(io).gc = obj2gco(x_); settt_(io, ctb(IRIN_VUSERDATA)); \
+    val_(io).gc = obj2gco(x_); settt_(io, ctb(ILYA_VUSERDATA)); \
     checkliveness(L,io); }
 
 
@@ -535,7 +535,7 @@ typedef struct Udata0 {
 ** ===================================================================
 */
 
-#define IRIN_VPROTO	makevariant(IRIN_TPROTO, 0)
+#define ILYA_VPROTO	makevariant(ILYA_TPROTO, 0)
 
 
 typedef l_uint32 Instruction;
@@ -567,8 +567,8 @@ typedef struct LocVar {
 ** Associates the absolute line source for a given instruction ('pc').
 ** The array 'lineinfo' gives, for each instruction, the difference in
 ** lines from the previous instruction. When that difference does not
-** fit into a byte, Irin saves the absolute line for that instruction.
-** (Irin also saves the absolute line periodically, to speed up the
+** fit into a byte, Ilya saves the absolute line for that instruction.
+** (Ilya also saves the absolute line periodically, to speed up the
 ** computation of a line number: we can use binary search in the
 ** absolute-line array, but we must traverse the 'lineinfo' array
 ** linearly to compute a line.)
@@ -623,18 +623,18 @@ typedef struct Proto {
 ** ===================================================================
 */
 
-#define IRIN_VUPVAL	makevariant(IRIN_TUPVAL, 0)
+#define ILYA_VUPVAL	makevariant(ILYA_TUPVAL, 0)
 
 
 /* Variant tags for functions */
-#define IRIN_VLCL	makevariant(IRIN_TFUNCTION, 0)  /* Irin closure */
-#define IRIN_VLCF	makevariant(IRIN_TFUNCTION, 1)  /* light C fn */
-#define IRIN_VCCL	makevariant(IRIN_TFUNCTION, 2)  /* C closure */
+#define ILYA_VLCL	makevariant(ILYA_TFUNCTION, 0)  /* Ilya closure */
+#define ILYA_VLCF	makevariant(ILYA_TFUNCTION, 1)  /* light C fn */
+#define ILYA_VCCL	makevariant(ILYA_TFUNCTION, 2)  /* C closure */
 
-#define ttisfunction(o)		checktype(o, IRIN_TFUNCTION)
-#define ttisLclosure(o)		checktag((o), ctb(IRIN_VLCL))
-#define ttislcf(o)		checktag((o), IRIN_VLCF)
-#define ttisCclosure(o)		checktag((o), ctb(IRIN_VCCL))
+#define ttisfunction(o)		checktype(o, ILYA_TFUNCTION)
+#define ttisLclosure(o)		checktag((o), ctb(ILYA_VLCL))
+#define ttislcf(o)		checktag((o), ILYA_VLCF)
+#define ttisCclosure(o)		checktag((o), ctb(ILYA_VCCL))
 #define ttisclosure(o)         (ttisLclosure(o) || ttisCclosure(o))
 
 
@@ -649,22 +649,22 @@ typedef struct Proto {
 
 #define setclLvalue(L,obj,x) \
   { TValue *io = (obj); LClosure *x_ = (x); \
-    val_(io).gc = obj2gco(x_); settt_(io, ctb(IRIN_VLCL)); \
+    val_(io).gc = obj2gco(x_); settt_(io, ctb(ILYA_VLCL)); \
     checkliveness(L,io); }
 
 #define setclLvalue2s(L,o,cl)	setclLvalue(L,s2v(o),cl)
 
 #define setfvalue(obj,x) \
-  { TValue *io=(obj); val_(io).f=(x); settt_(io, IRIN_VLCF); }
+  { TValue *io=(obj); val_(io).f=(x); settt_(io, ILYA_VLCF); }
 
 #define setclCvalue(L,obj,x) \
   { TValue *io = (obj); CClosure *x_ = (x); \
-    val_(io).gc = obj2gco(x_); settt_(io, ctb(IRIN_VCCL)); \
+    val_(io).gc = obj2gco(x_); settt_(io, ctb(ILYA_VCCL)); \
     checkliveness(L,io); }
 
 
 /*
-** Upvalues for Irin closures
+** Upvalues for Ilya closures
 */
 typedef struct UpVal {
   CommonHeader;
@@ -688,7 +688,7 @@ typedef struct UpVal {
 
 typedef struct CClosure {
   ClosureHeader;
-  irin_CFunction f;
+  ilya_CFunction f;
   TValue upvalue[1];  /* list of upvalues */
 } CClosure;
 
@@ -717,15 +717,15 @@ typedef union Closure {
 ** ===================================================================
 */
 
-#define IRIN_VTABLE	makevariant(IRIN_TTABLE, 0)
+#define ILYA_VTABLE	makevariant(ILYA_TTABLE, 0)
 
-#define ttistable(o)		checktag((o), ctb(IRIN_VTABLE))
+#define ttistable(o)		checktag((o), ctb(ILYA_VTABLE))
 
 #define hvalue(o)	check_exp(ttistable(o), gco2t(val_(o).gc))
 
 #define sethvalue(L,obj,x) \
   { TValue *io = (obj); Table *x_ = (x); \
-    val_(io).gc = obj2gco(x_); settt_(io, ctb(IRIN_VTABLE)); \
+    val_(io).gc = obj2gco(x_); settt_(io, ctb(ILYA_VTABLE)); \
     checkliveness(L,io); }
 
 #define sethvalue2s(L,o,h)	sethvalue(L,s2v(o),h)
@@ -781,13 +781,13 @@ typedef struct Table {
 #define keytt(node)		((node)->u.key_tt)
 #define keyval(node)		((node)->u.key_val)
 
-#define keyisnil(node)		(keytt(node) == IRIN_TNIL)
-#define keyisinteger(node)	(keytt(node) == IRIN_VNUMINT)
+#define keyisnil(node)		(keytt(node) == ILYA_TNIL)
+#define keyisinteger(node)	(keytt(node) == ILYA_VNUMINT)
 #define keyival(node)		(keyval(node).i)
-#define keyisshrstr(node)	(keytt(node) == ctb(IRIN_VSHRSTR))
+#define keyisshrstr(node)	(keytt(node) == ctb(ILYA_VSHRSTR))
 #define keystrval(node)		(gco2ts(keyval(node).gc))
 
-#define setnilkey(node)		(keytt(node) = IRIN_TNIL)
+#define setnilkey(node)		(keytt(node) = ILYA_TNIL)
 
 #define keyiscollectable(n)	(keytt(n) & BIT_ISCOLLECTABLE)
 
@@ -801,8 +801,8 @@ typedef struct Table {
 ** be found when searched in a special way. ('next' needs that to find
 ** keys removed from a table during a traversal.)
 */
-#define setdeadkey(node)	(keytt(node) = IRIN_TDEADKEY)
-#define keyisdead(node)		(keytt(node) == IRIN_TDEADKEY)
+#define setdeadkey(node)	(keytt(node) = ILYA_TDEADKEY)
+#define keyisdead(node)		(keytt(node) == ILYA_TDEADKEY)
 
 /* }================================================================== */
 
@@ -827,17 +827,17 @@ LUAI_FUNC lu_byte luaO_ceillog2 (unsigned int x);
 LUAI_FUNC lu_byte luaO_codeparam (unsigned int p);
 LUAI_FUNC l_mem luaO_applyparam (lu_byte p, l_mem x);
 
-LUAI_FUNC int luaO_rawarith (irin_State *L, int op, const TValue *p1,
+LUAI_FUNC int luaO_rawarith (ilya_State *L, int op, const TValue *p1,
                              const TValue *p2, TValue *res);
-LUAI_FUNC void luaO_arith (irin_State *L, int op, const TValue *p1,
+LUAI_FUNC void luaO_arith (ilya_State *L, int op, const TValue *p1,
                            const TValue *p2, StkId res);
 LUAI_FUNC size_t luaO_str2num (const char *s, TValue *o);
 LUAI_FUNC unsigned luaO_tostringbuff (const TValue *obj, char *buff);
 LUAI_FUNC lu_byte luaO_hexavalue (int c);
-LUAI_FUNC void luaO_tostring (irin_State *L, TValue *obj);
-LUAI_FUNC const char *luaO_pushvfstring (irin_State *L, const char *fmt,
+LUAI_FUNC void luaO_tostring (ilya_State *L, TValue *obj);
+LUAI_FUNC const char *luaO_pushvfstring (ilya_State *L, const char *fmt,
                                                        va_list argp);
-LUAI_FUNC const char *luaO_pushfstring (irin_State *L, const char *fmt, ...);
+LUAI_FUNC const char *luaO_pushfstring (ilya_State *L, const char *fmt, ...);
 LUAI_FUNC void luaO_chunkid (char *out, const char *source, size_t srclen);
 
 

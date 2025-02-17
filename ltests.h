@@ -1,7 +1,7 @@
 /*
 ** $Id: ltests.h $
-** Internal Header for Debugging of the Irin Implementation
-** See Copyright Notice in irin.h
+** Internal Header for Debugging of the Ilya Implementation
+** See Copyright Notice in ilya.h
 */
 
 #ifndef ltests_h
@@ -11,12 +11,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* test Irin with compatibility code */
-#define IRIN_COMPAT_MATHLIB
-#define IRIN_COMPAT_LT_LE
+/* test Ilya with compatibility code */
+#define ILYA_COMPAT_MATHLIB
+#define ILYA_COMPAT_LT_LE
 
 
-#define IRIN_DEBUG
+#define ILYA_DEBUG
 
 
 /* turn on assertions */
@@ -29,7 +29,7 @@
 
 /* test for sizes in 'l_sprintf' (make sure whole buffer is available) */
 #undef l_sprintf
-#if !defined(IRIN_USE_C89)
+#if !defined(ILYA_USE_C89)
 #define l_sprintf(s,sz,f,i)	(memset(s,0xAB,sz), snprintf(s,sz,f,i))
 #else
 #define l_sprintf(s,sz,f,i)	(memset(s,0xAB,sz), sprintf(s,f,i))
@@ -37,11 +37,11 @@
 
 
 /* get a chance to test code without jump tables */
-#define IRIN_USE_JUMPTABLE	0
+#define ILYA_USE_JUMPTABLE	0
 
 
 /* use 32-bit integers in random generator */
-#define IRIN_RAND32
+#define ILYA_RAND32
 
 
 /* memory-allocator control variables */
@@ -52,14 +52,14 @@ typedef struct Memcontrol {
   unsigned long maxmem;
   unsigned long memlimit;
   unsigned long countlimit;
-  unsigned long objcount[IRIN_NUMTYPES];
+  unsigned long objcount[ILYA_NUMTYPES];
 } Memcontrol;
 
-IRIN_API Memcontrol l_memcontrol;
+ILYA_API Memcontrol l_memcontrol;
 
 
 #define luai_tracegc(L,f)		luai_tracegctest(L, f)
-LUAI_FUNC void luai_tracegctest (irin_State *L, int first);
+LUAI_FUNC void luai_tracegctest (ilya_State *L, int first);
 
 
 /*
@@ -69,60 +69,60 @@ extern void *l_Trick;
 
 
 /*
-** Function to traverse and check all memory used by Irin
+** Function to traverse and check all memory used by Ilya
 */
-LUAI_FUNC int irin_checkmemory (irin_State *L);
+LUAI_FUNC int ilya_checkmemory (ilya_State *L);
 
 /*
 ** Function to print an object GC-friendly
 */
 struct GCObject;
-LUAI_FUNC void irin_printobj (irin_State *L, struct GCObject *o);
+LUAI_FUNC void ilya_printobj (ilya_State *L, struct GCObject *o);
 
 
 /*
 ** Function to print a value
 */
 struct TValue;
-LUAI_FUNC void irin_printvalue (struct TValue *v);
+LUAI_FUNC void ilya_printvalue (struct TValue *v);
 
 /*
 ** Function to print the stack
 */
-LUAI_FUNC void irin_printstack (irin_State *L);
+LUAI_FUNC void ilya_printstack (ilya_State *L);
 
 
 /* test for lock/unlock */
 
 struct L_EXTRA { int lock; int *plock; };
-#undef IRIN_EXTRASPACE
-#define IRIN_EXTRASPACE	sizeof(struct L_EXTRA)
-#define getlock(l)	cast(struct L_EXTRA*, irin_getextraspace(l))
+#undef ILYA_EXTRASPACE
+#define ILYA_EXTRASPACE	sizeof(struct L_EXTRA)
+#define getlock(l)	cast(struct L_EXTRA*, ilya_getextraspace(l))
 #define luai_userstateopen(l)  \
 	(getlock(l)->lock = 0, getlock(l)->plock = &(getlock(l)->lock))
 #define luai_userstateclose(l)  \
-  irin_assert(getlock(l)->lock == 1 && getlock(l)->plock == &(getlock(l)->lock))
+  ilya_assert(getlock(l)->lock == 1 && getlock(l)->plock == &(getlock(l)->lock))
 #define luai_userstatethread(l,l1) \
-  irin_assert(getlock(l1)->plock == getlock(l)->plock)
+  ilya_assert(getlock(l1)->plock == getlock(l)->plock)
 #define luai_userstatefree(l,l1) \
-  irin_assert(getlock(l)->plock == getlock(l1)->plock)
-#define irin_lock(l)     irin_assert((*getlock(l)->plock)++ == 0)
-#define irin_unlock(l)   irin_assert(--(*getlock(l)->plock) == 0)
+  ilya_assert(getlock(l)->plock == getlock(l1)->plock)
+#define ilya_lock(l)     ilya_assert((*getlock(l)->plock)++ == 0)
+#define ilya_unlock(l)   ilya_assert(--(*getlock(l)->plock) == 0)
 
 
 
-IRIN_API int luaB_opentests (irin_State *L);
+ILYA_API int luaB_opentests (ilya_State *L);
 
-IRIN_API void *debug_realloc (void *ud, void *block,
+ILYA_API void *debug_realloc (void *ud, void *block,
                              size_t osize, size_t nsize);
 
-#if defined(irin_c)
+#if defined(ilya_c)
 #define luaL_newstate()  \
-	irin_newstate(debug_realloc, &l_memcontrol, luaL_makeseed(NULL))
+	ilya_newstate(debug_realloc, &l_memcontrol, luaL_makeseed(NULL))
 #define luai_openlibs(L)  \
   {  luaL_openlibs(L); \
      luaL_requiref(L, "T", luaB_opentests, 1); \
-     irin_pop(L, 1); }
+     ilya_pop(L, 1); }
 #endif
 
 
@@ -158,9 +158,9 @@ IRIN_API void *debug_realloc (void *ud, void *block,
 #define LUAI_MAXCCALLS	180
 
 
-/* force Irin to use its own implementations */
-#undef irin_strx2number
-#undef irin_number2strx
+/* force Ilya to use its own implementations */
+#undef ilya_strx2number
+#undef ilya_number2strx
 
 
 #endif

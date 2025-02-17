@@ -1,11 +1,11 @@
 /*
 ** $Id: lutf8lib.c $
 ** Standard library for UTF-8 manipulation
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lutf8lib_c
-#define IRIN_LIB
+#define ILYA_LIB
 
 #include "lprefix.h"
 
@@ -15,10 +15,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lauxlib.h"
-#include "irinlib.h"
+#include "ilyalib.h"
 #include "llimits.h"
 
 
@@ -36,10 +36,10 @@
 
 /* from strlib */
 /* translate a relative string position: negative means back from end */
-static irin_Integer u_posrelat (irin_Integer pos, size_t len) {
+static ilya_Integer u_posrelat (ilya_Integer pos, size_t len) {
   if (pos >= 0) return pos;
   else if (0u - (size_t)pos > len) return 0;
-  else return (irin_Integer)len + pos + 1;
+  else return (ilya_Integer)len + pos + 1;
 }
 
 
@@ -85,28 +85,28 @@ static const char *utf8_decode (const char *s, l_uint32 *val, int strict) {
 ** start in the range [i,j], or nil + current position if 's' is not
 ** well formed in that interval
 */
-static int utflen (irin_State *L) {
-  irin_Integer n = 0;  /* counter for the number of characters */
+static int utflen (ilya_State *L) {
+  ilya_Integer n = 0;  /* counter for the number of characters */
   size_t len;  /* string length in bytes */
   const char *s = luaL_checklstring(L, 1, &len);
-  irin_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
-  irin_Integer posj = u_posrelat(luaL_optinteger(L, 3, -1), len);
-  int lax = irin_toboolean(L, 4);
-  luaL_argcheck(L, 1 <= posi && --posi <= (irin_Integer)len, 2,
+  ilya_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
+  ilya_Integer posj = u_posrelat(luaL_optinteger(L, 3, -1), len);
+  int lax = ilya_toboolean(L, 4);
+  luaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 2,
                    "initial position out of bounds");
-  luaL_argcheck(L, --posj < (irin_Integer)len, 3,
+  luaL_argcheck(L, --posj < (ilya_Integer)len, 3,
                    "final position out of bounds");
   while (posi <= posj) {
     const char *s1 = utf8_decode(s + posi, NULL, !lax);
     if (s1 == NULL) {  /* conversion error? */
       luaL_pushfail(L);  /* return fail ... */
-      irin_pushinteger(L, posi + 1);  /* ... and current position */
+      ilya_pushinteger(L, posi + 1);  /* ... and current position */
       return 2;
     }
     posi = ct_diff2S(s1 - s);
     n++;
   }
-  irin_pushinteger(L, n);
+  ilya_pushinteger(L, n);
   return 1;
 }
 
@@ -115,18 +115,18 @@ static int utflen (irin_State *L) {
 ** codepoint(s, [i, [j [, lax]]]) -> returns codepoints for all
 ** characters that start in the range [i,j]
 */
-static int codepoint (irin_State *L) {
+static int codepoint (ilya_State *L) {
   size_t len;
   const char *s = luaL_checklstring(L, 1, &len);
-  irin_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
-  irin_Integer pose = u_posrelat(luaL_optinteger(L, 3, posi), len);
-  int lax = irin_toboolean(L, 4);
+  ilya_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
+  ilya_Integer pose = u_posrelat(luaL_optinteger(L, 3, posi), len);
+  int lax = ilya_toboolean(L, 4);
   int n;
   const char *se;
   luaL_argcheck(L, posi >= 1, 2, "out of bounds");
-  luaL_argcheck(L, pose <= (irin_Integer)len, 3, "out of bounds");
+  luaL_argcheck(L, pose <= (ilya_Integer)len, 3, "out of bounds");
   if (posi > pose) return 0;  /* empty interval; return no values */
-  if (pose - posi >= INT_MAX)  /* (irin_Integer -> int) overflow? */
+  if (pose - posi >= INT_MAX)  /* (ilya_Integer -> int) overflow? */
     return luaL_error(L, "string slice too long");
   n = (int)(pose -  posi) + 1;  /* upper bound for number of returns */
   luaL_checkstack(L, n, "string slice too long");
@@ -137,25 +137,25 @@ static int codepoint (irin_State *L) {
     s = utf8_decode(s, &code, !lax);
     if (s == NULL)
       return luaL_error(L, MSGInvalid);
-    irin_pushinteger(L, l_castU2S(code));
+    ilya_pushinteger(L, l_castU2S(code));
     n++;
   }
   return n;
 }
 
 
-static void pushutfchar (irin_State *L, int arg) {
-  irin_Unsigned code = (irin_Unsigned)luaL_checkinteger(L, arg);
+static void pushutfchar (ilya_State *L, int arg) {
+  ilya_Unsigned code = (ilya_Unsigned)luaL_checkinteger(L, arg);
   luaL_argcheck(L, code <= MAXUTF, arg, "value out of range");
-  irin_pushfstring(L, "%U", (long)code);
+  ilya_pushfstring(L, "%U", (long)code);
 }
 
 
 /*
 ** utfchar(n1, n2, ...)  -> char(n1)..char(n2)...
 */
-static int utfchar (irin_State *L) {
-  int n = irin_gettop(L);  /* number of arguments */
+static int utfchar (ilya_State *L) {
+  int n = ilya_gettop(L);  /* number of arguments */
   if (n == 1)  /* optimize common case of single char */
     pushutfchar(L, 1);
   else {
@@ -176,13 +176,13 @@ static int utfchar (irin_State *L) {
 ** offset(s, n, [i])  -> indices where n-th character counting from
 **   position 'i' starts and ends; 0 means character at 'i'.
 */
-static int byteoffset (irin_State *L) {
+static int byteoffset (ilya_State *L) {
   size_t len;
   const char *s = luaL_checklstring(L, 1, &len);
-  irin_Integer n  = luaL_checkinteger(L, 2);
-  irin_Integer posi = (n >= 0) ? 1 : cast_st2S(len) + 1;
+  ilya_Integer n  = luaL_checkinteger(L, 2);
+  ilya_Integer posi = (n >= 0) ? 1 : cast_st2S(len) + 1;
   posi = u_posrelat(luaL_optinteger(L, 3, posi), len);
-  luaL_argcheck(L, 1 <= posi && --posi <= (irin_Integer)len, 3,
+  luaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 3,
                    "position out of bounds");
   if (n == 0) {
     /* find beginning of current byte sequence */
@@ -201,7 +201,7 @@ static int byteoffset (irin_State *L) {
     }
     else {
       n--;  /* do not move for 1st character */
-      while (n > 0 && posi < (irin_Integer)len) {
+      while (n > 0 && posi < (ilya_Integer)len) {
         do {  /* find beginning of next character */
           posi++;
         } while (iscontp(s + posi));  /* (cannot pass final '\0') */
@@ -213,22 +213,22 @@ static int byteoffset (irin_State *L) {
     luaL_pushfail(L);
     return 1;
   }
-  irin_pushinteger(L, posi + 1);  /* initial position */
+  ilya_pushinteger(L, posi + 1);  /* initial position */
   if ((s[posi] & 0x80) != 0) {  /* multi-byte character? */
     do {
       posi++;
     } while (iscontp(s + posi + 1));  /* skip to final byte */
   }
   /* else one-byte character: final position is the initial one */
-  irin_pushinteger(L, posi + 1);  /* 'posi' now is the final position */
+  ilya_pushinteger(L, posi + 1);  /* 'posi' now is the final position */
   return 2;
 }
 
 
-static int iter_aux (irin_State *L, int strict) {
+static int iter_aux (ilya_State *L, int strict) {
   size_t len;
   const char *s = luaL_checklstring(L, 1, &len);
-  irin_Unsigned n = (irin_Unsigned)irin_tointeger(L, 2);
+  ilya_Unsigned n = (ilya_Unsigned)ilya_tointeger(L, 2);
   if (n < len) {
     while (iscontp(s + n)) n++;  /* go to next character */
   }
@@ -239,29 +239,29 @@ static int iter_aux (irin_State *L, int strict) {
     const char *next = utf8_decode(s + n, &code, strict);
     if (next == NULL || iscontp(next))
       return luaL_error(L, MSGInvalid);
-    irin_pushinteger(L, l_castU2S(n + 1));
-    irin_pushinteger(L, l_castU2S(code));
+    ilya_pushinteger(L, l_castU2S(n + 1));
+    ilya_pushinteger(L, l_castU2S(code));
     return 2;
   }
 }
 
 
-static int iter_auxstrict (irin_State *L) {
+static int iter_auxstrict (ilya_State *L) {
   return iter_aux(L, 1);
 }
 
-static int iter_auxlax (irin_State *L) {
+static int iter_auxlax (ilya_State *L) {
   return iter_aux(L, 0);
 }
 
 
-static int iter_codes (irin_State *L) {
-  int lax = irin_toboolean(L, 2);
+static int iter_codes (ilya_State *L) {
+  int lax = ilya_toboolean(L, 2);
   const char *s = luaL_checkstring(L, 1);
   luaL_argcheck(L, !iscontp(s), 1, MSGInvalid);
-  irin_pushcfunction(L, lax ? iter_auxlax : iter_auxstrict);
-  irin_pushvalue(L, 1);
-  irin_pushinteger(L, 0);
+  ilya_pushcfunction(L, lax ? iter_auxlax : iter_auxstrict);
+  ilya_pushvalue(L, 1);
+  ilya_pushinteger(L, 0);
   return 3;
 }
 
@@ -282,10 +282,10 @@ static const luaL_Reg funcs[] = {
 };
 
 
-LUAMOD_API int luaopen_utf8 (irin_State *L) {
+LUAMOD_API int luaopen_utf8 (ilya_State *L) {
   luaL_newlib(L, funcs);
-  irin_pushlstring(L, UTF8PATT, sizeof(UTF8PATT)/sizeof(char) - 1);
-  irin_setfield(L, -2, "charpattern");
+  ilya_pushlstring(L, UTF8PATT, sizeof(UTF8PATT)/sizeof(char) - 1);
+  ilya_setfield(L, -2, "charpattern");
   return 1;
 }
 

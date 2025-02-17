@@ -1,18 +1,18 @@
 /*
 ** $Id: lstring.c $
-** String table (keeps all strings handled by Irin)
-** See Copyright Notice in irin.h
+** String table (keeps all strings handled by Ilya)
+** See Copyright Notice in ilya.h
 */
 
 #define lstring_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "ldebug.h"
 #include "ldo.h"
@@ -29,7 +29,7 @@
 
 /*
 ** Initial size for the string table (must be power of 2).
-** The Irin core alone registers ~50 strings (reserved words +
+** The Ilya core alone registers ~50 strings (reserved words +
 ** metaevent keys + a few others). Libraries would typically add
 ** a few dozens more.
 */
@@ -43,7 +43,7 @@
 */
 int luaS_eqlngstr (TString *a, TString *b) {
   size_t len = a->u.lnglen;
-  irin_assert(a->tt == IRIN_VLNGSTR && b->tt == IRIN_VLNGSTR);
+  ilya_assert(a->tt == ILYA_VLNGSTR && b->tt == ILYA_VLNGSTR);
   return (a == b) ||  /* same instance or... */
     ((len == b->u.lnglen) &&  /* equal length and ... */
      (memcmp(getlngstr(a), getlngstr(b), len) == 0));  /* equal contents */
@@ -59,7 +59,7 @@ unsigned luaS_hash (const char *str, size_t l, unsigned seed) {
 
 
 unsigned luaS_hashlongstr (TString *ts) {
-  irin_assert(ts->tt == IRIN_VLNGSTR);
+  ilya_assert(ts->tt == ILYA_VLNGSTR);
   if (ts->extra == 0) {  /* no hash? */
     size_t len = ts->u.lnglen;
     ts->hash = luaS_hash(getlngstr(ts), len, ts->hash);
@@ -92,7 +92,7 @@ static void tablerehash (TString **vect, int osize, int nsize) {
 ** (This can degrade performance, but any non-zero size should work
 ** correctly.)
 */
-void luaS_resize (irin_State *L, int nsize) {
+void luaS_resize (ilya_State *L, int nsize) {
   stringtable *tb = &G(L)->strt;
   int osize = tb->size;
   TString **newvect;
@@ -130,7 +130,7 @@ void luaS_clearcache (global_State *g) {
 /*
 ** Initialize the string table and the string cache
 */
-void luaS_init (irin_State *L) {
+void luaS_init (ilya_State *L) {
   global_State *g = G(L);
   int i, j;
   stringtable *tb = &G(L)->strt;
@@ -155,7 +155,7 @@ size_t luaS_sizelngstr (size_t len, int kind) {
       /* don't need 'falloc'/'ud' */
       return offsetof(TString, falloc);
     default:  /* external long string with deallocation */
-      irin_assert(kind == LSTRMEM);
+      ilya_assert(kind == LSTRMEM);
       return sizeof(TString);
   }
 }
@@ -164,7 +164,7 @@ size_t luaS_sizelngstr (size_t len, int kind) {
 /*
 ** creates a new string object
 */
-static TString *createstrobj (irin_State *L, size_t totalsize, lu_byte tag,
+static TString *createstrobj (ilya_State *L, size_t totalsize, lu_byte tag,
                               unsigned h) {
   TString *ts;
   GCObject *o;
@@ -176,9 +176,9 @@ static TString *createstrobj (irin_State *L, size_t totalsize, lu_byte tag,
 }
 
 
-TString *luaS_createlngstrobj (irin_State *L, size_t l) {
+TString *luaS_createlngstrobj (ilya_State *L, size_t l) {
   size_t totalsize = luaS_sizelngstr(l, LSTRREG);
-  TString *ts = createstrobj(L, totalsize, IRIN_VLNGSTR, G(L)->seed);
+  TString *ts = createstrobj(L, totalsize, ILYA_VLNGSTR, G(L)->seed);
   ts->u.lnglen = l;
   ts->shrlen = LSTRREG;  /* signals that it is a regular long string */
   ts->contents = cast_charp(ts) + offsetof(TString, falloc);
@@ -187,7 +187,7 @@ TString *luaS_createlngstrobj (irin_State *L, size_t l) {
 }
 
 
-void luaS_remove (irin_State *L, TString *ts) {
+void luaS_remove (ilya_State *L, TString *ts) {
   stringtable *tb = &G(L)->strt;
   TString **p = &tb->hash[lmod(ts->hash, tb->size)];
   while (*p != ts)  /* find previous element */
@@ -197,7 +197,7 @@ void luaS_remove (irin_State *L, TString *ts) {
 }
 
 
-static void growstrtab (irin_State *L, stringtable *tb) {
+static void growstrtab (ilya_State *L, stringtable *tb) {
   if (l_unlikely(tb->nuse == INT_MAX)) {  /* too many strings? */
     luaC_fullgc(L, 1);  /* try to free some... */
     if (tb->nuse == INT_MAX)  /* still too many? */
@@ -211,13 +211,13 @@ static void growstrtab (irin_State *L, stringtable *tb) {
 /*
 ** Checks whether short string exists and reuses it or creates a new one.
 */
-static TString *internshrstr (irin_State *L, const char *str, size_t l) {
+static TString *internshrstr (ilya_State *L, const char *str, size_t l) {
   TString *ts;
   global_State *g = G(L);
   stringtable *tb = &g->strt;
   unsigned int h = luaS_hash(str, l, g->seed);
   TString **list = &tb->hash[lmod(h, tb->size)];
-  irin_assert(str != NULL);  /* otherwise 'memcmp'/'memcpy' are undefined */
+  ilya_assert(str != NULL);  /* otherwise 'memcmp'/'memcpy' are undefined */
   for (ts = *list; ts != NULL; ts = ts->u.hnext) {
     if (l == cast_uint(ts->shrlen) &&
         (memcmp(str, getshrstr(ts), l * sizeof(char)) == 0)) {
@@ -232,7 +232,7 @@ static TString *internshrstr (irin_State *L, const char *str, size_t l) {
     growstrtab(L, tb);
     list = &tb->hash[lmod(h, tb->size)];  /* rehash with new size */
   }
-  ts = createstrobj(L, sizestrshr(l), IRIN_VSHRSTR, h);
+  ts = createstrobj(L, sizestrshr(l), ILYA_VSHRSTR, h);
   ts->shrlen = cast(ls_byte, l);
   getshrstr(ts)[l] = '\0';  /* ending 0 */
   memcpy(getshrstr(ts), str, l * sizeof(char));
@@ -246,7 +246,7 @@ static TString *internshrstr (irin_State *L, const char *str, size_t l) {
 /*
 ** new string (with explicit length)
 */
-TString *luaS_newlstr (irin_State *L, const char *str, size_t l) {
+TString *luaS_newlstr (ilya_State *L, const char *str, size_t l) {
   if (l <= LUAI_MAXSHORTLEN)  /* short string? */
     return internshrstr(L, str, l);
   else {
@@ -266,7 +266,7 @@ TString *luaS_newlstr (irin_State *L, const char *str, size_t l) {
 ** only zero-terminated strings, so it is safe to use 'strcmp' to
 ** check hits.
 */
-TString *luaS_new (irin_State *L, const char *str) {
+TString *luaS_new (ilya_State *L, const char *str) {
   unsigned int i = point2uint(str) % STRCACHE_N;  /* hash */
   int j;
   TString **p = G(L)->strcache[i];
@@ -283,13 +283,13 @@ TString *luaS_new (irin_State *L, const char *str) {
 }
 
 
-Udata *luaS_newudata (irin_State *L, size_t s, unsigned short nuvalue) {
+Udata *luaS_newudata (ilya_State *L, size_t s, unsigned short nuvalue) {
   Udata *u;
   int i;
   GCObject *o;
   if (l_unlikely(s > MAX_SIZE - udatamemoffset(nuvalue)))
     luaM_toobig(L);
-  o = luaC_newobj(L, IRIN_VUSERDATA, sizeudata(nuvalue, s));
+  o = luaC_newobj(L, ILYA_VUSERDATA, sizeudata(nuvalue, s));
   u = gco2u(o);
   u->len = s;
   u->nuvalue = nuvalue;
@@ -308,21 +308,21 @@ struct NewExt {
 };
 
 
-static void f_newext (irin_State *L, void *ud) {
+static void f_newext (ilya_State *L, void *ud) {
   struct NewExt *ne = cast(struct NewExt *, ud);
   size_t size = luaS_sizelngstr(0, ne->kind);
-  ne->ts = createstrobj(L, size, IRIN_VLNGSTR, G(L)->seed);
+  ne->ts = createstrobj(L, size, ILYA_VLNGSTR, G(L)->seed);
 }
 
 
-static void f_pintern (irin_State *L, void *ud) {
+static void f_pintern (ilya_State *L, void *ud) {
   struct NewExt *ne = cast(struct NewExt *, ud);
   ne->ts = internshrstr(L, ne->s, ne->len);
 }
 
 
-TString *luaS_newextlstr (irin_State *L,
-	          const char *s, size_t len, irin_Alloc falloc, void *ud) {
+TString *luaS_newextlstr (ilya_State *L,
+	          const char *s, size_t len, ilya_Alloc falloc, void *ud) {
   struct NewExt ne;
   if (len <= LUAI_MAXSHORTLEN) {  /* short string? */
     ne.s = s; ne.len = len;
@@ -331,7 +331,7 @@ TString *luaS_newextlstr (irin_State *L,
     else {
       int status = luaD_rawrunprotected(L, f_pintern, &ne);
       (*falloc)(ud, cast_voidp(s), len + 1, 0);  /* free external string */
-      if (status != IRIN_OK)  /* memory error? */
+      if (status != ILYA_OK)  /* memory error? */
         luaM_error(L);  /* re-raise memory error */
     }
     return ne.ts;
@@ -343,7 +343,7 @@ TString *luaS_newextlstr (irin_State *L,
   }
   else {
     ne.kind = LSTRMEM;
-    if (luaD_rawrunprotected(L, f_newext, &ne) != IRIN_OK) {  /* mem. error? */
+    if (luaD_rawrunprotected(L, f_newext, &ne) != ILYA_OK) {  /* mem. error? */
       (*falloc)(ud, cast_voidp(s), len + 1, 0);  /* free external string */
       luaM_error(L);  /* re-raise memory error */
     }

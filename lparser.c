@@ -1,11 +1,11 @@
 /*
 ** $Id: lparser.c $
-** Irin Parser
-** See Copyright Notice in irin.h
+** Ilya Parser
+** See Copyright Notice in ilya.h
 */
 
 #define lparser_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lcode.h"
 #include "ldebug.h"
@@ -72,7 +72,7 @@ static l_noret error_expected (LexState *ls, int token) {
 
 
 static l_noret errorlimit (FuncState *fs, int limit, const char *what) {
-  irin_State *L = fs->ls->L;
+  ilya_State *L = fs->ls->L;
   const char *msg;
   int line = fs->f->linedefined;
   const char *where = (line == 0)
@@ -192,7 +192,7 @@ static short registerlocalvar (LexState *ls, FuncState *fs,
 ** Return its index in the fn.
 */
 static int new_localvarkind (LexState *ls, TString *name, lu_byte kind) {
-  irin_State *L = ls->L;
+  ilya_State *L = ls->L;
   FuncState *fs = ls->fs;
   Dyndata *dyd = ls->dyd;
   Vardesc *var;
@@ -263,7 +263,7 @@ static LocVar *localdebuginfo (FuncState *fs, int vidx) {
     return NULL;  /* no debug info. for constants */
   else {
     int idx = vd->vd.pidx;
-    irin_assert(idx < fs->ndebugvars);
+    ilya_assert(idx < fs->ndebugvars);
     return &fs->f->locvars[idx];
   }
 }
@@ -377,13 +377,13 @@ static int newupvalue (FuncState *fs, TString *name, expdesc *v) {
     up->instack = 1;
     up->idx = v->u.var.ridx;
     up->kind = getlocalvardesc(prev, v->u.var.vidx)->vd.kind;
-    irin_assert(eqstr(name, getlocalvardesc(prev, v->u.var.vidx)->vd.name));
+    ilya_assert(eqstr(name, getlocalvardesc(prev, v->u.var.vidx)->vd.name));
   }
   else {
     up->instack = 0;
     up->idx = cast_byte(v->u.info);
     up->kind = prev->f->upvalues[v->u.info].kind;
-    irin_assert(eqstr(name, prev->f->upvalues[v->u.info].name));
+    ilya_assert(eqstr(name, prev->f->upvalues[v->u.info].name));
   }
   up->name = name;
   luaC_objbarrier(fs->ls->L, fs->f, name);
@@ -476,7 +476,7 @@ static void singlevar (LexState *ls, expdesc *var) {
   if (var->k == VVOID) {  /* global name? */
     expdesc key;
     singlevaraux(fs, ls->envn, var, 1);  /* get environment variable */
-    irin_assert(var->k != VVOID);  /* this one must exist */
+    ilya_assert(var->k != VVOID);  /* this one must exist */
     luaK_exp2anyregup(fs, var);  /* but could be a constant */
     codestring(&key, varname);  /* key is variable name */
     luaK_indexed(fs, var, &key);  /* env[varname] */
@@ -542,7 +542,7 @@ static void closegoto (LexState *ls, int g, Labeldesc *label, int bup) {
   FuncState *fs = ls->fs;
   Labellist *gl = &ls->dyd->gt;  /* list of gotos */
   Labeldesc *gt = &gl->arr[g];  /* goto to be resolved */
-  irin_assert(eqstr(gt->name, label->name));
+  ilya_assert(eqstr(gt->name, label->name));
   if (l_unlikely(gt->nactvar < label->nactvar))  /* enter some scope? */
     jumpscopeerror(ls, gt);
   if (gt->close ||
@@ -669,7 +669,7 @@ static void enterblock (FuncState *fs, BlockCnt *bl, lu_byte isloop) {
   bl->insidetbc = (fs->bl != NULL && fs->bl->insidetbc);
   bl->previous = fs->bl;
   fs->bl = bl;
-  irin_assert(fs->freereg == luaY_nvarstack(fs));
+  ilya_assert(fs->freereg == luaY_nvarstack(fs));
 }
 
 
@@ -680,7 +680,7 @@ static l_noret undefgoto (LexState *ls, Labeldesc *gt) {
   const char *msg = "no visible label '%s' for <goto> at line %d";
   msg = luaO_pushfstring(ls->L, msg, getstr(gt->name), gt->line);
   /* breaks are checked when created, cannot be undefined */
-  irin_assert(!eqstr(gt->name, luaS_newliteral(ls->L, "break")));
+  ilya_assert(!eqstr(gt->name, luaS_newliteral(ls->L, "break")));
   luaK_semerror(ls, msg);
 }
 
@@ -693,7 +693,7 @@ static void leaveblock (FuncState *fs) {
     luaK_codeABC(fs, OP_CLOSE, stklevel, 0, 0);
   fs->freereg = stklevel;  /* free registers */
   removevars(fs, bl->nactvar);  /* remove block locals */
-  irin_assert(bl->nactvar == fs->nactvar);  /* back to level on entry */
+  ilya_assert(bl->nactvar == fs->nactvar);  /* back to level on entry */
   if (bl->isloop == 2)  /* has to fix pending breaks? */
     createlabel(ls, luaS_newliteral(ls->L, "break"), 0, 0);
   solvegotos(fs, bl);
@@ -710,7 +710,7 @@ static void leaveblock (FuncState *fs) {
 */
 static Proto *addprototype (LexState *ls) {
   Proto *clp;
-  irin_State *L = ls->L;
+  ilya_State *L = ls->L;
   FuncState *fs = ls->fs;
   Proto *f = fs->f;  /* prototype of current fn */
   if (fs->np >= f->sizep) {
@@ -740,7 +740,7 @@ static void codeclosure (LexState *ls, expdesc *v) {
 
 
 static void open_func (LexState *ls, FuncState *fs, BlockCnt *bl) {
-  irin_State *L = ls->L;
+  ilya_State *L = ls->L;
   Proto *f = fs->f;
   fs->prev = ls->fs;  /* linked list of funcstates */
   fs->ls = ls;
@@ -771,12 +771,12 @@ static void open_func (LexState *ls, FuncState *fs, BlockCnt *bl) {
 
 
 static void close_func (LexState *ls) {
-  irin_State *L = ls->L;
+  ilya_State *L = ls->L;
   FuncState *fs = ls->fs;
   Proto *f = fs->f;
   luaK_ret(fs, luaY_nvarstack(fs), 0);  /* final return */
   leaveblock(fs);
-  irin_assert(fs->bl == NULL);
+  ilya_assert(fs->bl == NULL);
   luaK_finish(fs);
   luaM_shrinkvector(L, f->code, f->sizecode, fs->pc, Instruction);
   luaM_shrinkvector(L, f->lineinfo, f->sizelineinfo, fs->pc, ls_byte);
@@ -900,7 +900,7 @@ static void lastlistfield (FuncState *fs, ConsControl *cc) {
   if (cc->tostore == 0) return;
   if (hasmultret(cc->v.k)) {
     luaK_setmultret(fs, &cc->v);
-    luaK_setlist(fs, cc->t->u.info, cc->na, IRIN_MULTRET);
+    luaK_setlist(fs, cc->t->u.info, cc->na, ILYA_MULTRET);
     cc->na--;  /* do not count last expression (unknown number of elements) */
   }
   else {
@@ -973,7 +973,7 @@ static void constructor (LexState *ls, expdesc *t) {
   checknext(ls, '{' /*}*/);
   cc.maxtostore = maxtostore(fs);
   do {
-    irin_assert(cc.v.k == VVOID || cc.tostore > 0);
+    ilya_assert(cc.v.k == VVOID || cc.tostore > 0);
     if (ls->t.token == /*{*/ '}') break;
     closelistfield(fs, &cc);
     field(ls, &cc);
@@ -1089,10 +1089,10 @@ static void funcargs (LexState *ls, expdesc *f) {
       luaX_syntaxerror(ls, "fn arguments expected");
     }
   }
-  irin_assert(f->k == VNONRELOC);
+  ilya_assert(f->k == VNONRELOC);
   base = f->u.info;  /* base register for call */
   if (hasmultret(args.k))
-    nparams = IRIN_MULTRET;  /* open call */
+    nparams = ILYA_MULTRET;  /* open call */
   else {
     if (args.k != VVOID)
       luaK_exp2nextreg(fs, &args);  /* close last argument */
@@ -1550,13 +1550,13 @@ static void exp1 (LexState *ls) {
   expdesc e;
   expr(ls, &e);
   luaK_exp2nextreg(ls->fs, &e);
-  irin_assert(e.k == VNONRELOC);
+  ilya_assert(e.k == VNONRELOC);
 }
 
 
 /*
 ** Fix for instruction at position 'pc' to jump to 'dest'.
-** (Jump addresses are relative in Irin). 'back' true means
+** (Jump addresses are relative in Ilya). 'back' true means
 ** a back jump.
 */
 static void fixforjump (FuncState *fs, int pc, int dest, int back) {
@@ -1834,16 +1834,16 @@ static void retstat (LexState *ls) {
       luaK_setmultret(fs, &e);
       if (e.k == VCALL && nret == 1 && !fs->bl->insidetbc) {  /* tail call? */
         SET_OPCODE(getinstruction(fs,&e), OP_TAILCALL);
-        irin_assert(GETARG_A(getinstruction(fs,&e)) == luaY_nvarstack(fs));
+        ilya_assert(GETARG_A(getinstruction(fs,&e)) == luaY_nvarstack(fs));
       }
-      nret = IRIN_MULTRET;  /* return all values */
+      nret = ILYA_MULTRET;  /* return all values */
     }
     else {
       if (nret == 1)  /* only one single value? */
         first = luaK_exp2anyreg(fs, &e);  /* can use original slot */
       else {  /* values must go to the top of the stack */
         luaK_exp2nextreg(fs, &e);
-        irin_assert(nret == fs->freereg - first);
+        ilya_assert(nret == fs->freereg - first);
       }
     }
   }
@@ -1918,7 +1918,7 @@ static void statement (LexState *ls) {
       break;
     }
   }
-  irin_assert(ls->fs->f->maxstacksize >= ls->fs->freereg &&
+  ilya_assert(ls->fs->f->maxstacksize >= ls->fs->freereg &&
              ls->fs->freereg >= luaY_nvarstack(ls->fs));
   ls->fs->freereg = luaY_nvarstack(ls->fs);  /* free registers */
   leavelevel(ls);
@@ -1931,7 +1931,7 @@ static void statement (LexState *ls) {
 
 /*
 ** compiles the main fn, which is a regular vararg fn with an
-** upvalue named IRIN_ENV
+** upvalue named ILYA_ENV
 */
 static void mainfunc (LexState *ls, FuncState *fs) {
   BlockCnt bl;
@@ -1951,7 +1951,7 @@ static void mainfunc (LexState *ls, FuncState *fs) {
 }
 
 
-LClosure *luaY_parser (irin_State *L, ZIO *z, Mbuffer *buff,
+LClosure *luaY_parser (ilya_State *L, ZIO *z, Mbuffer *buff,
                        Dyndata *dyd, const char *name, int firstchar) {
   LexState lexstate;
   FuncState funcstate;
@@ -1970,9 +1970,9 @@ LClosure *luaY_parser (irin_State *L, ZIO *z, Mbuffer *buff,
   dyd->actvar.n = dyd->gt.n = dyd->label.n = 0;
   luaX_setinput(L, &lexstate, z, funcstate.f->source, firstchar);
   mainfunc(&lexstate, &funcstate);
-  irin_assert(!funcstate.prev && funcstate.nups == 1 && !lexstate.fs);
+  ilya_assert(!funcstate.prev && funcstate.nups == 1 && !lexstate.fs);
   /* all scopes should be correctly finished */
-  irin_assert(dyd->actvar.n == 0 && dyd->gt.n == 0 && dyd->label.n == 0);
+  ilya_assert(dyd->actvar.n == 0 && dyd->gt.n == 0 && dyd->label.n == 0);
   L->top.p--;  /* remove scanner's table */
   return cl;  /* closure is on the stack, too */
 }

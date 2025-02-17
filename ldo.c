@@ -1,11 +1,11 @@
 /*
 ** $Id: ldo.c $
-** Stack and Call structure of Irin
-** See Copyright Notice in irin.h
+** Stack and Call structure of Ilya
+** See Copyright Notice in ilya.h
 */
 
 #define ldo_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "ldebug.h"
@@ -35,7 +35,7 @@
 
 
 
-#define errorstatus(s)	((s) > IRIN_YIELD)
+#define errorstatus(s)	((s) > ILYA_YIELD)
 
 
 /*
@@ -58,14 +58,14 @@
 */
 
 /*
-** LUAI_THROW/LUAI_TRY define how Irin does exception handling. By
-** default, Irin handles errors with exceptions when compiling as
+** LUAI_THROW/LUAI_TRY define how Ilya does exception handling. By
+** default, Ilya handles errors with exceptions when compiling as
 ** C++ code, with _longjmp/_setjmp when asked to use them, and with
 ** longjmp/setjmp otherwise.
 */
 #if !defined(LUAI_THROW)				/* { */
 
-#if defined(__cplusplus) && !defined(IRIN_USE_LONGJMP)	/* { */
+#if defined(__cplusplus) && !defined(ILYA_USE_LONGJMP)	/* { */
 
 /* C++ exceptions */
 #define LUAI_THROW(L,c)		throw(c)
@@ -73,7 +73,7 @@
     try { (f)(L, ud); } catch(...) { if ((c)->status == 0) (c)->status = -1; }
 #define luai_jmpbuf		int  /* dummy field */
 
-#elif defined(IRIN_USE_POSIX)				/* }{ */
+#elif defined(ILYA_USE_POSIX)				/* }{ */
 
 /* in POSIX, try _longjmp/_setjmp (more efficient) */
 #define LUAI_THROW(L,c)		_longjmp((c)->b, 1)
@@ -94,29 +94,29 @@
 
 
 /* chain list of long jump buffers */
-struct irin_longjmp {
-  struct irin_longjmp *previous;
+struct ilya_longjmp {
+  struct ilya_longjmp *previous;
   luai_jmpbuf b;
   volatile int status;  /* error code */
 };
 
 
-void luaD_seterrorobj (irin_State *L, int errcode, StkId oldtop) {
+void luaD_seterrorobj (ilya_State *L, int errcode, StkId oldtop) {
   switch (errcode) {
-    case IRIN_ERRMEM: {  /* memory error? */
+    case ILYA_ERRMEM: {  /* memory error? */
       setsvalue2s(L, oldtop, G(L)->memerrmsg); /* reuse preregistered msg. */
       break;
     }
-    case IRIN_ERRERR: {
+    case ILYA_ERRERR: {
       setsvalue2s(L, oldtop, luaS_newliteral(L, "error in error handling"));
       break;
     }
-    case IRIN_OK: {  /* special case only for closing upvalues */
+    case ILYA_OK: {  /* special case only for closing upvalues */
       setnilvalue(s2v(oldtop));  /* no error message */
       break;
     }
     default: {
-      irin_assert(errorstatus(errcode));  /* real error */
+      ilya_assert(errorstatus(errcode));  /* real error */
       setobjs2s(L, oldtop, L->top.p - 1);  /* error message on current top */
       break;
     }
@@ -125,7 +125,7 @@ void luaD_seterrorobj (irin_State *L, int errcode, StkId oldtop) {
 }
 
 
-l_noret luaD_throw (irin_State *L, int errcode) {
+l_noret luaD_throw (ilya_State *L, int errcode) {
   if (L->errorJmp) {  /* thread has an error handler? */
     L->errorJmp->status = errcode;  /* set status */
     LUAI_THROW(L, L->errorJmp);  /* jump to it */
@@ -140,7 +140,7 @@ l_noret luaD_throw (irin_State *L, int errcode) {
     }
     else {  /* no handler at all; abort */
       if (g->panic) {  /* panic fn? */
-        irin_unlock(L);
+        ilya_unlock(L);
         g->panic(L);  /* call panic fn (last chance to jump out) */
       }
       abort();
@@ -149,10 +149,10 @@ l_noret luaD_throw (irin_State *L, int errcode) {
 }
 
 
-int luaD_rawrunprotected (irin_State *L, Pfunc f, void *ud) {
+int luaD_rawrunprotected (ilya_State *L, Pfunc f, void *ud) {
   l_uint32 oldnCcalls = L->nCcalls;
-  struct irin_longjmp lj;
-  lj.status = IRIN_OK;
+  struct ilya_longjmp lj;
+  lj.status = ILYA_OK;
   lj.previous = L->errorJmp;  /* chain new error handler */
   L->errorJmp = &lj;
   LUAI_TRY(L, &lj, f, ud);  /* call 'f' catching errors */
@@ -202,7 +202,7 @@ int luaD_rawrunprotected (irin_State *L, Pfunc f, void *ud) {
 /*
 ** Change all pointers to the stack into offsets.
 */
-static void relstack (irin_State *L) {
+static void relstack (ilya_State *L) {
   CallInfo *ci;
   UpVal *up;
   L->top.offset = savestack(L, L->top.p);
@@ -219,7 +219,7 @@ static void relstack (irin_State *L) {
 /*
 ** Change back all offsets into pointers.
 */
-static void correctstack (irin_State *L, StkId oldstack) {
+static void correctstack (ilya_State *L, StkId oldstack) {
   CallInfo *ci;
   UpVal *up;
   UNUSED(oldstack);
@@ -241,9 +241,9 @@ static void correctstack (irin_State *L, StkId oldstack) {
 ** That is not strict ISO C, but seems to work fine everywhere.
 */
 
-static void relstack (irin_State *L) { UNUSED(L); }
+static void relstack (ilya_State *L) { UNUSED(L); }
 
-static void correctstack (irin_State *L, StkId oldstack) {
+static void correctstack (ilya_State *L, StkId oldstack) {
   CallInfo *ci;
   UpVal *up;
   StkId newstack = L->stack.p;
@@ -269,13 +269,13 @@ static void correctstack (irin_State *L, StkId oldstack) {
 ** In case of allocation error, raise an error or return false according
 ** to 'raiseerror'.
 */
-int luaD_reallocstack (irin_State *L, int newsize, int raiseerror) {
+int luaD_reallocstack (ilya_State *L, int newsize, int raiseerror) {
   int oldsize = stacksize(L);
   int i;
   StkId newstack;
   StkId oldstack = L->stack.p;
   lu_byte oldgcstop = G(L)->gcstopem;
-  irin_assert(newsize <= MAXSTACK || newsize == ERRORSTACKSIZE);
+  ilya_assert(newsize <= MAXSTACK || newsize == ERRORSTACKSIZE);
   relstack(L);  /* change pointers to offsets */
   G(L)->gcstopem = 1;  /* stop emergency collection */
   newstack = luaM_reallocvector(L, oldstack, oldsize + EXTRA_STACK,
@@ -300,15 +300,15 @@ int luaD_reallocstack (irin_State *L, int newsize, int raiseerror) {
 ** Try to grow the stack by at least 'n' elements. When 'raiseerror'
 ** is true, raises any error; otherwise, return 0 in case of errors.
 */
-int luaD_growstack (irin_State *L, int n, int raiseerror) {
+int luaD_growstack (ilya_State *L, int n, int raiseerror) {
   int size = stacksize(L);
   if (l_unlikely(size > MAXSTACK)) {
     /* if stack is larger than maximum, thread is already using the
        extra space reserved for errors, that is, thread is handling
        a stack error; cannot grow further than that. */
-    irin_assert(stacksize(L) == ERRORSTACKSIZE);
+    ilya_assert(stacksize(L) == ERRORSTACKSIZE);
     if (raiseerror)
-      luaD_throw(L, IRIN_ERRERR);  /* error inside message handler */
+      luaD_throw(L, ILYA_ERRERR);  /* error inside message handler */
     return 0;  /* if not 'raiseerror', just signal it */
   }
   else if (n < MAXSTACK) {  /* avoids arithmetic overflows */
@@ -334,17 +334,17 @@ int luaD_growstack (irin_State *L, int n, int raiseerror) {
 ** Compute how much of the stack is being used, by computing the
 ** maximum top of all call frames in the stack and the current top.
 */
-static int stackinuse (irin_State *L) {
+static int stackinuse (ilya_State *L) {
   CallInfo *ci;
   int res;
   StkId lim = L->top.p;
   for (ci = L->ci; ci != NULL; ci = ci->previous) {
     if (lim < ci->top.p) lim = ci->top.p;
   }
-  irin_assert(lim <= L->stack_last.p + EXTRA_STACK);
+  ilya_assert(lim <= L->stack_last.p + EXTRA_STACK);
   res = cast_int(lim - L->stack.p) + 1;  /* part of stack in use */
-  if (res < IRIN_MINSTACK)
-    res = IRIN_MINSTACK;  /* ensure a minimum size */
+  if (res < ILYA_MINSTACK)
+    res = ILYA_MINSTACK;  /* ensure a minimum size */
   return res;
 }
 
@@ -358,7 +358,7 @@ static int stackinuse (irin_State *L) {
 ** stacksize (equal to ERRORSTACKSIZE in this case), and so the stack
 ** will be reduced to a "regular" size.
 */
-void luaD_shrinkstack (irin_State *L) {
+void luaD_shrinkstack (ilya_State *L) {
   int inuse = stackinuse(L);
   int max = (inuse > MAXSTACK / 3) ? MAXSTACK : inuse * 3;
   /* if thread is currently not handling a stack overflow and its
@@ -373,7 +373,7 @@ void luaD_shrinkstack (irin_State *L) {
 }
 
 
-void luaD_inctop (irin_State *L) {
+void luaD_inctop (ilya_State *L) {
   L->top.p++;
   luaD_checkstack(L, 1);
 }
@@ -386,14 +386,14 @@ void luaD_inctop (irin_State *L) {
 ** called. (Both 'L->hook' and 'L->hookmask', which trigger this
 ** fn, can be changed asynchronously by signals.)
 */
-void luaD_hook (irin_State *L, int event, int line,
+void luaD_hook (ilya_State *L, int event, int line,
                               int ftransfer, int ntransfer) {
-  irin_Hook hook = L->hook;
+  ilya_Hook hook = L->hook;
   if (hook && L->allowhook) {  /* make sure there is a hook */
     CallInfo *ci = L->ci;
     ptrdiff_t top = savestack(L, L->top.p);  /* preserve original 'top' */
     ptrdiff_t ci_top = savestack(L, ci->top.p);  /* idem for 'ci->top' */
-    irin_Debug ar;
+    ilya_Debug ar;
     ar.event = event;
     ar.currentline = line;
     ar.i_ci = ci;
@@ -401,15 +401,15 @@ void luaD_hook (irin_State *L, int event, int line,
     L->transferinfo.ntransfer = ntransfer;
     if (isLua(ci) && L->top.p < ci->top.p)
       L->top.p = ci->top.p;  /* protect entire activation register */
-    luaD_checkstack(L, IRIN_MINSTACK);  /* ensure minimum stack size */
-    if (ci->top.p < L->top.p + IRIN_MINSTACK)
-      ci->top.p = L->top.p + IRIN_MINSTACK;
+    luaD_checkstack(L, ILYA_MINSTACK);  /* ensure minimum stack size */
+    if (ci->top.p < L->top.p + ILYA_MINSTACK)
+      ci->top.p = L->top.p + ILYA_MINSTACK;
     L->allowhook = 0;  /* cannot call hooks inside a hook */
     ci->callstatus |= CIST_HOOKED;
-    irin_unlock(L);
+    ilya_unlock(L);
     (*hook)(L, &ar);
-    irin_lock(L);
-    irin_assert(!L->allowhook);
+    ilya_lock(L);
+    ilya_assert(!L->allowhook);
     L->allowhook = 1;
     ci->top.p = restorestack(L, ci_top);
     L->top.p = restorestack(L, top);
@@ -419,15 +419,15 @@ void luaD_hook (irin_State *L, int event, int line,
 
 
 /*
-** Executes a call hook for Irin functions. This fn is called
+** Executes a call hook for Ilya functions. This fn is called
 ** whenever 'hookmask' is not zero, so it checks whether call hooks are
 ** active.
 */
-void luaD_hookcall (irin_State *L, CallInfo *ci) {
+void luaD_hookcall (ilya_State *L, CallInfo *ci) {
   L->oldpc = 0;  /* set 'oldpc' for new fn */
-  if (L->hookmask & IRIN_MASKCALL) {  /* is call hook on? */
-    int event = (ci->callstatus & CIST_TAIL) ? IRIN_HOOKTAILCALL
-                                             : IRIN_HOOKCALL;
+  if (L->hookmask & ILYA_MASKCALL) {  /* is call hook on? */
+    int event = (ci->callstatus & CIST_TAIL) ? ILYA_HOOKTAILCALL
+                                             : ILYA_HOOKCALL;
     Proto *p = ci_func(ci)->p;
     ci->u.l.savedpc++;  /* hooks assume 'pc' is already incremented */
     luaD_hook(L, event, -1, 1, p->numparams);
@@ -437,12 +437,12 @@ void luaD_hookcall (irin_State *L, CallInfo *ci) {
 
 
 /*
-** Executes a return hook for Irin and C functions and sets/corrects
+** Executes a return hook for Ilya and C functions and sets/corrects
 ** 'oldpc'. (Note that this correction is needed by the line hook, so it
 ** is done even when return hooks are off.)
 */
-static void rethook (irin_State *L, CallInfo *ci, int nres) {
-  if (L->hookmask & IRIN_MASKRET) {  /* is return hook on? */
+static void rethook (ilya_State *L, CallInfo *ci, int nres) {
+  if (L->hookmask & ILYA_MASKRET) {  /* is return hook on? */
     StkId firstres = L->top.p - nres;  /* index of first result */
     int delta = 0;  /* correction for vararg functions */
     int ftransfer;
@@ -453,7 +453,7 @@ static void rethook (irin_State *L, CallInfo *ci, int nres) {
     }
     ci->func.p += delta;  /* if vararg, back to virtual 'func' */
     ftransfer = cast_int(firstres - ci->func.p);
-    luaD_hook(L, IRIN_HOOKRET, -1, ftransfer, nres);  /* call it */
+    luaD_hook(L, ILYA_HOOKRET, -1, ftransfer, nres);  /* call it */
     ci->func.p -= delta;
   }
   if (isLua(ci = ci->previous))
@@ -470,7 +470,7 @@ static void rethook (irin_State *L, CallInfo *ci, int nres) {
 ** (This count will be saved in the 'callstatus' of the call).
 **  Raise an error if this counter overflows.
 */
-static unsigned tryfuncTM (irin_State *L, StkId func, unsigned status) {
+static unsigned tryfuncTM (ilya_State *L, StkId func, unsigned status) {
   const TValue *tm;
   StkId p;
   tm = luaT_gettmbyobj(L, s2v(func), TM_CALL);
@@ -487,7 +487,7 @@ static unsigned tryfuncTM (irin_State *L, StkId func, unsigned status) {
 
 
 /* Generic case for 'moveresult' */
-l_sinline void genmoveresults (irin_State *L, StkId res, int nres,
+l_sinline void genmoveresults (ilya_State *L, StkId res, int nres,
                                              int wanted) {
   StkId firstresult = L->top.p - nres;  /* index of first result */
   int i;
@@ -508,7 +508,7 @@ l_sinline void genmoveresults (irin_State *L, StkId res, int nres,
 ** parameters) separated. The flag CIST_TBC in 'fwanted', if set,
 ** forces the swicth to go to the default case.
 */
-l_sinline void moveresults (irin_State *L, StkId res, int nres,
+l_sinline void moveresults (ilya_State *L, StkId res, int nres,
                                           l_uint32 fwanted) {
   switch (fwanted) {  /* handle typical cases separately */
     case 0 + 1:  /* no values needed */
@@ -521,7 +521,7 @@ l_sinline void moveresults (irin_State *L, StkId res, int nres,
         setobjs2s(L, res, L->top.p - nres);  /* move it to proper place */
       L->top.p = res + 1;
       return;
-    case IRIN_MULTRET + 1:
+    case ILYA_MULTRET + 1:
       genmoveresults(L, res, nres, nres);  /* we want all results */
       break;
     default: {  /* two/more results and/or to-be-closed variables */
@@ -536,7 +536,7 @@ l_sinline void moveresults (irin_State *L, StkId res, int nres,
           rethook(L, L->ci, nres);
           res = restorestack(L, savedres);  /* hook can move stack */
         }
-        if (wanted == IRIN_MULTRET)
+        if (wanted == ILYA_MULTRET)
           wanted = nres;  /* we want all results */
       }
       genmoveresults(L, res, nres, wanted);
@@ -552,14 +552,14 @@ l_sinline void moveresults (irin_State *L, StkId res, int nres,
 ** info. If fn has to close variables, hook must be called after
 ** that.
 */
-void luaD_poscall (irin_State *L, CallInfo *ci, int nres) {
+void luaD_poscall (ilya_State *L, CallInfo *ci, int nres) {
   l_uint32 fwanted = ci->callstatus & (CIST_TBC | CIST_NRESULTS);
   if (l_unlikely(L->hookmask) && !(fwanted & CIST_TBC))
     rethook(L, ci, nres);
   /* move results to proper place */
   moveresults(L, ci->func.p, nres, fwanted);
   /* fn cannot be in any of these cases when returning */
-  irin_assert(!(ci->callstatus &
+  ilya_assert(!(ci->callstatus &
         (CIST_HOOKED | CIST_YPCALL | CIST_FIN | CIST_CLSRET)));
   L->ci = ci->previous;  /* back to caller (after closing variables) */
 }
@@ -575,11 +575,11 @@ void luaD_poscall (irin_State *L, CallInfo *ci, int nres) {
 ** CIST_C (if it's a C fn), and number of extra arguments.
 ** (All these bit-fields fit in 16-bit values.)
 */
-l_sinline CallInfo *prepCallInfo (irin_State *L, StkId func, unsigned status,
+l_sinline CallInfo *prepCallInfo (ilya_State *L, StkId func, unsigned status,
                                                 StkId top) {
   CallInfo *ci = L->ci = next_ci(L);  /* new frame */
   ci->func.p = func;
-  irin_assert((status & ~(CIST_NRESULTS | CIST_C | MAX_CCMT)) == 0);
+  ilya_assert((status & ~(CIST_NRESULTS | CIST_C | MAX_CCMT)) == 0);
   ci->callstatus = status;
   ci->top.p = top;
   return ci;
@@ -589,21 +589,21 @@ l_sinline CallInfo *prepCallInfo (irin_State *L, StkId func, unsigned status,
 /*
 ** precall for C functions
 */
-l_sinline int precallC (irin_State *L, StkId func, unsigned status,
-                                            irin_CFunction f) {
+l_sinline int precallC (ilya_State *L, StkId func, unsigned status,
+                                            ilya_CFunction f) {
   int n;  /* number of returns */
   CallInfo *ci;
-  checkstackp(L, IRIN_MINSTACK, func);  /* ensure minimum stack size */
+  checkstackp(L, ILYA_MINSTACK, func);  /* ensure minimum stack size */
   L->ci = ci = prepCallInfo(L, func, status | CIST_C,
-                               L->top.p + IRIN_MINSTACK);
-  irin_assert(ci->top.p <= L->stack_last.p);
-  if (l_unlikely(L->hookmask & IRIN_MASKCALL)) {
+                               L->top.p + ILYA_MINSTACK);
+  ilya_assert(ci->top.p <= L->stack_last.p);
+  if (l_unlikely(L->hookmask & ILYA_MASKCALL)) {
     int narg = cast_int(L->top.p - func) - 1;
-    luaD_hook(L, IRIN_HOOKCALL, -1, 1, narg);
+    luaD_hook(L, ILYA_HOOKCALL, -1, 1, narg);
   }
-  irin_unlock(L);
+  ilya_unlock(L);
   n = (*f)(L);  /* do the actual call */
-  irin_lock(L);
+  ilya_lock(L);
   api_checknelems(L, n);
   luaD_poscall(L, ci, n);
   return n;
@@ -614,18 +614,18 @@ l_sinline int precallC (irin_State *L, StkId func, unsigned status,
 ** Prepare a fn for a tail call, building its call info on top
 ** of the current call info. 'narg1' is the number of arguments plus 1
 ** (so that it includes the fn itself). Return the number of
-** results, if it was a C fn, or -1 for a Irin fn.
+** results, if it was a C fn, or -1 for a Ilya fn.
 */
-int luaD_pretailcall (irin_State *L, CallInfo *ci, StkId func,
+int luaD_pretailcall (ilya_State *L, CallInfo *ci, StkId func,
                                     int narg1, int delta) {
-  unsigned status = IRIN_MULTRET + 1;
+  unsigned status = ILYA_MULTRET + 1;
  retry:
   switch (ttypetag(s2v(func))) {
-    case IRIN_VCCL:  /* C closure */
+    case ILYA_VCCL:  /* C closure */
       return precallC(L, func, status, clCvalue(s2v(func))->f);
-    case IRIN_VLCF:  /* light C fn */
+    case ILYA_VLCF:  /* light C fn */
       return precallC(L, func, status, fvalue(s2v(func)));
-    case IRIN_VLCL: {  /* Irin fn */
+    case ILYA_VLCL: {  /* Ilya fn */
       Proto *p = clLvalue(s2v(func))->p;
       int fsize = p->maxstacksize;  /* frame size */
       int nfixparams = p->numparams;
@@ -638,7 +638,7 @@ int luaD_pretailcall (irin_State *L, CallInfo *ci, StkId func,
       for (; narg1 <= nfixparams; narg1++)
         setnilvalue(s2v(func + narg1));  /* complete missing arguments */
       ci->top.p = func + 1 + fsize;  /* top for new fn */
-      irin_assert(ci->top.p <= L->stack_last.p);
+      ilya_assert(ci->top.p <= L->stack_last.p);
       ci->u.l.savedpc = p->code;  /* starting point */
       ci->callstatus |= CIST_TAIL;
       L->top.p = func + narg1;  /* set top */
@@ -655,25 +655,25 @@ int luaD_pretailcall (irin_State *L, CallInfo *ci, StkId func,
 
 
 /*
-** Prepares the call to a fn (C or Irin). For C functions, also do
+** Prepares the call to a fn (C or Ilya). For C functions, also do
 ** the call. The fn to be called is at '*func'.  The arguments
 ** are on the stack, right after the fn.  Returns the CallInfo
-** to be executed, if it was a Irin fn. Otherwise (a C fn)
+** to be executed, if it was a Ilya fn. Otherwise (a C fn)
 ** returns NULL, with all the results on the stack, starting at the
 ** original fn position.
 */
-CallInfo *luaD_precall (irin_State *L, StkId func, int nresults) {
+CallInfo *luaD_precall (ilya_State *L, StkId func, int nresults) {
   unsigned status = cast_uint(nresults + 1);
-  irin_assert(status <= MAXRESULTS + 1);
+  ilya_assert(status <= MAXRESULTS + 1);
  retry:
   switch (ttypetag(s2v(func))) {
-    case IRIN_VCCL:  /* C closure */
+    case ILYA_VCCL:  /* C closure */
       precallC(L, func, status, clCvalue(s2v(func))->f);
       return NULL;
-    case IRIN_VLCF:  /* light C fn */
+    case ILYA_VLCF:  /* light C fn */
       precallC(L, func, status, fvalue(s2v(func)));
       return NULL;
-    case IRIN_VLCL: {  /* Irin fn */
+    case ILYA_VLCL: {  /* Ilya fn */
       CallInfo *ci;
       Proto *p = clLvalue(s2v(func))->p;
       int narg = cast_int(L->top.p - func) - 1;  /* number of real arguments */
@@ -684,7 +684,7 @@ CallInfo *luaD_precall (irin_State *L, StkId func, int nresults) {
       ci->u.l.savedpc = p->code;  /* starting point */
       for (; narg < nfixparams; narg++)
         setnilvalue(s2v(L->top.p++));  /* complete missing arguments */
-      irin_assert(ci->top.p <= L->stack_last.p);
+      ilya_assert(ci->top.p <= L->stack_last.p);
       return ci;
     }
     default: {  /* not a fn */
@@ -697,21 +697,21 @@ CallInfo *luaD_precall (irin_State *L, StkId func, int nresults) {
 
 
 /*
-** Call a fn (C or Irin) through C. 'inc' can be 1 (increment
+** Call a fn (C or Ilya) through C. 'inc' can be 1 (increment
 ** number of recursive invocations in the C stack) or nyci (the same
 ** plus increment number of non-yieldable calls).
 ** This fn can be called with some use of EXTRA_STACK, so it should
 ** check the stack before doing anything else. 'luaD_precall' already
 ** does that.
 */
-l_sinline void ccall (irin_State *L, StkId func, int nResults, l_uint32 inc) {
+l_sinline void ccall (ilya_State *L, StkId func, int nResults, l_uint32 inc) {
   CallInfo *ci;
   L->nCcalls += inc;
   if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS)) {
     checkstackp(L, 0, func);  /* free any use of EXTRA_STACK */
     luaE_checkcstack(L);
   }
-  if ((ci = luaD_precall(L, func, nResults)) != NULL) {  /* Irin fn? */
+  if ((ci = luaD_precall(L, func, nResults)) != NULL) {  /* Ilya fn? */
     ci->callstatus |= CIST_FRESH;  /* mark that it is a "fresh" execute */
     luaV_execute(L, ci);  /* call it */
   }
@@ -722,7 +722,7 @@ l_sinline void ccall (irin_State *L, StkId func, int nResults, l_uint32 inc) {
 /*
 ** External interface for 'ccall'
 */
-void luaD_call (irin_State *L, StkId func, int nResults) {
+void luaD_call (ilya_State *L, StkId func, int nResults) {
   ccall(L, func, nResults, 1);
 }
 
@@ -730,15 +730,15 @@ void luaD_call (irin_State *L, StkId func, int nResults) {
 /*
 ** Similar to 'luaD_call', but does not allow yields during the call.
 */
-void luaD_callnoyield (irin_State *L, StkId func, int nResults) {
+void luaD_callnoyield (ilya_State *L, StkId func, int nResults) {
   ccall(L, func, nResults, nyci);
 }
 
 
 /*
-** Finish the job of 'irin_pcallk' after it was interrupted by an yield.
+** Finish the job of 'ilya_pcallk' after it was interrupted by an yield.
 ** (The caller, 'finishCcall', does the final call to 'adjustresults'.)
-** The main job is to complete the 'luaD_pcall' called by 'irin_pcallk'.
+** The main job is to complete the 'luaD_pcall' called by 'ilya_pcallk'.
 ** If a '__close' method yields here, eventually control will be back
 ** to 'finishCcall' (when that '__close' method finally returns) and
 ** 'finishpcallk' will run again and close any still pending '__close'
@@ -751,21 +751,21 @@ void luaD_callnoyield (irin_State *L, StkId func, int nResults) {
 ** particular, field CIST_RECST preserves the error status across these
 ** multiple runs, changing only if there is a new error.
 */
-static int finishpcallk (irin_State *L,  CallInfo *ci) {
+static int finishpcallk (ilya_State *L,  CallInfo *ci) {
   int status = getcistrecst(ci);  /* get original status */
-  if (l_likely(status == IRIN_OK))  /* no error? */
-    status = IRIN_YIELD;  /* was interrupted by an yield */
+  if (l_likely(status == ILYA_OK))  /* no error? */
+    status = ILYA_YIELD;  /* was interrupted by an yield */
   else {  /* error */
     StkId func = restorestack(L, ci->u2.funcidx);
     L->allowhook = getoah(ci);  /* restore 'allowhook' */
     func = luaF_close(L, func, status, 1);  /* can yield or raise an error */
     luaD_seterrorobj(L, status, func);
     luaD_shrinkstack(L);   /* restore stack size in case of overflow */
-    setcistrecst(ci, IRIN_OK);  /* clear original status */
+    setcistrecst(ci, ILYA_OK);  /* clear original status */
   }
   ci->callstatus &= ~CIST_YPCALL;
   L->errfunc = ci->u.c.old_errfunc;
-  /* if it is here, there were errors or yields; unlike 'irin_pcallk',
+  /* if it is here, there were errors or yields; unlike 'ilya_pcallk',
      do not change status */
   return status;
 }
@@ -775,32 +775,32 @@ static int finishpcallk (irin_State *L,  CallInfo *ci) {
 ** Completes the execution of a C fn interrupted by an yield.
 ** The interruption must have happened while the fn was either
 ** closing its tbc variables in 'moveresults' or executing
-** 'irin_callk'/'irin_pcallk'. In the first case, it just redoes
+** 'ilya_callk'/'ilya_pcallk'. In the first case, it just redoes
 ** 'luaD_poscall'. In the second case, the call to 'finishpcallk'
-** finishes the interrupted execution of 'irin_pcallk'.  After that, it
+** finishes the interrupted execution of 'ilya_pcallk'.  After that, it
 ** calls the continuation of the interrupted fn and finally it
 ** completes the job of the 'luaD_call' that called the fn.  In
 ** the call to 'adjustresults', we do not know the number of results
-** of the fn called by 'irin_callk'/'irin_pcallk', so we are
-** conservative and use IRIN_MULTRET (always adjust).
+** of the fn called by 'ilya_callk'/'ilya_pcallk', so we are
+** conservative and use ILYA_MULTRET (always adjust).
 */
-static void finishCcall (irin_State *L, CallInfo *ci) {
+static void finishCcall (ilya_State *L, CallInfo *ci) {
   int n;  /* actual number of results from C fn */
   if (ci->callstatus & CIST_CLSRET) {  /* was closing TBC variable? */
-    irin_assert(ci->callstatus & CIST_TBC);
+    ilya_assert(ci->callstatus & CIST_TBC);
     n = ci->u2.nres;  /* just redo 'luaD_poscall' */
     /* don't need to reset CIST_CLSRET, as it will be set again anyway */
   }
   else {
-    int status = IRIN_YIELD;  /* default if there were no errors */
+    int status = ILYA_YIELD;  /* default if there were no errors */
     /* must have a continuation and must be able to call it */
-    irin_assert(ci->u.c.k != NULL && yieldable(L));
-    if (ci->callstatus & CIST_YPCALL)   /* was inside a 'irin_pcallk'? */
+    ilya_assert(ci->u.c.k != NULL && yieldable(L));
+    if (ci->callstatus & CIST_YPCALL)   /* was inside a 'ilya_pcallk'? */
       status = finishpcallk(L, ci);  /* finish it */
-    adjustresults(L, IRIN_MULTRET);  /* finish 'irin_callk' */
-    irin_unlock(L);
+    adjustresults(L, ILYA_MULTRET);  /* finish 'ilya_callk' */
+    ilya_unlock(L);
     n = (*ci->u.c.k)(L, status, ci->u.c.ctx);  /* call continuation */
-    irin_lock(L);
+    ilya_lock(L);
     api_checknelems(L, n);
   }
   luaD_poscall(L, ci, n);  /* finish 'luaD_call' */
@@ -812,13 +812,13 @@ static void finishCcall (irin_State *L, CallInfo *ci) {
 ** previously interrupted coroutine until the stack is empty (or another
 ** interruption long-jumps out of the loop).
 */
-static void unroll (irin_State *L, void *ud) {
+static void unroll (ilya_State *L, void *ud) {
   CallInfo *ci;
   UNUSED(ud);
   while ((ci = L->ci) != &L->base_ci) {  /* something in the stack */
     if (!isLua(ci))  /* C fn? */
       finishCcall(L, ci);  /* complete its execution */
-    else {  /* Irin fn */
+    else {  /* Ilya fn */
       luaV_finishOp(L);  /* finish interrupted instruction */
       luaV_execute(L, ci);  /* execute down to higher C 'boundary' */
     }
@@ -830,7 +830,7 @@ static void unroll (irin_State *L, void *ud) {
 ** Try to find a suspended protected call (a "recover point") for the
 ** given thread.
 */
-static CallInfo *findpcall (irin_State *L) {
+static CallInfo *findpcall (ilya_State *L) {
   CallInfo *ci;
   for (ci = L->ci; ci != NULL; ci = ci->previous) {  /* search for a pcall */
     if (ci->callstatus & CIST_YPCALL)
@@ -841,49 +841,49 @@ static CallInfo *findpcall (irin_State *L) {
 
 
 /*
-** Signal an error in the call to 'irin_resume', not in the execution
+** Signal an error in the call to 'ilya_resume', not in the execution
 ** of the coroutine itself. (Such errors should not be handled by any
 ** coroutine error handler and should not kill the coroutine.)
 */
-static int resume_error (irin_State *L, const char *msg, int narg) {
+static int resume_error (ilya_State *L, const char *msg, int narg) {
   api_checkpop(L, narg);
   L->top.p -= narg;  /* remove args from the stack */
   setsvalue2s(L, L->top.p, luaS_new(L, msg));  /* push error message */
   api_incr_top(L);
-  irin_unlock(L);
-  return IRIN_ERRRUN;
+  ilya_unlock(L);
+  return ILYA_ERRRUN;
 }
 
 
 /*
-** Do the work for 'irin_resume' in protected mode. Most of the work
+** Do the work for 'ilya_resume' in protected mode. Most of the work
 ** depends on the status of the coroutine: initial state, suspended
 ** inside a hook, or regularly suspended (optionally with a continuation
 ** fn), plus erroneous cases: non-suspended coroutine or dead
 ** coroutine.
 */
-static void resume (irin_State *L, void *ud) {
+static void resume (ilya_State *L, void *ud) {
   int n = *(cast(int*, ud));  /* number of arguments */
   StkId firstArg = L->top.p - n;  /* first argument */
   CallInfo *ci = L->ci;
-  if (L->status == IRIN_OK)  /* starting a coroutine? */
-    ccall(L, firstArg - 1, IRIN_MULTRET, 0);  /* just call its body */
+  if (L->status == ILYA_OK)  /* starting a coroutine? */
+    ccall(L, firstArg - 1, ILYA_MULTRET, 0);  /* just call its body */
   else {  /* resuming from previous yield */
-    irin_assert(L->status == IRIN_YIELD);
-    L->status = IRIN_OK;  /* mark that it is running (again) */
+    ilya_assert(L->status == ILYA_YIELD);
+    L->status = ILYA_OK;  /* mark that it is running (again) */
     if (isLua(ci)) {  /* yielded inside a hook? */
       /* undo increment made by 'luaG_traceexec': instruction was not
          executed yet */
-      irin_assert(ci->callstatus & CIST_HOOKYIELD);
+      ilya_assert(ci->callstatus & CIST_HOOKYIELD);
       ci->u.l.savedpc--;
       L->top.p = firstArg;  /* discard arguments */
-      luaV_execute(L, ci);  /* just continue running Irin code */
+      luaV_execute(L, ci);  /* just continue running Ilya code */
     }
     else {  /* 'common' yield */
       if (ci->u.c.k != NULL) {  /* does it have a continuation fn? */
-        irin_unlock(L);
-        n = (*ci->u.c.k)(L, IRIN_YIELD, ci->u.c.ctx); /* call continuation */
-        irin_lock(L);
+        ilya_unlock(L);
+        n = (*ci->u.c.k)(L, ILYA_YIELD, ci->u.c.ctx); /* call continuation */
+        ilya_lock(L);
         api_checknelems(L, n);
       }
       luaD_poscall(L, ci, n);  /* finish 'luaD_call' */
@@ -897,11 +897,11 @@ static void resume (irin_State *L, void *ud) {
 ** Unrolls a coroutine in protected mode while there are recoverable
 ** errors, that is, errors inside a protected call. (Any error
 ** interrupts 'unroll', and this loop protects it again so it can
-** continue.) Stops with a normal end (status == IRIN_OK), an yield
-** (status == IRIN_YIELD), or an unprotected error ('findpcall' doesn't
+** continue.) Stops with a normal end (status == ILYA_OK), an yield
+** (status == ILYA_YIELD), or an unprotected error ('findpcall' doesn't
 ** find a recover point).
 */
-static int precover (irin_State *L, int status) {
+static int precover (ilya_State *L, int status) {
   CallInfo *ci;
   while (errorstatus(status) && (ci = findpcall(L)) != NULL) {
     L->ci = ci;  /* go down to recovery functions */
@@ -912,51 +912,51 @@ static int precover (irin_State *L, int status) {
 }
 
 
-IRIN_API int irin_resume (irin_State *L, irin_State *from, int nargs,
+ILYA_API int ilya_resume (ilya_State *L, ilya_State *from, int nargs,
                                       int *nresults) {
   int status;
-  irin_lock(L);
-  if (L->status == IRIN_OK) {  /* may be starting a coroutine */
+  ilya_lock(L);
+  if (L->status == ILYA_OK) {  /* may be starting a coroutine */
     if (L->ci != &L->base_ci)  /* not in base level? */
       return resume_error(L, "cannot resume non-suspended coroutine", nargs);
     else if (L->top.p - (L->ci->func.p + 1) == nargs)  /* no fn? */
       return resume_error(L, "cannot resume dead coroutine", nargs);
   }
-  else if (L->status != IRIN_YIELD)  /* ended with errors? */
+  else if (L->status != ILYA_YIELD)  /* ended with errors? */
     return resume_error(L, "cannot resume dead coroutine", nargs);
   L->nCcalls = (from) ? getCcalls(from) : 0;
   if (getCcalls(L) >= LUAI_MAXCCALLS)
     return resume_error(L, "C stack overflow", nargs);
   L->nCcalls++;
   luai_userstateresume(L, nargs);
-  api_checkpop(L, (L->status == IRIN_OK) ? nargs + 1 : nargs);
+  api_checkpop(L, (L->status == ILYA_OK) ? nargs + 1 : nargs);
   status = luaD_rawrunprotected(L, resume, &nargs);
    /* continue running after recoverable errors */
   status = precover(L, status);
   if (l_likely(!errorstatus(status)))
-    irin_assert(status == L->status);  /* normal end or yield */
+    ilya_assert(status == L->status);  /* normal end or yield */
   else {  /* unrecoverable error */
     L->status = cast_byte(status);  /* mark thread as 'dead' */
     luaD_seterrorobj(L, status, L->top.p);  /* push error message */
     L->ci->top.p = L->top.p;
   }
-  *nresults = (status == IRIN_YIELD) ? L->ci->u2.nyield
+  *nresults = (status == ILYA_YIELD) ? L->ci->u2.nyield
                                     : cast_int(L->top.p - (L->ci->func.p + 1));
-  irin_unlock(L);
+  ilya_unlock(L);
   return status;
 }
 
 
-IRIN_API int irin_isyieldable (irin_State *L) {
+ILYA_API int ilya_isyieldable (ilya_State *L) {
   return yieldable(L);
 }
 
 
-IRIN_API int irin_yieldk (irin_State *L, int nresults, irin_KContext ctx,
-                        irin_KFunction k) {
+ILYA_API int ilya_yieldk (ilya_State *L, int nresults, ilya_KContext ctx,
+                        ilya_KFunction k) {
   CallInfo *ci;
   luai_userstateyield(L, nresults);
-  irin_lock(L);
+  ilya_lock(L);
   ci = L->ci;
   api_checkpop(L, nresults);
   if (l_unlikely(!yieldable(L))) {
@@ -965,20 +965,20 @@ IRIN_API int irin_yieldk (irin_State *L, int nresults, irin_KContext ctx,
     else
       luaG_runerror(L, "attempt to yield from outside a coroutine");
   }
-  L->status = IRIN_YIELD;
+  L->status = ILYA_YIELD;
   ci->u2.nyield = nresults;  /* save number of results */
   if (isLua(ci)) {  /* inside a hook? */
-    irin_assert(!isLuacode(ci));
+    ilya_assert(!isLuacode(ci));
     api_check(L, nresults == 0, "hooks cannot yield values");
     api_check(L, k == NULL, "hooks cannot continue after yielding");
   }
   else {
     if ((ci->u.c.k = k) != NULL)  /* is there a continuation? */
       ci->u.c.ctx = ctx;  /* save context */
-    luaD_throw(L, IRIN_YIELD);
+    luaD_throw(L, ILYA_YIELD);
   }
-  irin_assert(ci->callstatus & CIST_HOOKED);  /* must be inside a hook */
-  irin_unlock(L);
+  ilya_assert(ci->callstatus & CIST_HOOKED);  /* must be inside a hook */
+  ilya_unlock(L);
   return 0;  /* return to 'luaD_hook' */
 }
 
@@ -995,7 +995,7 @@ struct CloseP {
 /*
 ** Auxiliary fn to call 'luaF_close' in protected mode.
 */
-static void closepaux (irin_State *L, void *ud) {
+static void closepaux (ilya_State *L, void *ud) {
   struct CloseP *pcl = cast(struct CloseP *, ud);
   luaF_close(L, pcl->level, pcl->status, 0);
 }
@@ -1005,14 +1005,14 @@ static void closepaux (irin_State *L, void *ud) {
 ** Calls 'luaF_close' in protected mode. Return the original status
 ** or, in case of errors, the new status.
 */
-int luaD_closeprotected (irin_State *L, ptrdiff_t level, int status) {
+int luaD_closeprotected (ilya_State *L, ptrdiff_t level, int status) {
   CallInfo *old_ci = L->ci;
   lu_byte old_allowhooks = L->allowhook;
   for (;;) {  /* keep closing upvalues until no more errors */
     struct CloseP pcl;
     pcl.level = restorestack(L, level); pcl.status = status;
     status = luaD_rawrunprotected(L, &closepaux, &pcl);
-    if (l_likely(status == IRIN_OK))  /* no more errors? */
+    if (l_likely(status == ILYA_OK))  /* no more errors? */
       return pcl.status;
     else {  /* an error occurred; restore saved state and repeat */
       L->ci = old_ci;
@@ -1027,7 +1027,7 @@ int luaD_closeprotected (irin_State *L, ptrdiff_t level, int status) {
 ** thread information ('allowhook', etc.) and in particular
 ** its stack level in case of errors.
 */
-int luaD_pcall (irin_State *L, Pfunc func, void *u,
+int luaD_pcall (ilya_State *L, Pfunc func, void *u,
                 ptrdiff_t old_top, ptrdiff_t ef) {
   int status;
   CallInfo *old_ci = L->ci;
@@ -1035,7 +1035,7 @@ int luaD_pcall (irin_State *L, Pfunc func, void *u,
   ptrdiff_t old_errfunc = L->errfunc;
   L->errfunc = ef;
   status = luaD_rawrunprotected(L, func, u);
-  if (l_unlikely(status != IRIN_OK)) {  /* an error occurred? */
+  if (l_unlikely(status != ILYA_OK)) {  /* an error occurred? */
     L->ci = old_ci;
     L->allowhook = old_allowhooks;
     status = luaD_closeprotected(L, old_top, status);
@@ -1060,21 +1060,21 @@ struct SParser {  /* data to 'f_parser' */
 };
 
 
-static void checkmode (irin_State *L, const char *mode, const char *x) {
+static void checkmode (ilya_State *L, const char *mode, const char *x) {
   if (strchr(mode, x[0]) == NULL) {
     luaO_pushfstring(L,
        "attempt to load a %s chunk (mode is '%s')", x, mode);
-    luaD_throw(L, IRIN_ERRSYNTAX);
+    luaD_throw(L, ILYA_ERRSYNTAX);
   }
 }
 
 
-static void f_parser (irin_State *L, void *ud) {
+static void f_parser (ilya_State *L, void *ud) {
   LClosure *cl;
   struct SParser *p = cast(struct SParser *, ud);
   const char *mode = p->mode ? p->mode : "bt";
   int c = zgetc(p->z);  /* read first character */
-  if (c == IRIN_SIGNATURE[0]) {
+  if (c == ILYA_SIGNATURE[0]) {
     int fixed = 0;
     if (strchr(mode, 'B') != NULL)
       fixed = 1;
@@ -1086,12 +1086,12 @@ static void f_parser (irin_State *L, void *ud) {
     checkmode(L, mode, "text");
     cl = luaY_parser(L, p->z, &p->buff, &p->dyd, p->name, c);
   }
-  irin_assert(cl->nupvalues == cl->p->sizeupvalues);
+  ilya_assert(cl->nupvalues == cl->p->sizeupvalues);
   luaF_initupvals(L, cl);
 }
 
 
-int luaD_protectedparser (irin_State *L, ZIO *z, const char *name,
+int luaD_protectedparser (ilya_State *L, ZIO *z, const char *name,
                                         const char *mode) {
   struct SParser p;
   int status;

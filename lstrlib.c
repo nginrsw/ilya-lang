@@ -1,11 +1,11 @@
 /*
 ** $Id: lstrlib.c $
 ** Standard library for string operations and pattern-matching
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lstrlib_c
-#define IRIN_LIB
+#define ILYA_LIB
 
 #include "lprefix.h"
 
@@ -20,10 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lauxlib.h"
-#include "irinlib.h"
+#include "ilyalib.h"
 #include "llimits.h"
 
 
@@ -32,15 +32,15 @@
 ** pattern-matching. This limit is arbitrary, but must fit in
 ** an unsigned char.
 */
-#if !defined(IRIN_MAXCAPTURES)
-#define IRIN_MAXCAPTURES		32
+#if !defined(ILYA_MAXCAPTURES)
+#define ILYA_MAXCAPTURES		32
 #endif
 
 
-static int str_len (irin_State *L) {
+static int str_len (ilya_State *L) {
   size_t l;
   luaL_checklstring(L, 1, &l);
-  irin_pushinteger(L, (irin_Integer)l);
+  ilya_pushinteger(L, (ilya_Integer)l);
   return 1;
 }
 
@@ -48,17 +48,17 @@ static int str_len (irin_State *L) {
 /*
 ** translate a relative initial string position
 ** (negative means back from end): clip result to [1, inf).
-** The length of any string in Irin must fit in a irin_Integer,
+** The length of any string in Ilya must fit in a ilya_Integer,
 ** so there are no overflows in the casts.
 ** The inverted comparison avoids a possible overflow
 ** computing '-pos'.
 */
-static size_t posrelatI (irin_Integer pos, size_t len) {
+static size_t posrelatI (ilya_Integer pos, size_t len) {
   if (pos > 0)
     return (size_t)pos;
   else if (pos == 0)
     return 1;
-  else if (pos < -(irin_Integer)len)  /* inverted comparison */
+  else if (pos < -(ilya_Integer)len)  /* inverted comparison */
     return 1;  /* clip to 1 */
   else return len + (size_t)pos + 1;
 }
@@ -69,32 +69,32 @@ static size_t posrelatI (irin_Integer pos, size_t len) {
 ** with default value 'def'.
 ** Negative means back from end: clip result to [0, len]
 */
-static size_t getendpos (irin_State *L, int arg, irin_Integer def,
+static size_t getendpos (ilya_State *L, int arg, ilya_Integer def,
                          size_t len) {
-  irin_Integer pos = luaL_optinteger(L, arg, def);
-  if (pos > (irin_Integer)len)
+  ilya_Integer pos = luaL_optinteger(L, arg, def);
+  if (pos > (ilya_Integer)len)
     return len;
   else if (pos >= 0)
     return (size_t)pos;
-  else if (pos < -(irin_Integer)len)
+  else if (pos < -(ilya_Integer)len)
     return 0;
   else return len + (size_t)pos + 1;
 }
 
 
-static int str_sub (irin_State *L) {
+static int str_sub (ilya_State *L) {
   size_t l;
   const char *s = luaL_checklstring(L, 1, &l);
   size_t start = posrelatI(luaL_checkinteger(L, 2), l);
   size_t end = getendpos(L, 3, -1, l);
   if (start <= end)
-    irin_pushlstring(L, s + start - 1, (end - start) + 1);
-  else irin_pushliteral(L, "");
+    ilya_pushlstring(L, s + start - 1, (end - start) + 1);
+  else ilya_pushliteral(L, "");
   return 1;
 }
 
 
-static int str_reverse (irin_State *L) {
+static int str_reverse (ilya_State *L) {
   size_t l, i;
   luaL_Buffer b;
   const char *s = luaL_checklstring(L, 1, &l);
@@ -106,7 +106,7 @@ static int str_reverse (irin_State *L) {
 }
 
 
-static int str_lower (irin_State *L) {
+static int str_lower (ilya_State *L) {
   size_t l;
   size_t i;
   luaL_Buffer b;
@@ -119,7 +119,7 @@ static int str_lower (irin_State *L) {
 }
 
 
-static int str_upper (irin_State *L) {
+static int str_upper (ilya_State *L) {
   size_t l;
   size_t i;
   luaL_Buffer b;
@@ -132,13 +132,13 @@ static int str_upper (irin_State *L) {
 }
 
 
-static int str_rep (irin_State *L) {
+static int str_rep (ilya_State *L) {
   size_t l, lsep;
   const char *s = luaL_checklstring(L, 1, &l);
-  irin_Integer n = luaL_checkinteger(L, 2);
+  ilya_Integer n = luaL_checkinteger(L, 2);
   const char *sep = luaL_optlstring(L, 3, "", &lsep);
   if (n <= 0)
-    irin_pushliteral(L, "");
+    ilya_pushliteral(L, "");
   else if (l_unlikely(l + lsep < l || l + lsep > MAX_SIZE / cast_sizet(n)))
     return luaL_error(L, "resulting string too large");
   else {
@@ -159,10 +159,10 @@ static int str_rep (irin_State *L) {
 }
 
 
-static int str_byte (irin_State *L) {
+static int str_byte (ilya_State *L) {
   size_t l;
   const char *s = luaL_checklstring(L, 1, &l);
-  irin_Integer pi = luaL_optinteger(L, 2, 1);
+  ilya_Integer pi = luaL_optinteger(L, 2, 1);
   size_t posi = posrelatI(pi, l);
   size_t pose = getendpos(L, 3, pi, l);
   int n, i;
@@ -172,19 +172,19 @@ static int str_byte (irin_State *L) {
   n = (int)(pose -  posi) + 1;
   luaL_checkstack(L, n, "string slice too long");
   for (i=0; i<n; i++)
-    irin_pushinteger(L, cast_uchar(s[posi + cast_uint(i) - 1]));
+    ilya_pushinteger(L, cast_uchar(s[posi + cast_uint(i) - 1]));
   return n;
 }
 
 
-static int str_char (irin_State *L) {
-  int n = irin_gettop(L);  /* number of arguments */
+static int str_char (ilya_State *L) {
+  int n = ilya_gettop(L);  /* number of arguments */
   int i;
   luaL_Buffer b;
   char *p = luaL_buffinitsize(L, &b, cast_uint(n));
   for (i=1; i<=n; i++) {
-    irin_Unsigned c = (irin_Unsigned)luaL_checkinteger(L, i);
-    luaL_argcheck(L, c <= (irin_Unsigned)UCHAR_MAX, i, "value out of range");
+    ilya_Unsigned c = (ilya_Unsigned)luaL_checkinteger(L, i);
+    luaL_argcheck(L, c <= (ilya_Unsigned)UCHAR_MAX, i, "value out of range");
     p[i - 1] = cast_char(cast_uchar(c));
   }
   luaL_pushresultsize(&b, cast_uint(n));
@@ -194,8 +194,8 @@ static int str_char (irin_State *L) {
 
 /*
 ** Buffer to store the result of 'string.dump'. It must be initialized
-** after the call to 'irin_dump', to ensure that the fn is on the
-** top of the stack when 'irin_dump' is called. ('luaL_buffinit' might
+** after the call to 'ilya_dump', to ensure that the fn is on the
+** top of the stack when 'ilya_dump' is called. ('luaL_buffinit' might
 ** push stuff.)
 */
 struct str_Writer {
@@ -204,7 +204,7 @@ struct str_Writer {
 };
 
 
-static int writer (irin_State *L, const void *b, size_t size, void *ud) {
+static int writer (ilya_State *L, const void *b, size_t size, void *ud) {
   struct str_Writer *state = (struct str_Writer *)ud;
   if (!state->init) {
     state->init = 1;
@@ -212,7 +212,7 @@ static int writer (irin_State *L, const void *b, size_t size, void *ud) {
   }
   if (b == NULL) {  /* finishing dump? */
     luaL_pushresult(&state->B);  /* push result */
-    irin_replace(L, 1);  /* move it to reserved slot */
+    ilya_replace(L, 1);  /* move it to reserved slot */
   }
   else
     luaL_addlstring(&state->B, (const char *)b, size);
@@ -220,16 +220,16 @@ static int writer (irin_State *L, const void *b, size_t size, void *ud) {
 }
 
 
-static int str_dump (irin_State *L) {
+static int str_dump (ilya_State *L) {
   struct str_Writer state;
-  int strip = irin_toboolean(L, 2);
-  luaL_argcheck(L, irin_type(L, 1) == IRIN_TFUNCTION && !irin_iscfunction(L, 1),
-                   1, "Irin fn expected");
+  int strip = ilya_toboolean(L, 2);
+  luaL_argcheck(L, ilya_type(L, 1) == ILYA_TFUNCTION && !ilya_iscfunction(L, 1),
+                   1, "Ilya fn expected");
   /* ensure fn is on the top of the stack and vacate slot 1 */
-  irin_pushvalue(L, 1);
+  ilya_pushvalue(L, 1);
   state.init = 0;
-  irin_dump(L, writer, &state, strip);
-  irin_settop(L, 1);  /* leave final result on top */
+  ilya_dump(L, writer, &state, strip);
+  ilya_settop(L, 1);  /* leave final result on top */
   return 1;
 }
 
@@ -241,7 +241,7 @@ static int str_dump (irin_State *L) {
 ** =======================================================
 */
 
-#if defined(IRIN_NOCVTS2N)	/* { */
+#if defined(ILYA_NOCVTS2N)	/* { */
 
 /* no coercion from strings to numbers */
 
@@ -252,69 +252,69 @@ static const luaL_Reg stringmetamethods[] = {
 
 #else		/* }{ */
 
-static int tonum (irin_State *L, int arg) {
-  if (irin_type(L, arg) == IRIN_TNUMBER) {  /* already a number? */
-    irin_pushvalue(L, arg);
+static int tonum (ilya_State *L, int arg) {
+  if (ilya_type(L, arg) == ILYA_TNUMBER) {  /* already a number? */
+    ilya_pushvalue(L, arg);
     return 1;
   }
   else {  /* check whether it is a numerical string */
     size_t len;
-    const char *s = irin_tolstring(L, arg, &len);
-    return (s != NULL && irin_stringtonumber(L, s) == len + 1);
+    const char *s = ilya_tolstring(L, arg, &len);
+    return (s != NULL && ilya_stringtonumber(L, s) == len + 1);
   }
 }
 
 
-static void trymt (irin_State *L, const char *mtname) {
-  irin_settop(L, 2);  /* back to the original arguments */
-  if (l_unlikely(irin_type(L, 2) == IRIN_TSTRING ||
+static void trymt (ilya_State *L, const char *mtname) {
+  ilya_settop(L, 2);  /* back to the original arguments */
+  if (l_unlikely(ilya_type(L, 2) == ILYA_TSTRING ||
                  !luaL_getmetafield(L, 2, mtname)))
     luaL_error(L, "attempt to %s a '%s' with a '%s'", mtname + 2,
                   luaL_typename(L, -2), luaL_typename(L, -1));
-  irin_insert(L, -3);  /* put metamethod before arguments */
-  irin_call(L, 2, 1);  /* call metamethod */
+  ilya_insert(L, -3);  /* put metamethod before arguments */
+  ilya_call(L, 2, 1);  /* call metamethod */
 }
 
 
-static int arith (irin_State *L, int op, const char *mtname) {
+static int arith (ilya_State *L, int op, const char *mtname) {
   if (tonum(L, 1) && tonum(L, 2))
-    irin_arith(L, op);  /* result will be on the top */
+    ilya_arith(L, op);  /* result will be on the top */
   else
     trymt(L, mtname);
   return 1;
 }
 
 
-static int arith_add (irin_State *L) {
-  return arith(L, IRIN_OPADD, "__add");
+static int arith_add (ilya_State *L) {
+  return arith(L, ILYA_OPADD, "__add");
 }
 
-static int arith_sub (irin_State *L) {
-  return arith(L, IRIN_OPSUB, "__sub");
+static int arith_sub (ilya_State *L) {
+  return arith(L, ILYA_OPSUB, "__sub");
 }
 
-static int arith_mul (irin_State *L) {
-  return arith(L, IRIN_OPMUL, "__mul");
+static int arith_mul (ilya_State *L) {
+  return arith(L, ILYA_OPMUL, "__mul");
 }
 
-static int arith_mod (irin_State *L) {
-  return arith(L, IRIN_OPMOD, "__mod");
+static int arith_mod (ilya_State *L) {
+  return arith(L, ILYA_OPMOD, "__mod");
 }
 
-static int arith_pow (irin_State *L) {
-  return arith(L, IRIN_OPPOW, "__pow");
+static int arith_pow (ilya_State *L) {
+  return arith(L, ILYA_OPPOW, "__pow");
 }
 
-static int arith_div (irin_State *L) {
-  return arith(L, IRIN_OPDIV, "__div");
+static int arith_div (ilya_State *L) {
+  return arith(L, ILYA_OPDIV, "__div");
 }
 
-static int arith_idiv (irin_State *L) {
-  return arith(L, IRIN_OPIDIV, "__idiv");
+static int arith_idiv (ilya_State *L) {
+  return arith(L, ILYA_OPIDIV, "__idiv");
 }
 
-static int arith_unm (irin_State *L) {
-  return arith(L, IRIN_OPUNM, "__unm");
+static int arith_unm (ilya_State *L) {
+  return arith(L, ILYA_OPUNM, "__unm");
 }
 
 
@@ -350,13 +350,13 @@ typedef struct MatchState {
   const char *src_init;  /* init of source string */
   const char *src_end;  /* end ('\0') of source string */
   const char *p_end;  /* end ('\0') of pattern */
-  irin_State *L;
+  ilya_State *L;
   int matchdepth;  /* control for recursive depth (to avoid C stack overflow) */
   int level;  /* total number of captures (finished or unfinished) */
   struct {
     const char *init;
     ptrdiff_t len;  /* length or special value (CAP_*) */
-  } capture[IRIN_MAXCAPTURES];
+  } capture[ILYA_MAXCAPTURES];
 } MatchState;
 
 
@@ -526,7 +526,7 @@ static const char *start_capture (MatchState *ms, const char *s,
                                     const char *p, int what) {
   const char *res;
   int level = ms->level;
-  if (level >= IRIN_MAXCAPTURES) luaL_error(ms->L, "too many captures");
+  if (level >= ILYA_MAXCAPTURES) luaL_error(ms->L, "too many captures");
   ms->capture[level].init = s;
   ms->capture[level].len = what;
   ms->level = level+1;
@@ -704,7 +704,7 @@ static ptrdiff_t get_onecapture (MatchState *ms, int i, const char *s,
     if (l_unlikely(capl == CAP_UNFINISHED))
       luaL_error(ms->L, "unfinished capture");
     else if (capl == CAP_POSITION)
-      irin_pushinteger(ms->L,
+      ilya_pushinteger(ms->L,
           ct_diff2S(ms->capture[i].init - ms->src_init) + 1);
     return capl;
   }
@@ -719,7 +719,7 @@ static void push_onecapture (MatchState *ms, int i, const char *s,
   const char *cap;
   ptrdiff_t l = get_onecapture(ms, i, s, e, &cap);
   if (l != CAP_POSITION)
-    irin_pushlstring(ms->L, cap, cast_sizet(l));
+    ilya_pushlstring(ms->L, cap, cast_sizet(l));
   /* else position was already pushed */
 }
 
@@ -746,7 +746,7 @@ static int nospecials (const char *p, size_t l) {
 }
 
 
-static void prepstate (MatchState *ms, irin_State *L,
+static void prepstate (MatchState *ms, ilya_State *L,
                        const char *s, size_t ls, const char *p, size_t lp) {
   ms->L = L;
   ms->matchdepth = MAXCCALLS;
@@ -758,11 +758,11 @@ static void prepstate (MatchState *ms, irin_State *L,
 
 static void reprepstate (MatchState *ms) {
   ms->level = 0;
-  irin_assert(ms->matchdepth == MAXCCALLS);
+  ilya_assert(ms->matchdepth == MAXCCALLS);
 }
 
 
-static int str_find_aux (irin_State *L, int find) {
+static int str_find_aux (ilya_State *L, int find) {
   size_t ls, lp;
   const char *s = luaL_checklstring(L, 1, &ls);
   const char *p = luaL_checklstring(L, 2, &lp);
@@ -772,12 +772,12 @@ static int str_find_aux (irin_State *L, int find) {
     return 1;
   }
   /* explicit request or no special characters? */
-  if (find && (irin_toboolean(L, 4) || nospecials(p, lp))) {
+  if (find && (ilya_toboolean(L, 4) || nospecials(p, lp))) {
     /* do a plain search */
     const char *s2 = lmemfind(s + init, ls - init, p, lp);
     if (s2) {
-      irin_pushinteger(L, ct_diff2S(s2 - s) + 1);
-      irin_pushinteger(L, cast_st2S(ct_diff2sz(s2 - s) + lp));
+      ilya_pushinteger(L, ct_diff2S(s2 - s) + 1);
+      ilya_pushinteger(L, cast_st2S(ct_diff2sz(s2 - s) + lp));
       return 2;
     }
   }
@@ -794,8 +794,8 @@ static int str_find_aux (irin_State *L, int find) {
       reprepstate(&ms);
       if ((res=match(&ms, s1, p)) != NULL) {
         if (find) {
-          irin_pushinteger(L, ct_diff2S(s1 - s) + 1);  /* start */
-          irin_pushinteger(L, ct_diff2S(res - s));   /* end */
+          ilya_pushinteger(L, ct_diff2S(s1 - s) + 1);  /* start */
+          ilya_pushinteger(L, ct_diff2S(res - s));   /* end */
           return push_captures(&ms, NULL, 0) + 2;
         }
         else
@@ -808,12 +808,12 @@ static int str_find_aux (irin_State *L, int find) {
 }
 
 
-static int str_find (irin_State *L) {
+static int str_find (ilya_State *L) {
   return str_find_aux(L, 1);
 }
 
 
-static int str_match (irin_State *L) {
+static int str_match (ilya_State *L) {
   return str_find_aux(L, 0);
 }
 
@@ -827,8 +827,8 @@ typedef struct GMatchState {
 } GMatchState;
 
 
-static int gmatch_aux (irin_State *L) {
-  GMatchState *gm = (GMatchState *)irin_touserdata(L, irin_upvalueindex(3));
+static int gmatch_aux (ilya_State *L) {
+  GMatchState *gm = (GMatchState *)ilya_touserdata(L, ilya_upvalueindex(3));
   const char *src;
   gm->ms.L = L;
   for (src = gm->src; src <= gm->ms.src_end; src++) {
@@ -843,19 +843,19 @@ static int gmatch_aux (irin_State *L) {
 }
 
 
-static int gmatch (irin_State *L) {
+static int gmatch (ilya_State *L) {
   size_t ls, lp;
   const char *s = luaL_checklstring(L, 1, &ls);
   const char *p = luaL_checklstring(L, 2, &lp);
   size_t init = posrelatI(luaL_optinteger(L, 3, 1), ls) - 1;
   GMatchState *gm;
-  irin_settop(L, 2);  /* keep strings on closure to avoid being collected */
-  gm = (GMatchState *)irin_newuserdatauv(L, sizeof(GMatchState), 0);
+  ilya_settop(L, 2);  /* keep strings on closure to avoid being collected */
+  gm = (GMatchState *)ilya_newuserdatauv(L, sizeof(GMatchState), 0);
   if (init > ls)  /* start after string's end? */
     init = ls + 1;  /* avoid overflows in 's + init' */
   prepstate(&gm->ms, L, s, ls, p, lp);
   gm->src = s + init; gm->p = p; gm->lastmatch = NULL;
-  irin_pushcclosure(L, gmatch_aux, 3);
+  ilya_pushcclosure(L, gmatch_aux, 3);
   return 1;
 }
 
@@ -863,8 +863,8 @@ static int gmatch (irin_State *L) {
 static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
                                                    const char *e) {
   size_t l;
-  irin_State *L = ms->L;
-  const char *news = irin_tolstring(L, 3, &l);
+  ilya_State *L = ms->L;
+  const char *news = ilya_tolstring(L, 3, &l);
   const char *p;
   while ((p = (char *)memchr(news, L_ESC, l)) != NULL) {
     luaL_addlstring(b, news, ct_diff2sz(p - news));
@@ -897,31 +897,31 @@ static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
 */
 static int add_value (MatchState *ms, luaL_Buffer *b, const char *s,
                                       const char *e, int tr) {
-  irin_State *L = ms->L;
+  ilya_State *L = ms->L;
   switch (tr) {
-    case IRIN_TFUNCTION: {  /* call the fn */
+    case ILYA_TFUNCTION: {  /* call the fn */
       int n;
-      irin_pushvalue(L, 3);  /* push the fn */
+      ilya_pushvalue(L, 3);  /* push the fn */
       n = push_captures(ms, s, e);  /* all captures as arguments */
-      irin_call(L, n, 1);  /* call it */
+      ilya_call(L, n, 1);  /* call it */
       break;
     }
-    case IRIN_TTABLE: {  /* index the table */
+    case ILYA_TTABLE: {  /* index the table */
       push_onecapture(ms, 0, s, e);  /* first capture is the index */
-      irin_gettable(L, 3);
+      ilya_gettable(L, 3);
       break;
     }
-    default: {  /* IRIN_TNUMBER or IRIN_TSTRING */
+    default: {  /* ILYA_TNUMBER or ILYA_TSTRING */
       add_s(ms, b, s, e);  /* add value to the buffer */
       return 1;  /* something changed */
     }
   }
-  if (!irin_toboolean(L, -1)) {  /* nil or false? */
-    irin_pop(L, 1);  /* remove value */
+  if (!ilya_toboolean(L, -1)) {  /* nil or false? */
+    ilya_pop(L, 1);  /* remove value */
     luaL_addlstring(b, s, ct_diff2sz(e - s));  /* keep original text */
     return 0;  /* no changes */
   }
-  else if (l_unlikely(!irin_isstring(L, -1)))
+  else if (l_unlikely(!ilya_isstring(L, -1)))
     return luaL_error(L, "invalid replacement value (a %s)",
                          luaL_typename(L, -1));
   else {
@@ -931,21 +931,21 @@ static int add_value (MatchState *ms, luaL_Buffer *b, const char *s,
 }
 
 
-static int str_gsub (irin_State *L) {
+static int str_gsub (ilya_State *L) {
   size_t srcl, lp;
   const char *src = luaL_checklstring(L, 1, &srcl);  /* subject */
   const char *p = luaL_checklstring(L, 2, &lp);  /* pattern */
   const char *lastmatch = NULL;  /* end of last match */
-  int tr = irin_type(L, 3);  /* replacement type */
+  int tr = ilya_type(L, 3);  /* replacement type */
   /* max replacements */
-  irin_Integer max_s = luaL_optinteger(L, 4, cast_st2S(srcl) + 1);
+  ilya_Integer max_s = luaL_optinteger(L, 4, cast_st2S(srcl) + 1);
   int anchor = (*p == '^');
-  irin_Integer n = 0;  /* replacement count */
+  ilya_Integer n = 0;  /* replacement count */
   int changed = 0;  /* change flag */
   MatchState ms;
   luaL_Buffer b;
-  luaL_argexpected(L, tr == IRIN_TNUMBER || tr == IRIN_TSTRING ||
-                   tr == IRIN_TFUNCTION || tr == IRIN_TTABLE, 3,
+  luaL_argexpected(L, tr == ILYA_TNUMBER || tr == ILYA_TSTRING ||
+                   tr == ILYA_TFUNCTION || tr == ILYA_TTABLE, 3,
                       "string/fn/table");
   luaL_buffinit(L, &b);
   if (anchor) {
@@ -966,12 +966,12 @@ static int str_gsub (irin_State *L) {
     if (anchor) break;
   }
   if (!changed)  /* no changes? */
-    irin_pushvalue(L, 1);  /* return original string */
+    ilya_pushvalue(L, 1);  /* return original string */
   else {  /* something changed */
     luaL_addlstring(&b, src, ct_diff2sz(ms.src_end - src));
     luaL_pushresult(&b);  /* create and return new string */
   }
-  irin_pushinteger(L, n);  /* number of substitutions */
+  ilya_pushinteger(L, n);  /* number of substitutions */
   return 2;
 }
 
@@ -985,13 +985,13 @@ static int str_gsub (irin_State *L) {
 ** =======================================================
 */
 
-#if !defined(irin_number2strx)	/* { */
+#if !defined(ilya_number2strx)	/* { */
 
 /*
 ** Hexadecimal floating-point formatter
 */
 
-#define SIZELENMOD	(sizeof(IRIN_NUMBER_FRMLEN)/sizeof(char))
+#define SIZELENMOD	(sizeof(ILYA_NUMBER_FRMLEN)/sizeof(char))
 
 
 /*
@@ -1006,25 +1006,25 @@ static int str_gsub (irin_State *L) {
 /*
 ** Add integer part of 'x' to buffer and return new 'x'
 */
-static irin_Number adddigit (char *buff, unsigned n, irin_Number x) {
-  irin_Number dd = l_mathop(floor)(x);  /* get integer part from 'x' */
+static ilya_Number adddigit (char *buff, unsigned n, ilya_Number x) {
+  ilya_Number dd = l_mathop(floor)(x);  /* get integer part from 'x' */
   int d = (int)dd;
   buff[n] = cast_char(d < 10 ? d + '0' : d - 10 + 'a');  /* add to buffer */
   return x - dd;  /* return what is left */
 }
 
 
-static int num2straux (char *buff, unsigned sz, irin_Number x) {
+static int num2straux (char *buff, unsigned sz, ilya_Number x) {
   /* if 'inf' or 'NaN', format it like '%g' */
-  if (x != x || x == (irin_Number)HUGE_VAL || x == -(irin_Number)HUGE_VAL)
-    return l_sprintf(buff, sz, IRIN_NUMBER_FMT, (LUAI_UACNUMBER)x);
+  if (x != x || x == (ilya_Number)HUGE_VAL || x == -(ilya_Number)HUGE_VAL)
+    return l_sprintf(buff, sz, ILYA_NUMBER_FMT, (LUAI_UACNUMBER)x);
   else if (x == 0) {  /* can be -0... */
     /* create "0" or "-0" followed by exponent */
-    return l_sprintf(buff, sz, IRIN_NUMBER_FMT "x0p+0", (LUAI_UACNUMBER)x);
+    return l_sprintf(buff, sz, ILYA_NUMBER_FMT "x0p+0", (LUAI_UACNUMBER)x);
   }
   else {
     int e;
-    irin_Number m = l_mathop(frexp)(x, &e);  /* 'x' fraction and exponent */
+    ilya_Number m = l_mathop(frexp)(x, &e);  /* 'x' fraction and exponent */
     unsigned n = 0;  /* character count */
     if (m < 0) {  /* is number negative? */
       buff[n++] = '-';  /* add sign */
@@ -1034,20 +1034,20 @@ static int num2straux (char *buff, unsigned sz, irin_Number x) {
     m = adddigit(buff, n++, m * (1 << L_NBFD));  /* add first digit */
     e -= L_NBFD;  /* this digit goes before the radix point */
     if (m > 0) {  /* more digits? */
-      buff[n++] = irin_getlocaledecpoint();  /* add radix point */
+      buff[n++] = ilya_getlocaledecpoint();  /* add radix point */
       do {  /* add as many digits as needed */
         m = adddigit(buff, n++, m * 16);
       } while (m > 0);
     }
     n += cast_uint(l_sprintf(buff + n, sz - n, "p%+d", e));  /* add exponent */
-    irin_assert(n < sz);
+    ilya_assert(n < sz);
     return cast_int(n);
   }
 }
 
 
-static int irin_number2strx (irin_State *L, char *buff, unsigned sz,
-                            const char *fmt, irin_Number x) {
+static int ilya_number2strx (ilya_State *L, char *buff, unsigned sz,
+                            const char *fmt, ilya_Number x) {
   int n = num2straux(buff, sz, x);
   if (fmt[SIZELENMOD] == 'A') {
     int i;
@@ -1137,24 +1137,24 @@ static void addquoted (luaL_Buffer *b, const char *s, size_t len) {
 
 /*
 ** Serialize a floating-point number in such a way that it can be
-** scanned back by Irin. Use hexadecimal format for "common" numbers
+** scanned back by Ilya. Use hexadecimal format for "common" numbers
 ** (to preserve precision); inf, -inf, and NaN are handled separately.
 ** (NaN cannot be expressed as a numeral, so we write '(0/0)' for it.)
 */
-static int quotefloat (irin_State *L, char *buff, irin_Number n) {
+static int quotefloat (ilya_State *L, char *buff, ilya_Number n) {
   const char *s;  /* for the fixed representations */
-  if (n == (irin_Number)HUGE_VAL)  /* inf? */
+  if (n == (ilya_Number)HUGE_VAL)  /* inf? */
     s = "1e9999";
-  else if (n == -(irin_Number)HUGE_VAL)  /* -inf? */
+  else if (n == -(ilya_Number)HUGE_VAL)  /* -inf? */
     s = "-1e9999";
   else if (n != n)  /* NaN? */
     s = "(0/0)";
   else {  /* format number as hexadecimal */
-    int  nb = irin_number2strx(L, buff, MAX_ITEM,
-                                 "%" IRIN_NUMBER_FRMLEN "a", n);
+    int  nb = ilya_number2strx(L, buff, MAX_ITEM,
+                                 "%" ILYA_NUMBER_FRMLEN "a", n);
     /* ensures that 'buff' string uses a dot as the radix character */
     if (memchr(buff, '.', cast_uint(nb)) == NULL) {  /* no dot? */
-      char point = irin_getlocaledecpoint();  /* try locale point */
+      char point = ilya_getlocaledecpoint();  /* try locale point */
       char *ppoint = (char *)memchr(buff, point, cast_uint(nb));
       if (ppoint) *ppoint = '.';  /* change it to a dot */
     }
@@ -1165,30 +1165,30 @@ static int quotefloat (irin_State *L, char *buff, irin_Number n) {
 }
 
 
-static void addliteral (irin_State *L, luaL_Buffer *b, int arg) {
-  switch (irin_type(L, arg)) {
-    case IRIN_TSTRING: {
+static void addliteral (ilya_State *L, luaL_Buffer *b, int arg) {
+  switch (ilya_type(L, arg)) {
+    case ILYA_TSTRING: {
       size_t len;
-      const char *s = irin_tolstring(L, arg, &len);
+      const char *s = ilya_tolstring(L, arg, &len);
       addquoted(b, s, len);
       break;
     }
-    case IRIN_TNUMBER: {
+    case ILYA_TNUMBER: {
       char *buff = luaL_prepbuffsize(b, MAX_ITEM);
       int nb;
-      if (!irin_isinteger(L, arg))  /* float? */
-        nb = quotefloat(L, buff, irin_tonumber(L, arg));
+      if (!ilya_isinteger(L, arg))  /* float? */
+        nb = quotefloat(L, buff, ilya_tonumber(L, arg));
       else {  /* integers */
-        irin_Integer n = irin_tointeger(L, arg);
-        const char *format = (n == IRIN_MININTEGER)  /* corner case? */
-                           ? "0x%" IRIN_INTEGER_FRMLEN "x"  /* use hex */
-                           : IRIN_INTEGER_FMT;  /* else use default format */
+        ilya_Integer n = ilya_tointeger(L, arg);
+        const char *format = (n == ILYA_MININTEGER)  /* corner case? */
+                           ? "0x%" ILYA_INTEGER_FRMLEN "x"  /* use hex */
+                           : ILYA_INTEGER_FMT;  /* else use default format */
         nb = l_sprintf(buff, MAX_ITEM, format, (LUAI_UACINT)n);
       }
       luaL_addsize(b, cast_uint(nb));
       break;
     }
-    case IRIN_TNIL: case IRIN_TBOOLEAN: {
+    case ILYA_TNIL: case ILYA_TBOOLEAN: {
       luaL_tolstring(L, arg, NULL);
       luaL_addvalue(b);
       break;
@@ -1215,7 +1215,7 @@ static const char *get2digits (const char *s) {
 ** be a valid conversion specifier. 'flags' are the accepted flags;
 ** 'precision' signals whether to accept a precision.
 */
-static void checkformat (irin_State *L, const char *form, const char *flags,
+static void checkformat (ilya_State *L, const char *form, const char *flags,
                                        int precision) {
   const char *spec = form + 1;  /* skip '%' */
   spec += strspn(spec, flags);  /* skip flags */
@@ -1235,7 +1235,7 @@ static void checkformat (irin_State *L, const char *form, const char *flags,
 ** Get a conversion specification and copy it to 'form'.
 ** Return the address of its last character.
 */
-static const char *getformat (irin_State *L, const char *strfrmt,
+static const char *getformat (ilya_State *L, const char *strfrmt,
                                             char *form) {
   /* spans flags, width, and precision ('0' is included as a flag) */
   size_t len = strspn(strfrmt, L_FMTFLAGSF "123456789.");
@@ -1263,8 +1263,8 @@ static void addlenmod (char *form, const char *lenmod) {
 }
 
 
-static int str_format (irin_State *L) {
-  int top = irin_gettop(L);
+static int str_format (ilya_State *L) {
+  int top = ilya_gettop(L);
   int arg = 1;
   size_t sfl;
   const char *strfrmt = luaL_checklstring(L, arg, &sfl);
@@ -1300,16 +1300,16 @@ static int str_format (irin_State *L) {
         case 'o': case 'x': case 'X':
           flags = L_FMTFLAGSX;
          intcase: {
-          irin_Integer n = luaL_checkinteger(L, arg);
+          ilya_Integer n = luaL_checkinteger(L, arg);
           checkformat(L, form, flags, 1);
-          addlenmod(form, IRIN_INTEGER_FRMLEN);
+          addlenmod(form, ILYA_INTEGER_FRMLEN);
           nb = l_sprintf(buff, maxitem, form, (LUAI_UACINT)n);
           break;
         }
         case 'a': case 'A':
           checkformat(L, form, L_FMTFLAGSF, 1);
-          addlenmod(form, IRIN_NUMBER_FRMLEN);
-          nb = irin_number2strx(L, buff, maxitem, form,
+          addlenmod(form, ILYA_NUMBER_FRMLEN);
+          nb = ilya_number2strx(L, buff, maxitem, form,
                                   luaL_checknumber(L, arg));
           break;
         case 'f':
@@ -1317,14 +1317,14 @@ static int str_format (irin_State *L) {
           buff = luaL_prepbuffsize(&b, maxitem);
           /* FALLTHROUGH */
         case 'e': case 'E': case 'g': case 'G': {
-          irin_Number n = luaL_checknumber(L, arg);
+          ilya_Number n = luaL_checknumber(L, arg);
           checkformat(L, form, L_FMTFLAGSF, 1);
-          addlenmod(form, IRIN_NUMBER_FRMLEN);
+          addlenmod(form, ILYA_NUMBER_FRMLEN);
           nb = l_sprintf(buff, maxitem, form, (LUAI_UACNUMBER)n);
           break;
         }
         case 'p': {
-          const void *p = irin_topointer(L, arg);
+          const void *p = ilya_topointer(L, arg);
           checkformat(L, form, L_FMTFLAGSC, 0);
           if (p == NULL) {  /* avoid calling 'printf' with argument NULL */
             p = "(null)";  /* result */
@@ -1353,7 +1353,7 @@ static int str_format (irin_State *L) {
             }
             else {  /* format the string into 'buff' */
               nb = l_sprintf(buff, maxitem, form, s);
-              irin_pop(L, 1);  /* remove result from 'luaL_tolstring' */
+              ilya_pop(L, 1);  /* remove result from 'luaL_tolstring' */
             }
           }
           break;
@@ -1362,7 +1362,7 @@ static int str_format (irin_State *L) {
           return luaL_error(L, "invalid conversion '%s' to 'format'", form);
         }
       }
-      irin_assert(cast_uint(nb) < maxitem);
+      ilya_assert(cast_uint(nb) < maxitem);
       luaL_addsize(&b, cast_uint(nb));
     }
   }
@@ -1394,8 +1394,8 @@ static int str_format (irin_State *L) {
 /* mask for one character (NB 1's) */
 #define MC	((1 << NB) - 1)
 
-/* size of a irin_Integer */
-#define SZINT	((int)sizeof(irin_Integer))
+/* size of a ilya_Integer */
+#define SZINT	((int)sizeof(ilya_Integer))
 
 
 /* dummy union to get native endianness */
@@ -1409,7 +1409,7 @@ static const union {
 ** information to pack/unpack stuff
 */
 typedef struct Header {
-  irin_State *L;
+  ilya_State *L;
   int islittle;
   unsigned maxalign;
 } Header;
@@ -1422,7 +1422,7 @@ typedef enum KOption {
   Kint,		/* signed integers */
   Kuint,	/* unsigned integers */
   Kfloat,	/* single-precision floating-point numbers */
-  Knumber,	/* Irin "native" floating-point numbers */
+  Knumber,	/* Ilya "native" floating-point numbers */
   Kdouble,	/* double-precision floating-point numbers */
   Kchar,	/* fixed-length strings */
   Kstring,	/* strings with prefixed length */
@@ -1468,7 +1468,7 @@ static unsigned getnumlimit (Header *h, const char **fmt, size_t df) {
 /*
 ** Initialize Header
 */
-static void initheader (irin_State *L, Header *h) {
+static void initheader (ilya_State *L, Header *h) {
   h->L = L;
   h->islittle = nativeendian.little;
   h->maxalign = 1;
@@ -1490,11 +1490,11 @@ static KOption getoption (Header *h, const char **fmt, size_t *size) {
     case 'H': *size = sizeof(short); return Kuint;
     case 'l': *size = sizeof(long); return Kint;
     case 'L': *size = sizeof(long); return Kuint;
-    case 'j': *size = sizeof(irin_Integer); return Kint;
-    case 'J': *size = sizeof(irin_Integer); return Kuint;
+    case 'j': *size = sizeof(ilya_Integer); return Kint;
+    case 'J': *size = sizeof(ilya_Integer); return Kuint;
     case 'T': *size = sizeof(size_t); return Kuint;
     case 'f': *size = sizeof(float); return Kfloat;
-    case 'n': *size = sizeof(irin_Number); return Knumber;
+    case 'n': *size = sizeof(ilya_Number); return Knumber;
     case 'd': *size = sizeof(double); return Kdouble;
     case 'i': *size = getnumlimit(h, fmt, sizeof(int)); return Kint;
     case 'I': *size = getnumlimit(h, fmt, sizeof(int)); return Kuint;
@@ -1559,10 +1559,10 @@ static KOption getdetails (Header *h, size_t totalsize, const char **fmt,
 /*
 ** Pack integer 'n' with 'size' bytes and 'islittle' endianness.
 ** The final 'if' handles the case when 'size' is larger than
-** the size of a Irin integer, correcting the extra sign-extension
+** the size of a Ilya integer, correcting the extra sign-extension
 ** bytes if necessary (by default they would be zeros).
 */
-static void packint (luaL_Buffer *b, irin_Unsigned n,
+static void packint (luaL_Buffer *b, ilya_Unsigned n,
                      int islittle, unsigned size, int neg) {
   char *buff = luaL_prepbuffsize(b, size);
   unsigned i;
@@ -1595,14 +1595,14 @@ static void copywithendian (char *dest, const char *src,
 }
 
 
-static int str_pack (irin_State *L) {
+static int str_pack (ilya_State *L) {
   luaL_Buffer b;
   Header h;
   const char *fmt = luaL_checkstring(L, 1);  /* format string */
   int arg = 1;  /* current argument to pack */
   size_t totalsize = 0;  /* accumulate total size of result */
   initheader(L, &h);
-  irin_pushnil(L);  /* mark to separate arguments from string buffer */
+  ilya_pushnil(L);  /* mark to separate arguments from string buffer */
   luaL_buffinit(L, &b);
   while (*fmt != '\0') {
     unsigned ntoalign;
@@ -1616,20 +1616,20 @@ static int str_pack (irin_State *L) {
     arg++;
     switch (opt) {
       case Kint: {  /* signed integers */
-        irin_Integer n = luaL_checkinteger(L, arg);
+        ilya_Integer n = luaL_checkinteger(L, arg);
         if (size < SZINT) {  /* need overflow check? */
-          irin_Integer lim = (irin_Integer)1 << ((size * NB) - 1);
+          ilya_Integer lim = (ilya_Integer)1 << ((size * NB) - 1);
           luaL_argcheck(L, -lim <= n && n < lim, arg, "integer overflow");
         }
-        packint(&b, (irin_Unsigned)n, h.islittle, cast_uint(size), (n < 0));
+        packint(&b, (ilya_Unsigned)n, h.islittle, cast_uint(size), (n < 0));
         break;
       }
       case Kuint: {  /* unsigned integers */
-        irin_Integer n = luaL_checkinteger(L, arg);
+        ilya_Integer n = luaL_checkinteger(L, arg);
         if (size < SZINT)  /* need overflow check? */
-          luaL_argcheck(L, (irin_Unsigned)n < ((irin_Unsigned)1 << (size * NB)),
+          luaL_argcheck(L, (ilya_Unsigned)n < ((ilya_Unsigned)1 << (size * NB)),
                            arg, "unsigned overflow");
-        packint(&b, (irin_Unsigned)n, h.islittle, cast_uint(size), 0);
+        packint(&b, (ilya_Unsigned)n, h.islittle, cast_uint(size), 0);
         break;
       }
       case Kfloat: {  /* C float */
@@ -1640,8 +1640,8 @@ static int str_pack (irin_State *L) {
         luaL_addsize(&b, size);
         break;
       }
-      case Knumber: {  /* Irin float */
-        irin_Number f = luaL_checknumber(L, arg);  /* get argument */
+      case Knumber: {  /* Ilya float */
+        ilya_Number f = luaL_checknumber(L, arg);  /* get argument */
         char *buff = luaL_prepbuffsize(&b, sizeof(f));
         /* move 'f' to final result, correcting endianness if needed */
         copywithendian(buff, (char *)&f, sizeof(f), h.islittle);
@@ -1672,11 +1672,11 @@ static int str_pack (irin_State *L) {
       case Kstring: {  /* strings with length count */
         size_t len;
         const char *s = luaL_checklstring(L, arg, &len);
-        luaL_argcheck(L, size >= sizeof(irin_Unsigned) ||
-                         len < ((irin_Unsigned)1 << (size * NB)),
+        luaL_argcheck(L, size >= sizeof(ilya_Unsigned) ||
+                         len < ((ilya_Unsigned)1 << (size * NB)),
                          arg, "string length does not fit in given size");
         /* pack length */
-        packint(&b, (irin_Unsigned)len, h.islittle, cast_uint(size), 0);
+        packint(&b, (ilya_Unsigned)len, h.islittle, cast_uint(size), 0);
         luaL_addlstring(&b, s, len);
         totalsize += len;
         break;
@@ -1701,7 +1701,7 @@ static int str_pack (irin_State *L) {
 }
 
 
-static int str_packsize (irin_State *L) {
+static int str_packsize (ilya_State *L) {
   Header h;
   const char *fmt = luaL_checkstring(L, 1);  /* format string */
   size_t totalsize = 0;  /* accumulate total size of result */
@@ -1713,50 +1713,50 @@ static int str_packsize (irin_State *L) {
     luaL_argcheck(L, opt != Kstring && opt != Kzstr, 1,
                      "variable-length format");
     size += ntoalign;  /* total space used by option */
-    luaL_argcheck(L, totalsize <= IRIN_MAXINTEGER - size,
+    luaL_argcheck(L, totalsize <= ILYA_MAXINTEGER - size,
                      1, "format result too large");
     totalsize += size;
   }
-  irin_pushinteger(L, cast_st2S(totalsize));
+  ilya_pushinteger(L, cast_st2S(totalsize));
   return 1;
 }
 
 
 /*
 ** Unpack an integer with 'size' bytes and 'islittle' endianness.
-** If size is smaller than the size of a Irin integer and integer
+** If size is smaller than the size of a Ilya integer and integer
 ** is signed, must do sign extension (propagating the sign to the
-** higher bits); if size is larger than the size of a Irin integer,
+** higher bits); if size is larger than the size of a Ilya integer,
 ** it must check the unread bytes to see whether they do not cause an
 ** overflow.
 */
-static irin_Integer unpackint (irin_State *L, const char *str,
+static ilya_Integer unpackint (ilya_State *L, const char *str,
                               int islittle, int size, int issigned) {
-  irin_Unsigned res = 0;
+  ilya_Unsigned res = 0;
   int i;
   int limit = (size  <= SZINT) ? size : SZINT;
   for (i = limit - 1; i >= 0; i--) {
     res <<= NB;
-    res |= (irin_Unsigned)(unsigned char)str[islittle ? i : size - 1 - i];
+    res |= (ilya_Unsigned)(unsigned char)str[islittle ? i : size - 1 - i];
   }
-  if (size < SZINT) {  /* real size smaller than irin_Integer? */
+  if (size < SZINT) {  /* real size smaller than ilya_Integer? */
     if (issigned) {  /* needs sign extension? */
-      irin_Unsigned mask = (irin_Unsigned)1 << (size*NB - 1);
+      ilya_Unsigned mask = (ilya_Unsigned)1 << (size*NB - 1);
       res = ((res ^ mask) - mask);  /* do sign extension */
     }
   }
   else if (size > SZINT) {  /* must check unread bytes */
-    int mask = (!issigned || (irin_Integer)res >= 0) ? 0 : MC;
+    int mask = (!issigned || (ilya_Integer)res >= 0) ? 0 : MC;
     for (i = limit; i < size; i++) {
       if (l_unlikely((unsigned char)str[islittle ? i : size - 1 - i] != mask))
-        luaL_error(L, "%d-byte integer does not fit into Irin Integer", size);
+        luaL_error(L, "%d-byte integer does not fit into Ilya Integer", size);
     }
   }
-  return (irin_Integer)res;
+  return (ilya_Integer)res;
 }
 
 
-static int str_unpack (irin_State *L) {
+static int str_unpack (ilya_State *L) {
   Header h;
   const char *fmt = luaL_checkstring(L, 1);
   size_t ld;
@@ -1778,38 +1778,38 @@ static int str_unpack (irin_State *L) {
     switch (opt) {
       case Kint:
       case Kuint: {
-        irin_Integer res = unpackint(L, data + pos, h.islittle,
+        ilya_Integer res = unpackint(L, data + pos, h.islittle,
                                        cast_int(size), (opt == Kint));
-        irin_pushinteger(L, res);
+        ilya_pushinteger(L, res);
         break;
       }
       case Kfloat: {
         float f;
         copywithendian((char *)&f, data + pos, sizeof(f), h.islittle);
-        irin_pushnumber(L, (irin_Number)f);
+        ilya_pushnumber(L, (ilya_Number)f);
         break;
       }
       case Knumber: {
-        irin_Number f;
+        ilya_Number f;
         copywithendian((char *)&f, data + pos, sizeof(f), h.islittle);
-        irin_pushnumber(L, f);
+        ilya_pushnumber(L, f);
         break;
       }
       case Kdouble: {
         double f;
         copywithendian((char *)&f, data + pos, sizeof(f), h.islittle);
-        irin_pushnumber(L, (irin_Number)f);
+        ilya_pushnumber(L, (ilya_Number)f);
         break;
       }
       case Kchar: {
-        irin_pushlstring(L, data + pos, size);
+        ilya_pushlstring(L, data + pos, size);
         break;
       }
       case Kstring: {
-        irin_Unsigned len = (irin_Unsigned)unpackint(L, data + pos,
+        ilya_Unsigned len = (ilya_Unsigned)unpackint(L, data + pos,
                                           h.islittle, cast_int(size), 0);
         luaL_argcheck(L, len <= ld - pos - size, 2, "data string too short");
-        irin_pushlstring(L, data + pos + size, len);
+        ilya_pushlstring(L, data + pos + size, len);
         pos += len;  /* skip string */
         break;
       }
@@ -1817,7 +1817,7 @@ static int str_unpack (irin_State *L) {
         size_t len = strlen(data + pos);
         luaL_argcheck(L, pos + len < ld, 2,
                          "unfinished string for format 'z'");
-        irin_pushlstring(L, data + pos, len);
+        ilya_pushlstring(L, data + pos, len);
         pos += len + 1;  /* skip string plus final '\0' */
         break;
       }
@@ -1827,7 +1827,7 @@ static int str_unpack (irin_State *L) {
     }
     pos += size;
   }
-  irin_pushinteger(L, cast_st2S(pos) + 1);  /* next position */
+  ilya_pushinteger(L, cast_st2S(pos) + 1);  /* next position */
   return n + 1;
 }
 
@@ -1856,24 +1856,24 @@ static const luaL_Reg strlib[] = {
 };
 
 
-static void createmetatable (irin_State *L) {
+static void createmetatable (ilya_State *L) {
   /* table to be metatable for strings */
   luaL_newlibtable(L, stringmetamethods);
   luaL_setfuncs(L, stringmetamethods, 0);
-  irin_pushliteral(L, "");  /* dummy string */
-  irin_pushvalue(L, -2);  /* copy table */
-  irin_setmetatable(L, -2);  /* set table as metatable for strings */
-  irin_pop(L, 1);  /* pop dummy string */
-  irin_pushvalue(L, -2);  /* get string library */
-  irin_setfield(L, -2, "__index");  /* metatable.__index = string */
-  irin_pop(L, 1);  /* pop metatable */
+  ilya_pushliteral(L, "");  /* dummy string */
+  ilya_pushvalue(L, -2);  /* copy table */
+  ilya_setmetatable(L, -2);  /* set table as metatable for strings */
+  ilya_pop(L, 1);  /* pop dummy string */
+  ilya_pushvalue(L, -2);  /* get string library */
+  ilya_setfield(L, -2, "__index");  /* metatable.__index = string */
+  ilya_pop(L, 1);  /* pop metatable */
 }
 
 
 /*
 ** Open string library
 */
-LUAMOD_API int luaopen_string (irin_State *L) {
+LUAMOD_API int luaopen_string (ilya_State *L) {
   luaL_newlib(L, strlib);
   createmetatable(L);
   return 1;

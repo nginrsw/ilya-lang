@@ -1,5 +1,5 @@
-# Developer's makefile for building Irin
-# see irinconf.h for further customization
+# Developer's makefile for building Ilya
+# see ilyaconf.h for further customization
 
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
@@ -42,7 +42,7 @@ CWARNSC= -Wdeclaration-after-statement \
 CWARNS= $(CWARNSCPP) $(CWARNSC) $(CWARNGCC)
 
 # Some useful compiler options for internal tests:
-# -DLUAI_ASSERT turns on all assertions inside Irin.
+# -DLUAI_ASSERT turns on all assertions inside Ilya.
 # -DHARDSTACKTESTS forces a reallocation of the stack at every point where
 # the stack can be reallocated.
 # -DHARDMEMTESTS forces a full collection at all points where the collector
@@ -97,12 +97,12 @@ AUX_O=	lauxlib.o
 LIB_O=	lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o lstrlib.o \
 	lutf8lib.o loadlib.o lcorolib.o linit.o
 
-IRIN_T=	irin
-IRIN_O=	irin.o
+ILYA_T=	ilya
+ILYA_O=	ilya.o
 
 
-ALL_T= $(CORE_T) $(IRIN_T)
-ALL_O= $(CORE_O) $(IRIN_O) $(AUX_O) $(LIB_O)
+ALL_T= $(CORE_T) $(ILYA_T)
+ALL_O= $(CORE_O) $(ILYA_O) $(AUX_O) $(LIB_O)
 ALL_A= $(CORE_T)
 
 all:	$(ALL_T)
@@ -116,8 +116,8 @@ $(CORE_T): $(CORE_O) $(AUX_O) $(LIB_O)
 	$(AR) $@ $?
 	$(RANLIB) $@
 
-$(IRIN_T): $(IRIN_O) $(CORE_T)
-	$(CC) -o $@ $(MYLDFLAGS) $(IRIN_O) $(CORE_T) $(LIBS) $(MYLIBS) $(DL)
+$(ILYA_T): $(ILYA_O) $(CORE_T)
+	$(CC) -o $@ $(MYLDFLAGS) $(ILYA_O) $(CORE_T) $(LIBS) $(MYLIBS) $(DL)
 
 
 clean:
@@ -142,79 +142,79 @@ $(ALL_O): makefile ltests.h
 # DO NOT EDIT
 # automatically made with 'gcc -MM l*.c'
 
-lapi.o: lapi.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+lapi.o: lapi.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h lgc.h lstring.h \
  ltable.h lundump.h lvm.h
-lauxlib.o: lauxlib.c lprefix.h irin.h irinconf.h lauxlib.h llimits.h
-lbaselib.o: lbaselib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+lauxlib.o: lauxlib.c lprefix.h ilya.h ilyaconf.h lauxlib.h llimits.h
+lbaselib.o: lbaselib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-lcode.o: lcode.c lprefix.h irin.h irinconf.h lcode.h llex.h lobject.h \
+lcode.o: lcode.c lprefix.h ilya.h ilyaconf.h lcode.h llex.h lobject.h \
  llimits.h lzio.h lmem.h lopcodes.h lparser.h ldebug.h lstate.h ltm.h \
  ldo.h lgc.h lstring.h ltable.h lvm.h lopnames.h
-lcorolib.o: lcorolib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+lcorolib.o: lcorolib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-lctype.o: lctype.c lprefix.h lctype.h irin.h irinconf.h llimits.h
-ldblib.o: ldblib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h llimits.h
-ldebug.o: ldebug.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+lctype.o: lctype.c lprefix.h lctype.h ilya.h ilyaconf.h llimits.h
+ldblib.o: ldblib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h llimits.h
+ldebug.o: ldebug.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h lcode.h llex.h lopcodes.h lparser.h \
  ldebug.h ldo.h lfunc.h lstring.h lgc.h ltable.h lvm.h
-ldo.o: ldo.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+ldo.o: ldo.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h lgc.h lopcodes.h \
  lparser.h lstring.h ltable.h lundump.h lvm.h
-ldump.o: ldump.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+ldump.o: ldump.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h lgc.h ltable.h lundump.h
-lfunc.o: lfunc.c lprefix.h irin.h irinconf.h ldebug.h lstate.h lobject.h \
+lfunc.o: lfunc.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h
-lgc.o: lgc.c lprefix.h irin.h irinconf.h ldebug.h lstate.h lobject.h \
+lgc.o: lgc.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h llex.h lstring.h \
  ltable.h
-linit.o: linit.c lprefix.h irin.h irinconf.h irinlib.h lauxlib.h llimits.h
-liolib.o: liolib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h llimits.h
-llex.o: llex.c lprefix.h irin.h irinconf.h lctype.h llimits.h ldebug.h \
+linit.o: linit.c lprefix.h ilya.h ilyaconf.h ilyalib.h lauxlib.h llimits.h
+liolib.o: liolib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h llimits.h
+llex.o: llex.c lprefix.h ilya.h ilyaconf.h lctype.h llimits.h ldebug.h \
  lstate.h lobject.h ltm.h lzio.h lmem.h ldo.h lgc.h llex.h lparser.h \
  lstring.h ltable.h
-lmathlib.o: lmathlib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+lmathlib.o: lmathlib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-lmem.o: lmem.c lprefix.h irin.h irinconf.h ldebug.h lstate.h lobject.h \
+lmem.o: lmem.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lgc.h
-loadlib.o: loadlib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+loadlib.o: loadlib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-lobject.o: lobject.c lprefix.h irin.h irinconf.h lctype.h llimits.h \
+lobject.o: lobject.c lprefix.h ilya.h ilyaconf.h lctype.h llimits.h \
  ldebug.h lstate.h lobject.h ltm.h lzio.h lmem.h ldo.h lstring.h lgc.h \
  lvm.h
-lopcodes.o: lopcodes.c lprefix.h lopcodes.h llimits.h irin.h irinconf.h \
+lopcodes.o: lopcodes.c lprefix.h lopcodes.h llimits.h ilya.h ilyaconf.h \
  lobject.h
-loslib.o: loslib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h llimits.h
-lparser.o: lparser.c lprefix.h irin.h irinconf.h lcode.h llex.h lobject.h \
+loslib.o: loslib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h llimits.h
+lparser.o: lparser.c lprefix.h ilya.h ilyaconf.h lcode.h llex.h lobject.h \
  llimits.h lzio.h lmem.h lopcodes.h lparser.h ldebug.h lstate.h ltm.h \
  ldo.h lfunc.h lstring.h lgc.h ltable.h
-lstate.o: lstate.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+lstate.o: lstate.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h lgc.h llex.h \
  lstring.h ltable.h
-lstring.o: lstring.c lprefix.h irin.h irinconf.h ldebug.h lstate.h \
+lstring.o: lstring.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h \
  lobject.h llimits.h ltm.h lzio.h lmem.h ldo.h lstring.h lgc.h
-lstrlib.o: lstrlib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+lstrlib.o: lstrlib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-ltable.o: ltable.c lprefix.h irin.h irinconf.h ldebug.h lstate.h lobject.h \
+ltable.o: ltable.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lgc.h lstring.h ltable.h lvm.h
-ltablib.o: ltablib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+ltablib.o: ltablib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-ltests.o: ltests.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+ltests.o: ltests.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h lauxlib.h lcode.h llex.h lopcodes.h \
  lparser.h lctype.h ldebug.h ldo.h lfunc.h lopnames.h lstring.h lgc.h \
- ltable.h irinlib.h
-ltm.o: ltm.c lprefix.h irin.h irinconf.h ldebug.h lstate.h lobject.h \
+ ltable.h ilyalib.h
+ltm.o: ltm.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h lobject.h \
  llimits.h ltm.h lzio.h lmem.h ldo.h lgc.h lstring.h ltable.h lvm.h
-irin.o: irin.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h llimits.h
-lundump.o: lundump.c lprefix.h irin.h irinconf.h ldebug.h lstate.h \
+ilya.o: ilya.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h llimits.h
+lundump.o: lundump.c lprefix.h ilya.h ilyaconf.h ldebug.h lstate.h \
  lobject.h llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lstring.h lgc.h \
  ltable.h lundump.h
-lutf8lib.o: lutf8lib.c lprefix.h irin.h irinconf.h lauxlib.h irinlib.h \
+lutf8lib.o: lutf8lib.c lprefix.h ilya.h ilyaconf.h lauxlib.h ilyalib.h \
  llimits.h
-lvm.o: lvm.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+lvm.o: lvm.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h lgc.h lopcodes.h \
  lstring.h ltable.h lvm.h ljumptab.h
-lzio.o: lzio.c lprefix.h irin.h irinconf.h lapi.h llimits.h lstate.h \
+lzio.o: lzio.c lprefix.h ilya.h ilyaconf.h lapi.h llimits.h lstate.h \
  lobject.h ltm.h lzio.h lmem.h
 
 # (end of Makefile)

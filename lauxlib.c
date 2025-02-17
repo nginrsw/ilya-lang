@@ -1,11 +1,11 @@
 /*
 ** $Id: lauxlib.c $
-** Auxiliary functions for building Irin libraries
-** See Copyright Notice in irin.h
+** Auxiliary functions for building Ilya libraries
+** See Copyright Notice in ilya.h
 */
 
 #define lauxlib_c
-#define IRIN_LIB
+#define ILYA_LIB
 
 #include "lprefix.h"
 
@@ -18,11 +18,11 @@
 
 
 /*
-** This file uses only the official API of Irin.
+** This file uses only the official API of Ilya.
 ** Any fn declared here could be written as an application fn.
 */
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lauxlib.h"
 #include "llimits.h"
@@ -44,25 +44,25 @@
 ** Search for 'objidx' in table at index -1. ('objidx' must be an
 ** absolute index.) Return 1 + string at top if it found a good name.
 */
-static int findfield (irin_State *L, int objidx, int level) {
-  if (level == 0 || !irin_istable(L, -1))
+static int findfield (ilya_State *L, int objidx, int level) {
+  if (level == 0 || !ilya_istable(L, -1))
     return 0;  /* not found */
-  irin_pushnil(L);  /* start 'next' loop */
-  while (irin_next(L, -2)) {  /* for each pair in table */
-    if (irin_type(L, -2) == IRIN_TSTRING) {  /* ignore non-string keys */
-      if (irin_rawequal(L, objidx, -1)) {  /* found object? */
-        irin_pop(L, 1);  /* remove value (but keep name) */
+  ilya_pushnil(L);  /* start 'next' loop */
+  while (ilya_next(L, -2)) {  /* for each pair in table */
+    if (ilya_type(L, -2) == ILYA_TSTRING) {  /* ignore non-string keys */
+      if (ilya_rawequal(L, objidx, -1)) {  /* found object? */
+        ilya_pop(L, 1);  /* remove value (but keep name) */
         return 1;
       }
       else if (findfield(L, objidx, level - 1)) {  /* try recursively */
         /* stack: lib_name, lib_table, field_name (top) */
-        irin_pushliteral(L, ".");  /* place '.' between the two names */
-        irin_replace(L, -3);  /* (in the slot occupied by table) */
-        irin_concat(L, 3);  /* lib_name.field_name */
+        ilya_pushliteral(L, ".");  /* place '.' between the two names */
+        ilya_replace(L, -3);  /* (in the slot occupied by table) */
+        ilya_concat(L, 3);  /* lib_name.field_name */
         return 1;
       }
     }
-    irin_pop(L, 1);  /* remove value */
+    ilya_pop(L, 1);  /* remove value */
   }
   return 0;  /* not found */
 }
@@ -71,63 +71,63 @@ static int findfield (irin_State *L, int objidx, int level) {
 /*
 ** Search for a name for a fn in all loaded modules
 */
-static int pushglobalfuncname (irin_State *L, irin_Debug *ar) {
-  int top = irin_gettop(L);
-  irin_getinfo(L, "f", ar);  /* push fn */
-  irin_getfield(L, IRIN_REGISTRYINDEX, IRIN_LOADED_TABLE);
+static int pushglobalfuncname (ilya_State *L, ilya_Debug *ar) {
+  int top = ilya_gettop(L);
+  ilya_getinfo(L, "f", ar);  /* push fn */
+  ilya_getfield(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
   luaL_checkstack(L, 6, "not enough stack");  /* slots for 'findfield' */
   if (findfield(L, top + 1, 2)) {
-    const char *name = irin_tostring(L, -1);
-    if (strncmp(name, IRIN_GNAME ".", 3) == 0) {  /* name start with '_G.'? */
-      irin_pushstring(L, name + 3);  /* push name without prefix */
-      irin_remove(L, -2);  /* remove original name */
+    const char *name = ilya_tostring(L, -1);
+    if (strncmp(name, ILYA_GNAME ".", 3) == 0) {  /* name start with '_G.'? */
+      ilya_pushstring(L, name + 3);  /* push name without prefix */
+      ilya_remove(L, -2);  /* remove original name */
     }
-    irin_copy(L, -1, top + 1);  /* copy name to proper place */
-    irin_settop(L, top + 1);  /* remove table "loaded" and name copy */
+    ilya_copy(L, -1, top + 1);  /* copy name to proper place */
+    ilya_settop(L, top + 1);  /* remove table "loaded" and name copy */
     return 1;
   }
   else {
-    irin_settop(L, top);  /* remove fn and global table */
+    ilya_settop(L, top);  /* remove fn and global table */
     return 0;
   }
 }
 
 
-static void pushfuncname (irin_State *L, irin_Debug *ar) {
+static void pushfuncname (ilya_State *L, ilya_Debug *ar) {
   if (pushglobalfuncname(L, ar)) {  /* try first a global name */
-    irin_pushfstring(L, "fn '%s'", irin_tostring(L, -1));
-    irin_remove(L, -2);  /* remove name */
+    ilya_pushfstring(L, "fn '%s'", ilya_tostring(L, -1));
+    ilya_remove(L, -2);  /* remove name */
   }
   else if (*ar->namewhat != '\0')  /* is there a name from code? */
-    irin_pushfstring(L, "%s '%s'", ar->namewhat, ar->name);  /* use it */
+    ilya_pushfstring(L, "%s '%s'", ar->namewhat, ar->name);  /* use it */
   else if (*ar->what == 'm')  /* main? */
-      irin_pushliteral(L, "main chunk");
-  else if (*ar->what != 'C')  /* for Irin functions, use <file:line> */
-    irin_pushfstring(L, "fn <%s:%d>", ar->short_src, ar->linedefined);
+      ilya_pushliteral(L, "main chunk");
+  else if (*ar->what != 'C')  /* for Ilya functions, use <file:line> */
+    ilya_pushfstring(L, "fn <%s:%d>", ar->short_src, ar->linedefined);
   else  /* nothing left... */
-    irin_pushliteral(L, "?");
+    ilya_pushliteral(L, "?");
 }
 
 
-static int lastlevel (irin_State *L) {
-  irin_Debug ar;
+static int lastlevel (ilya_State *L) {
+  ilya_Debug ar;
   int li = 1, le = 1;
   /* find an upper bound */
-  while (irin_getstack(L, le, &ar)) { li = le; le *= 2; }
+  while (ilya_getstack(L, le, &ar)) { li = le; le *= 2; }
   /* do a binary search */
   while (li < le) {
     int m = (li + le)/2;
-    if (irin_getstack(L, m, &ar)) li = m + 1;
+    if (ilya_getstack(L, m, &ar)) li = m + 1;
     else le = m;
   }
   return le - 1;
 }
 
 
-LUALIB_API void luaL_traceback (irin_State *L, irin_State *L1,
+LUALIB_API void luaL_traceback (ilya_State *L, ilya_State *L1,
                                 const char *msg, int level) {
   luaL_Buffer b;
-  irin_Debug ar;
+  ilya_Debug ar;
   int last = lastlevel(L1);
   int limit2show = (last - level > LEVELS1 + LEVELS2) ? LEVELS1 : -1;
   luaL_buffinit(L, &b);
@@ -136,19 +136,19 @@ LUALIB_API void luaL_traceback (irin_State *L, irin_State *L1,
     luaL_addchar(&b, '\n');
   }
   luaL_addstring(&b, "stack traceback:");
-  while (irin_getstack(L1, level++, &ar)) {
+  while (ilya_getstack(L1, level++, &ar)) {
     if (limit2show-- == 0) {  /* too many levels? */
       int n = last - level - LEVELS2 + 1;  /* number of levels to skip */
-      irin_pushfstring(L, "\n\t...\t(skipping %d levels)", n);
+      ilya_pushfstring(L, "\n\t...\t(skipping %d levels)", n);
       luaL_addvalue(&b);  /* add warning about skip */
       level += n;  /* and skip to last levels */
     }
     else {
-      irin_getinfo(L1, "Slnt", &ar);
+      ilya_getinfo(L1, "Slnt", &ar);
       if (ar.currentline <= 0)
-        irin_pushfstring(L, "\n\t%s: in ", ar.short_src);
+        ilya_pushfstring(L, "\n\t%s: in ", ar.short_src);
       else
-        irin_pushfstring(L, "\n\t%s:%d: in ", ar.short_src, ar.currentline);
+        ilya_pushfstring(L, "\n\t%s:%d: in ", ar.short_src, ar.currentline);
       luaL_addvalue(&b);
       pushfuncname(L, &ar);
       luaL_addvalue(&b);
@@ -168,12 +168,12 @@ LUALIB_API void luaL_traceback (irin_State *L, irin_State *L1,
 ** =======================================================
 */
 
-LUALIB_API int luaL_argerror (irin_State *L, int arg, const char *extramsg) {
-  irin_Debug ar;
+LUALIB_API int luaL_argerror (ilya_State *L, int arg, const char *extramsg) {
+  ilya_Debug ar;
   const char *argword;
-  if (!irin_getstack(L, 0, &ar))  /* no stack frame? */
+  if (!ilya_getstack(L, 0, &ar))  /* no stack frame? */
     return luaL_error(L, "bad argument #%d (%s)", arg, extramsg);
-  irin_getinfo(L, "nt", &ar);
+  ilya_getinfo(L, "nt", &ar);
   if (arg <= ar.extraargs)  /* error in an extra argument? */
     argword =  "extra argument";
   else {
@@ -188,68 +188,68 @@ LUALIB_API int luaL_argerror (irin_State *L, int arg, const char *extramsg) {
     argword = "argument";
   }
   if (ar.name == NULL)
-    ar.name = (pushglobalfuncname(L, &ar)) ? irin_tostring(L, -1) : "?";
+    ar.name = (pushglobalfuncname(L, &ar)) ? ilya_tostring(L, -1) : "?";
   return luaL_error(L, "bad %s #%d to '%s' (%s)",
                        argword, arg, ar.name, extramsg);
 }
 
 
-LUALIB_API int luaL_typeerror (irin_State *L, int arg, const char *tname) {
+LUALIB_API int luaL_typeerror (ilya_State *L, int arg, const char *tname) {
   const char *msg;
   const char *typearg;  /* name for the type of the actual argument */
-  if (luaL_getmetafield(L, arg, "__name") == IRIN_TSTRING)
-    typearg = irin_tostring(L, -1);  /* use the given type name */
-  else if (irin_type(L, arg) == IRIN_TLIGHTUSERDATA)
+  if (luaL_getmetafield(L, arg, "__name") == ILYA_TSTRING)
+    typearg = ilya_tostring(L, -1);  /* use the given type name */
+  else if (ilya_type(L, arg) == ILYA_TLIGHTUSERDATA)
     typearg = "light userdata";  /* special name for messages */
   else
     typearg = luaL_typename(L, arg);  /* standard name */
-  msg = irin_pushfstring(L, "%s expected, got %s", tname, typearg);
+  msg = ilya_pushfstring(L, "%s expected, got %s", tname, typearg);
   return luaL_argerror(L, arg, msg);
 }
 
 
-static void tag_error (irin_State *L, int arg, int tag) {
-  luaL_typeerror(L, arg, irin_typename(L, tag));
+static void tag_error (ilya_State *L, int arg, int tag) {
+  luaL_typeerror(L, arg, ilya_typename(L, tag));
 }
 
 
 /*
-** The use of 'irin_pushfstring' ensures this fn does not
+** The use of 'ilya_pushfstring' ensures this fn does not
 ** need reserved stack space when called.
 */
-LUALIB_API void luaL_where (irin_State *L, int level) {
-  irin_Debug ar;
-  if (irin_getstack(L, level, &ar)) {  /* check fn at level */
-    irin_getinfo(L, "Sl", &ar);  /* get info about it */
+LUALIB_API void luaL_where (ilya_State *L, int level) {
+  ilya_Debug ar;
+  if (ilya_getstack(L, level, &ar)) {  /* check fn at level */
+    ilya_getinfo(L, "Sl", &ar);  /* get info about it */
     if (ar.currentline > 0) {  /* is there info? */
-      irin_pushfstring(L, "%s:%d: ", ar.short_src, ar.currentline);
+      ilya_pushfstring(L, "%s:%d: ", ar.short_src, ar.currentline);
       return;
     }
   }
-  irin_pushfstring(L, "");  /* else, no information available... */
+  ilya_pushfstring(L, "");  /* else, no information available... */
 }
 
 
 /*
-** Again, the use of 'irin_pushvfstring' ensures this fn does
+** Again, the use of 'ilya_pushvfstring' ensures this fn does
 ** not need reserved stack space when called. (At worst, it generates
 ** a memory error instead of the given message.)
 */
-LUALIB_API int luaL_error (irin_State *L, const char *fmt, ...) {
+LUALIB_API int luaL_error (ilya_State *L, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
   luaL_where(L, 1);
-  irin_pushvfstring(L, fmt, argp);
+  ilya_pushvfstring(L, fmt, argp);
   va_end(argp);
-  irin_concat(L, 2);
-  return irin_error(L);
+  ilya_concat(L, 2);
+  return ilya_error(L);
 }
 
 
-LUALIB_API int luaL_fileresult (irin_State *L, int stat, const char *fname) {
-  int en = errno;  /* calls to Irin API may change this value */
+LUALIB_API int luaL_fileresult (ilya_State *L, int stat, const char *fname) {
+  int en = errno;  /* calls to Ilya API may change this value */
   if (stat) {
-    irin_pushboolean(L, 1);
+    ilya_pushboolean(L, 1);
     return 1;
   }
   else {
@@ -257,10 +257,10 @@ LUALIB_API int luaL_fileresult (irin_State *L, int stat, const char *fname) {
     luaL_pushfail(L);
     msg = (en != 0) ? strerror(en) : "(no extra info)";
     if (fname)
-      irin_pushfstring(L, "%s: %s", fname, msg);
+      ilya_pushfstring(L, "%s: %s", fname, msg);
     else
-      irin_pushstring(L, msg);
-    irin_pushinteger(L, en);
+      ilya_pushstring(L, msg);
+    ilya_pushinteger(L, en);
     return 3;
   }
 }
@@ -268,7 +268,7 @@ LUALIB_API int luaL_fileresult (irin_State *L, int stat, const char *fname) {
 
 #if !defined(l_inspectstat)	/* { */
 
-#if defined(IRIN_USE_POSIX)
+#if defined(ILYA_USE_POSIX)
 
 #include <sys/wait.h>
 
@@ -288,18 +288,18 @@ LUALIB_API int luaL_fileresult (irin_State *L, int stat, const char *fname) {
 #endif				/* } */
 
 
-LUALIB_API int luaL_execresult (irin_State *L, int stat) {
+LUALIB_API int luaL_execresult (ilya_State *L, int stat) {
   if (stat != 0 && errno != 0)  /* error with an 'errno'? */
     return luaL_fileresult(L, 0, NULL);
   else {
     const char *what = "exit";  /* type of termination */
     l_inspectstat(stat, what);  /* interpret result */
     if (*what == 'e' && stat == 0)  /* successful termination? */
-      irin_pushboolean(L, 1);
+      ilya_pushboolean(L, 1);
     else
       luaL_pushfail(L);
-    irin_pushstring(L, what);
-    irin_pushinteger(L, stat);
+    ilya_pushstring(L, what);
+    ilya_pushinteger(L, stat);
     return 3;  /* return true/fail,what,code */
   }
 }
@@ -314,33 +314,33 @@ LUALIB_API int luaL_execresult (irin_State *L, int stat) {
 ** =======================================================
 */
 
-LUALIB_API int luaL_newmetatable (irin_State *L, const char *tname) {
-  if (luaL_getmetatable(L, tname) != IRIN_TNIL)  /* name already in use? */
+LUALIB_API int luaL_newmetatable (ilya_State *L, const char *tname) {
+  if (luaL_getmetatable(L, tname) != ILYA_TNIL)  /* name already in use? */
     return 0;  /* leave previous value on top, but return 0 */
-  irin_pop(L, 1);
-  irin_createtable(L, 0, 2);  /* create metatable */
-  irin_pushstring(L, tname);
-  irin_setfield(L, -2, "__name");  /* metatable.__name = tname */
-  irin_pushvalue(L, -1);
-  irin_setfield(L, IRIN_REGISTRYINDEX, tname);  /* registry.name = metatable */
+  ilya_pop(L, 1);
+  ilya_createtable(L, 0, 2);  /* create metatable */
+  ilya_pushstring(L, tname);
+  ilya_setfield(L, -2, "__name");  /* metatable.__name = tname */
+  ilya_pushvalue(L, -1);
+  ilya_setfield(L, ILYA_REGISTRYINDEX, tname);  /* registry.name = metatable */
   return 1;
 }
 
 
-LUALIB_API void luaL_setmetatable (irin_State *L, const char *tname) {
+LUALIB_API void luaL_setmetatable (ilya_State *L, const char *tname) {
   luaL_getmetatable(L, tname);
-  irin_setmetatable(L, -2);
+  ilya_setmetatable(L, -2);
 }
 
 
-LUALIB_API void *luaL_testudata (irin_State *L, int ud, const char *tname) {
-  void *p = irin_touserdata(L, ud);
+LUALIB_API void *luaL_testudata (ilya_State *L, int ud, const char *tname) {
+  void *p = ilya_touserdata(L, ud);
   if (p != NULL) {  /* value is a userdata? */
-    if (irin_getmetatable(L, ud)) {  /* does it have a metatable? */
+    if (ilya_getmetatable(L, ud)) {  /* does it have a metatable? */
       luaL_getmetatable(L, tname);  /* get correct metatable */
-      if (!irin_rawequal(L, -1, -2))  /* not the same? */
+      if (!ilya_rawequal(L, -1, -2))  /* not the same? */
         p = NULL;  /* value is a userdata with wrong metatable */
-      irin_pop(L, 2);  /* remove both metatables */
+      ilya_pop(L, 2);  /* remove both metatables */
       return p;
     }
   }
@@ -348,7 +348,7 @@ LUALIB_API void *luaL_testudata (irin_State *L, int ud, const char *tname) {
 }
 
 
-LUALIB_API void *luaL_checkudata (irin_State *L, int ud, const char *tname) {
+LUALIB_API void *luaL_checkudata (ilya_State *L, int ud, const char *tname) {
   void *p = luaL_testudata(L, ud, tname);
   luaL_argexpected(L, p != NULL, ud, tname);
   return p;
@@ -363,7 +363,7 @@ LUALIB_API void *luaL_checkudata (irin_State *L, int ud, const char *tname) {
 ** =======================================================
 */
 
-LUALIB_API int luaL_checkoption (irin_State *L, int arg, const char *def,
+LUALIB_API int luaL_checkoption (ilya_State *L, int arg, const char *def,
                                  const char *const lst[]) {
   const char *name = (def) ? luaL_optstring(L, arg, def) :
                              luaL_checkstring(L, arg);
@@ -372,7 +372,7 @@ LUALIB_API int luaL_checkoption (irin_State *L, int arg, const char *def,
     if (strcmp(lst[i], name) == 0)
       return i;
   return luaL_argerror(L, arg,
-                       irin_pushfstring(L, "invalid option '%s'", name));
+                       ilya_pushfstring(L, "invalid option '%s'", name));
 }
 
 
@@ -380,11 +380,11 @@ LUALIB_API int luaL_checkoption (irin_State *L, int arg, const char *def,
 ** Ensures the stack has at least 'space' extra slots, raising an error
 ** if it cannot fulfill the request. (The error handling needs a few
 ** extra slots to format the error message. In case of an error without
-** this extra space, Irin will generate the same 'stack overflow' error,
+** this extra space, Ilya will generate the same 'stack overflow' error,
 ** but without 'msg'.)
 */
-LUALIB_API void luaL_checkstack (irin_State *L, int space, const char *msg) {
-  if (l_unlikely(!irin_checkstack(L, space))) {
+LUALIB_API void luaL_checkstack (ilya_State *L, int space, const char *msg) {
+  if (l_unlikely(!ilya_checkstack(L, space))) {
     if (msg)
       luaL_error(L, "stack overflow (%s)", msg);
     else
@@ -393,28 +393,28 @@ LUALIB_API void luaL_checkstack (irin_State *L, int space, const char *msg) {
 }
 
 
-LUALIB_API void luaL_checktype (irin_State *L, int arg, int t) {
-  if (l_unlikely(irin_type(L, arg) != t))
+LUALIB_API void luaL_checktype (ilya_State *L, int arg, int t) {
+  if (l_unlikely(ilya_type(L, arg) != t))
     tag_error(L, arg, t);
 }
 
 
-LUALIB_API void luaL_checkany (irin_State *L, int arg) {
-  if (l_unlikely(irin_type(L, arg) == IRIN_TNONE))
+LUALIB_API void luaL_checkany (ilya_State *L, int arg) {
+  if (l_unlikely(ilya_type(L, arg) == ILYA_TNONE))
     luaL_argerror(L, arg, "value expected");
 }
 
 
-LUALIB_API const char *luaL_checklstring (irin_State *L, int arg, size_t *len) {
-  const char *s = irin_tolstring(L, arg, len);
-  if (l_unlikely(!s)) tag_error(L, arg, IRIN_TSTRING);
+LUALIB_API const char *luaL_checklstring (ilya_State *L, int arg, size_t *len) {
+  const char *s = ilya_tolstring(L, arg, len);
+  if (l_unlikely(!s)) tag_error(L, arg, ILYA_TSTRING);
   return s;
 }
 
 
-LUALIB_API const char *luaL_optlstring (irin_State *L, int arg,
+LUALIB_API const char *luaL_optlstring (ilya_State *L, int arg,
                                         const char *def, size_t *len) {
-  if (irin_isnoneornil(L, arg)) {
+  if (ilya_isnoneornil(L, arg)) {
     if (len)
       *len = (def ? strlen(def) : 0);
     return def;
@@ -423,31 +423,31 @@ LUALIB_API const char *luaL_optlstring (irin_State *L, int arg,
 }
 
 
-LUALIB_API irin_Number luaL_checknumber (irin_State *L, int arg) {
+LUALIB_API ilya_Number luaL_checknumber (ilya_State *L, int arg) {
   int isnum;
-  irin_Number d = irin_tonumberx(L, arg, &isnum);
+  ilya_Number d = ilya_tonumberx(L, arg, &isnum);
   if (l_unlikely(!isnum))
-    tag_error(L, arg, IRIN_TNUMBER);
+    tag_error(L, arg, ILYA_TNUMBER);
   return d;
 }
 
 
-LUALIB_API irin_Number luaL_optnumber (irin_State *L, int arg, irin_Number def) {
+LUALIB_API ilya_Number luaL_optnumber (ilya_State *L, int arg, ilya_Number def) {
   return luaL_opt(L, luaL_checknumber, arg, def);
 }
 
 
-static void interror (irin_State *L, int arg) {
-  if (irin_isnumber(L, arg))
+static void interror (ilya_State *L, int arg) {
+  if (ilya_isnumber(L, arg))
     luaL_argerror(L, arg, "number has no integer representation");
   else
-    tag_error(L, arg, IRIN_TNUMBER);
+    tag_error(L, arg, ILYA_TNUMBER);
 }
 
 
-LUALIB_API irin_Integer luaL_checkinteger (irin_State *L, int arg) {
+LUALIB_API ilya_Integer luaL_checkinteger (ilya_State *L, int arg) {
   int isnum;
-  irin_Integer d = irin_tointegerx(L, arg, &isnum);
+  ilya_Integer d = ilya_tointegerx(L, arg, &isnum);
   if (l_unlikely(!isnum)) {
     interror(L, arg);
   }
@@ -455,8 +455,8 @@ LUALIB_API irin_Integer luaL_checkinteger (irin_State *L, int arg) {
 }
 
 
-LUALIB_API irin_Integer luaL_optinteger (irin_State *L, int arg,
-                                                      irin_Integer def) {
+LUALIB_API ilya_Integer luaL_optinteger (ilya_State *L, int arg,
+                                                      ilya_Integer def) {
   return luaL_opt(L, luaL_checkinteger, arg, def);
 }
 
@@ -481,17 +481,17 @@ typedef struct UBox {
 ** to 0 even after it was closed. 'pushresult' may also resize it to a
 ** final size that is equal to the one set when the buffer was created.)
 */
-static void *resizebox (irin_State *L, int idx, size_t newsize) {
-  UBox *box = (UBox *)irin_touserdata(L, idx);
+static void *resizebox (ilya_State *L, int idx, size_t newsize) {
+  UBox *box = (UBox *)ilya_touserdata(L, idx);
   if (box->bsize == newsize)  /* not changing size? */
     return box->box;  /* keep the buffer */
   else {
     void *ud;
-    irin_Alloc allocf = irin_getallocf(L, &ud);
+    ilya_Alloc allocf = ilya_getallocf(L, &ud);
     void *temp = allocf(ud, box->box, box->bsize, newsize);
     if (l_unlikely(temp == NULL && newsize > 0)) {  /* allocation error? */
-      irin_pushliteral(L, "not enough memory");
-      irin_error(L);  /* raise a memory error */
+      ilya_pushliteral(L, "not enough memory");
+      ilya_error(L);  /* raise a memory error */
     }
     box->box = temp;
     box->bsize = newsize;
@@ -500,7 +500,7 @@ static void *resizebox (irin_State *L, int idx, size_t newsize) {
 }
 
 
-static int boxgc (irin_State *L) {
+static int boxgc (ilya_State *L) {
   resizebox(L, 1, 0);
   return 0;
 }
@@ -513,13 +513,13 @@ static const luaL_Reg boxmt[] = {  /* box metamethods */
 };
 
 
-static void newbox (irin_State *L) {
-  UBox *box = (UBox *)irin_newuserdatauv(L, sizeof(UBox), 0);
+static void newbox (ilya_State *L) {
+  UBox *box = (UBox *)ilya_newuserdatauv(L, sizeof(UBox), 0);
   box->box = NULL;
   box->bsize = 0;
   if (luaL_newmetatable(L, "_UBOX*"))  /* creating metatable? */
     luaL_setfuncs(L, boxmt, 0);  /* set its metamethods */
-  irin_setmetatable(L, -2);
+  ilya_setmetatable(L, -2);
 }
 
 
@@ -535,8 +535,8 @@ static void newbox (irin_State *L) {
 ** cannot be NULL) or it is a placeholder for the buffer.
 */
 #define checkbufferlevel(B,idx)  \
-  irin_assert(buffonstack(B) ? irin_touserdata(B->L, idx) != NULL  \
-                            : irin_touserdata(B->L, idx) == (void*)B)
+  ilya_assert(buffonstack(B) ? ilya_touserdata(B->L, idx) != NULL  \
+                            : ilya_touserdata(B->L, idx) == (void*)B)
 
 
 /*
@@ -566,17 +566,17 @@ static char *prepbuffsize (luaL_Buffer *B, size_t sz, int boxidx) {
   if (B->size - B->n >= sz)  /* enough space? */
     return B->b + B->n;
   else {
-    irin_State *L = B->L;
+    ilya_State *L = B->L;
     char *newbuff;
     size_t newsize = newbuffsize(B, sz);
     /* create larger buffer */
     if (buffonstack(B))  /* buffer already has a box? */
       newbuff = (char *)resizebox(L, boxidx, newsize);  /* resize it */
     else {  /* no box yet */
-      irin_remove(L, boxidx);  /* remove placeholder */
+      ilya_remove(L, boxidx);  /* remove placeholder */
       newbox(L);  /* create a new box */
-      irin_insert(L, boxidx);  /* move box to its intended position */
-      irin_toclose(L, boxidx);
+      ilya_insert(L, boxidx);  /* move box to its intended position */
+      ilya_toclose(L, boxidx);
       newbuff = (char *)resizebox(L, boxidx, newsize);
       memcpy(newbuff, B->b, B->n * sizeof(char));  /* copy original content */
     }
@@ -609,26 +609,26 @@ LUALIB_API void luaL_addstring (luaL_Buffer *B, const char *s) {
 
 
 LUALIB_API void luaL_pushresult (luaL_Buffer *B) {
-  irin_State *L = B->L;
+  ilya_State *L = B->L;
   checkbufferlevel(B, -1);
   if (!buffonstack(B))  /* using static buffer? */
-    irin_pushlstring(L, B->b, B->n);  /* save result as regular string */
+    ilya_pushlstring(L, B->b, B->n);  /* save result as regular string */
   else {  /* reuse buffer already allocated */
-    UBox *box = (UBox *)irin_touserdata(L, -1);
+    UBox *box = (UBox *)ilya_touserdata(L, -1);
     void *ud;
-    irin_Alloc allocf = irin_getallocf(L, &ud);  /* fn to free buffer */
+    ilya_Alloc allocf = ilya_getallocf(L, &ud);  /* fn to free buffer */
     size_t len = B->n;  /* final string length */
     char *s;
     resizebox(L, -1, len + 1);  /* adjust box size to content size */
     s = (char*)box->box;  /* final buffer address */
     s[len] = '\0';  /* add ending zero */
-    /* clear box, as Irin will take control of the buffer */
+    /* clear box, as Ilya will take control of the buffer */
     box->bsize = 0;  box->box = NULL;
-    irin_pushexternalstring(L, s, len, allocf, ud);
-    irin_closeslot(L, -2);  /* close the box */
-    irin_gc(L, IRIN_GCSTEP, len);
+    ilya_pushexternalstring(L, s, len, allocf, ud);
+    ilya_closeslot(L, -2);  /* close the box */
+    ilya_gc(L, ILYA_GCSTEP, len);
   }
-  irin_remove(L, -2);  /* remove box or placeholder from the stack */
+  ilya_remove(L, -2);  /* remove box or placeholder from the stack */
 }
 
 
@@ -648,26 +648,26 @@ LUALIB_API void luaL_pushresultsize (luaL_Buffer *B, size_t sz) {
 ** stack before we have the space guaranteed.)
 */
 LUALIB_API void luaL_addvalue (luaL_Buffer *B) {
-  irin_State *L = B->L;
+  ilya_State *L = B->L;
   size_t len;
-  const char *s = irin_tolstring(L, -1, &len);
+  const char *s = ilya_tolstring(L, -1, &len);
   char *b = prepbuffsize(B, len, -2);
   memcpy(b, s, len * sizeof(char));
   luaL_addsize(B, len);
-  irin_pop(L, 1);  /* pop string */
+  ilya_pop(L, 1);  /* pop string */
 }
 
 
-LUALIB_API void luaL_buffinit (irin_State *L, luaL_Buffer *B) {
+LUALIB_API void luaL_buffinit (ilya_State *L, luaL_Buffer *B) {
   B->L = L;
   B->b = B->init.b;
   B->n = 0;
   B->size = LUAL_BUFFERSIZE;
-  irin_pushlightuserdata(L, (void*)B);  /* push placeholder */
+  ilya_pushlightuserdata(L, (void*)B);  /* push placeholder */
 }
 
 
-LUALIB_API char *luaL_buffinitsize (irin_State *L, luaL_Buffer *B, size_t sz) {
+LUALIB_API char *luaL_buffinitsize (ilya_State *L, luaL_Buffer *B, size_t sz) {
   luaL_buffinit(L, B);
   return prepbuffsize(B, sz, -1);
 }
@@ -686,41 +686,41 @@ LUALIB_API char *luaL_buffinitsize (irin_State *L, luaL_Buffer *B, size_t sz) {
 ** of a first free index, t[t[1]] is the index of the second element,
 ** etc. A zero signals the end of the list.
 */
-LUALIB_API int luaL_ref (irin_State *L, int t) {
+LUALIB_API int luaL_ref (ilya_State *L, int t) {
   int ref;
-  if (irin_isnil(L, -1)) {
-    irin_pop(L, 1);  /* remove from stack */
-    return IRIN_REFNIL;  /* 'nil' has a unique fixed reference */
+  if (ilya_isnil(L, -1)) {
+    ilya_pop(L, 1);  /* remove from stack */
+    return ILYA_REFNIL;  /* 'nil' has a unique fixed reference */
   }
-  t = irin_absindex(L, t);
-  if (irin_rawgeti(L, t, 1) == IRIN_TNUMBER)  /* already initialized? */
-    ref = (int)irin_tointeger(L, -1);  /* ref = t[1] */
+  t = ilya_absindex(L, t);
+  if (ilya_rawgeti(L, t, 1) == ILYA_TNUMBER)  /* already initialized? */
+    ref = (int)ilya_tointeger(L, -1);  /* ref = t[1] */
   else {  /* first access */
-    irin_assert(!irin_toboolean(L, -1));  /* must be nil or false */
+    ilya_assert(!ilya_toboolean(L, -1));  /* must be nil or false */
     ref = 0;  /* list is empty */
-    irin_pushinteger(L, 0);  /* initialize as an empty list */
-    irin_rawseti(L, t, 1);  /* ref = t[1] = 0 */
+    ilya_pushinteger(L, 0);  /* initialize as an empty list */
+    ilya_rawseti(L, t, 1);  /* ref = t[1] = 0 */
   }
-  irin_pop(L, 1);  /* remove element from stack */
+  ilya_pop(L, 1);  /* remove element from stack */
   if (ref != 0) {  /* any free element? */
-    irin_rawgeti(L, t, ref);  /* remove it from list */
-    irin_rawseti(L, t, 1);  /* (t[1] = t[ref]) */
+    ilya_rawgeti(L, t, ref);  /* remove it from list */
+    ilya_rawseti(L, t, 1);  /* (t[1] = t[ref]) */
   }
   else  /* no free elements */
-    ref = (int)irin_rawlen(L, t) + 1;  /* get a new reference */
-  irin_rawseti(L, t, ref);
+    ref = (int)ilya_rawlen(L, t) + 1;  /* get a new reference */
+  ilya_rawseti(L, t, ref);
   return ref;
 }
 
 
-LUALIB_API void luaL_unref (irin_State *L, int t, int ref) {
+LUALIB_API void luaL_unref (ilya_State *L, int t, int ref) {
   if (ref >= 0) {
-    t = irin_absindex(L, t);
-    irin_rawgeti(L, t, 1);
-    irin_assert(irin_isinteger(L, -1));
-    irin_rawseti(L, t, ref);  /* t[ref] = t[1] */
-    irin_pushinteger(L, ref);
-    irin_rawseti(L, t, 1);  /* t[1] = ref */
+    t = ilya_absindex(L, t);
+    ilya_rawgeti(L, t, 1);
+    ilya_assert(ilya_isinteger(L, -1));
+    ilya_rawseti(L, t, ref);  /* t[ref] = t[1] */
+    ilya_pushinteger(L, ref);
+    ilya_rawseti(L, t, 1);  /* t[1] = ref */
   }
 }
 
@@ -740,7 +740,7 @@ typedef struct LoadF {
 } LoadF;
 
 
-static const char *getF (irin_State *L, void *ud, size_t *size) {
+static const char *getF (ilya_State *L, void *ud, size_t *size) {
   LoadF *lf = (LoadF *)ud;
   (void)L;  /* not used */
   if (lf->n > 0) {  /* are there pre-read characters to be read? */
@@ -758,15 +758,15 @@ static const char *getF (irin_State *L, void *ud, size_t *size) {
 }
 
 
-static int errfile (irin_State *L, const char *what, int fnameindex) {
+static int errfile (ilya_State *L, const char *what, int fnameindex) {
   int err = errno;
-  const char *filename = irin_tostring(L, fnameindex) + 1;
+  const char *filename = ilya_tostring(L, fnameindex) + 1;
   if (err != 0)
-    irin_pushfstring(L, "cannot %s %s: %s", what, filename, strerror(err));
+    ilya_pushfstring(L, "cannot %s %s: %s", what, filename, strerror(err));
   else
-    irin_pushfstring(L, "cannot %s %s", what, filename);
-  irin_remove(L, fnameindex);
-  return IRIN_ERRFILE;
+    ilya_pushfstring(L, "cannot %s %s", what, filename);
+  ilya_remove(L, fnameindex);
+  return ILYA_ERRFILE;
 }
 
 
@@ -805,18 +805,18 @@ static int skipcomment (FILE *f, int *cp) {
 }
 
 
-LUALIB_API int luaL_loadfilex (irin_State *L, const char *filename,
+LUALIB_API int luaL_loadfilex (ilya_State *L, const char *filename,
                                              const char *mode) {
   LoadF lf;
   int status, readstatus;
   int c;
-  int fnameindex = irin_gettop(L) + 1;  /* index of filename on the stack */
+  int fnameindex = ilya_gettop(L) + 1;  /* index of filename on the stack */
   if (filename == NULL) {
-    irin_pushliteral(L, "=stdin");
+    ilya_pushliteral(L, "=stdin");
     lf.f = stdin;
   }
   else {
-    irin_pushfstring(L, "@%s", filename);
+    ilya_pushfstring(L, "@%s", filename);
     errno = 0;
     lf.f = fopen(filename, "r");
     if (lf.f == NULL) return errfile(L, "open", fnameindex);
@@ -824,7 +824,7 @@ LUALIB_API int luaL_loadfilex (irin_State *L, const char *filename,
   lf.n = 0;
   if (skipcomment(lf.f, &c))  /* read initial portion */
     lf.buff[lf.n++] = '\n';  /* add newline to correct line numbers */
-  if (c == IRIN_SIGNATURE[0]) {  /* binary file? */
+  if (c == ILYA_SIGNATURE[0]) {  /* binary file? */
     lf.n = 0;  /* remove possible newline */
     if (filename) {  /* "real" file? */
       errno = 0;
@@ -835,15 +835,15 @@ LUALIB_API int luaL_loadfilex (irin_State *L, const char *filename,
   }
   if (c != EOF)
     lf.buff[lf.n++] = cast_char(c);  /* 'c' is the first character */
-  status = irin_load(L, getF, &lf, irin_tostring(L, -1), mode);
+  status = ilya_load(L, getF, &lf, ilya_tostring(L, -1), mode);
   readstatus = ferror(lf.f);
   errno = 0;  /* no useful error number until here */
   if (filename) fclose(lf.f);  /* close file (even in case of errors) */
   if (readstatus) {
-    irin_settop(L, fnameindex);  /* ignore results from 'irin_load' */
+    ilya_settop(L, fnameindex);  /* ignore results from 'ilya_load' */
     return errfile(L, "read", fnameindex);
   }
-  irin_remove(L, fnameindex);
+  ilya_remove(L, fnameindex);
   return status;
 }
 
@@ -854,7 +854,7 @@ typedef struct LoadS {
 } LoadS;
 
 
-static const char *getS (irin_State *L, void *ud, size_t *size) {
+static const char *getS (ilya_State *L, void *ud, size_t *size) {
   LoadS *ls = (LoadS *)ud;
   (void)L;  /* not used */
   if (ls->size == 0) return NULL;
@@ -864,16 +864,16 @@ static const char *getS (irin_State *L, void *ud, size_t *size) {
 }
 
 
-LUALIB_API int luaL_loadbufferx (irin_State *L, const char *buff, size_t size,
+LUALIB_API int luaL_loadbufferx (ilya_State *L, const char *buff, size_t size,
                                  const char *name, const char *mode) {
   LoadS ls;
   ls.s = buff;
   ls.size = size;
-  return irin_load(L, getS, &ls, name, mode);
+  return ilya_load(L, getS, &ls, name, mode);
 }
 
 
-LUALIB_API int luaL_loadstring (irin_State *L, const char *s) {
+LUALIB_API int luaL_loadstring (ilya_State *L, const char *s) {
   return luaL_loadbuffer(L, s, strlen(s), s);
 }
 
@@ -881,79 +881,79 @@ LUALIB_API int luaL_loadstring (irin_State *L, const char *s) {
 
 
 
-LUALIB_API int luaL_getmetafield (irin_State *L, int obj, const char *event) {
-  if (!irin_getmetatable(L, obj))  /* no metatable? */
-    return IRIN_TNIL;
+LUALIB_API int luaL_getmetafield (ilya_State *L, int obj, const char *event) {
+  if (!ilya_getmetatable(L, obj))  /* no metatable? */
+    return ILYA_TNIL;
   else {
     int tt;
-    irin_pushstring(L, event);
-    tt = irin_rawget(L, -2);
-    if (tt == IRIN_TNIL)  /* is metafield nil? */
-      irin_pop(L, 2);  /* remove metatable and metafield */
+    ilya_pushstring(L, event);
+    tt = ilya_rawget(L, -2);
+    if (tt == ILYA_TNIL)  /* is metafield nil? */
+      ilya_pop(L, 2);  /* remove metatable and metafield */
     else
-      irin_remove(L, -2);  /* remove only metatable */
+      ilya_remove(L, -2);  /* remove only metatable */
     return tt;  /* return metafield type */
   }
 }
 
 
-LUALIB_API int luaL_callmeta (irin_State *L, int obj, const char *event) {
-  obj = irin_absindex(L, obj);
-  if (luaL_getmetafield(L, obj, event) == IRIN_TNIL)  /* no metafield? */
+LUALIB_API int luaL_callmeta (ilya_State *L, int obj, const char *event) {
+  obj = ilya_absindex(L, obj);
+  if (luaL_getmetafield(L, obj, event) == ILYA_TNIL)  /* no metafield? */
     return 0;
-  irin_pushvalue(L, obj);
-  irin_call(L, 1, 1);
+  ilya_pushvalue(L, obj);
+  ilya_call(L, 1, 1);
   return 1;
 }
 
 
-LUALIB_API irin_Integer luaL_len (irin_State *L, int idx) {
-  irin_Integer l;
+LUALIB_API ilya_Integer luaL_len (ilya_State *L, int idx) {
+  ilya_Integer l;
   int isnum;
-  irin_len(L, idx);
-  l = irin_tointegerx(L, -1, &isnum);
+  ilya_len(L, idx);
+  l = ilya_tointegerx(L, -1, &isnum);
   if (l_unlikely(!isnum))
     luaL_error(L, "object length is not an integer");
-  irin_pop(L, 1);  /* remove object */
+  ilya_pop(L, 1);  /* remove object */
   return l;
 }
 
 
-LUALIB_API const char *luaL_tolstring (irin_State *L, int idx, size_t *len) {
-  idx = irin_absindex(L,idx);
+LUALIB_API const char *luaL_tolstring (ilya_State *L, int idx, size_t *len) {
+  idx = ilya_absindex(L,idx);
   if (luaL_callmeta(L, idx, "__tostring")) {  /* metafield? */
-    if (!irin_isstring(L, -1))
+    if (!ilya_isstring(L, -1))
       luaL_error(L, "'__tostring' must return a string");
   }
   else {
-    switch (irin_type(L, idx)) {
-      case IRIN_TNUMBER: {
-        char buff[IRIN_N2SBUFFSZ];
-        irin_numbertocstring(L, idx, buff);
-        irin_pushstring(L, buff);
+    switch (ilya_type(L, idx)) {
+      case ILYA_TNUMBER: {
+        char buff[ILYA_N2SBUFFSZ];
+        ilya_numbertocstring(L, idx, buff);
+        ilya_pushstring(L, buff);
         break;
       }
-      case IRIN_TSTRING:
-        irin_pushvalue(L, idx);
+      case ILYA_TSTRING:
+        ilya_pushvalue(L, idx);
         break;
-      case IRIN_TBOOLEAN:
-        irin_pushstring(L, (irin_toboolean(L, idx) ? "true" : "false"));
+      case ILYA_TBOOLEAN:
+        ilya_pushstring(L, (ilya_toboolean(L, idx) ? "true" : "false"));
         break;
-      case IRIN_TNIL:
-        irin_pushliteral(L, "nil");
+      case ILYA_TNIL:
+        ilya_pushliteral(L, "nil");
         break;
       default: {
         int tt = luaL_getmetafield(L, idx, "__name");  /* try name */
-        const char *kind = (tt == IRIN_TSTRING) ? irin_tostring(L, -1) :
+        const char *kind = (tt == ILYA_TSTRING) ? ilya_tostring(L, -1) :
                                                  luaL_typename(L, idx);
-        irin_pushfstring(L, "%s: %p", kind, irin_topointer(L, idx));
-        if (tt != IRIN_TNIL)
-          irin_remove(L, -2);  /* remove '__name' */
+        ilya_pushfstring(L, "%s: %p", kind, ilya_topointer(L, idx));
+        if (tt != ILYA_TNIL)
+          ilya_remove(L, -2);  /* remove '__name' */
         break;
       }
     }
   }
-  return irin_tolstring(L, -1, len);
+  return ilya_tolstring(L, -1, len);
 }
 
 
@@ -962,20 +962,20 @@ LUALIB_API const char *luaL_tolstring (irin_State *L, int idx, size_t *len) {
 ** fn gets the 'nup' elements at the top as upvalues.
 ** Returns with only the table at the stack.
 */
-LUALIB_API void luaL_setfuncs (irin_State *L, const luaL_Reg *l, int nup) {
+LUALIB_API void luaL_setfuncs (ilya_State *L, const luaL_Reg *l, int nup) {
   luaL_checkstack(L, nup, "too many upvalues");
   for (; l->name != NULL; l++) {  /* fill the table with given functions */
     if (l->func == NULL)  /* placeholder? */
-      irin_pushboolean(L, 0);
+      ilya_pushboolean(L, 0);
     else {
       int i;
       for (i = 0; i < nup; i++)  /* copy upvalues to the top */
-        irin_pushvalue(L, -nup);
-      irin_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
+        ilya_pushvalue(L, -nup);
+      ilya_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
     }
-    irin_setfield(L, -(nup + 2), l->name);
+    ilya_setfield(L, -(nup + 2), l->name);
   }
-  irin_pop(L, nup);  /* remove upvalues */
+  ilya_pop(L, nup);  /* remove upvalues */
 }
 
 
@@ -983,15 +983,15 @@ LUALIB_API void luaL_setfuncs (irin_State *L, const luaL_Reg *l, int nup) {
 ** ensure that stack[idx][fname] has a table and push that table
 ** into the stack
 */
-LUALIB_API int luaL_getsubtable (irin_State *L, int idx, const char *fname) {
-  if (irin_getfield(L, idx, fname) == IRIN_TTABLE)
+LUALIB_API int luaL_getsubtable (ilya_State *L, int idx, const char *fname) {
+  if (ilya_getfield(L, idx, fname) == ILYA_TTABLE)
     return 1;  /* table already there */
   else {
-    irin_pop(L, 1);  /* remove previous result */
-    idx = irin_absindex(L, idx);
-    irin_newtable(L);
-    irin_pushvalue(L, -1);  /* copy to be left at top */
-    irin_setfield(L, idx, fname);  /* assign new table to field */
+    ilya_pop(L, 1);  /* remove previous result */
+    idx = ilya_absindex(L, idx);
+    ilya_newtable(L);
+    ilya_pushvalue(L, -1);  /* copy to be left at top */
+    ilya_setfield(L, idx, fname);  /* assign new table to field */
     return 0;  /* false, because did not find table there */
   }
 }
@@ -1003,22 +1003,22 @@ LUALIB_API int luaL_getsubtable (irin_State *L, int idx, const char *fname) {
 ** if 'glb' is true, also registers the result in the global table.
 ** Leaves resulting module on the top.
 */
-LUALIB_API void luaL_requiref (irin_State *L, const char *modname,
-                               irin_CFunction openf, int glb) {
-  luaL_getsubtable(L, IRIN_REGISTRYINDEX, IRIN_LOADED_TABLE);
-  irin_getfield(L, -1, modname);  /* LOADED[modname] */
-  if (!irin_toboolean(L, -1)) {  /* package not already loaded? */
-    irin_pop(L, 1);  /* remove field */
-    irin_pushcfunction(L, openf);
-    irin_pushstring(L, modname);  /* argument to open fn */
-    irin_call(L, 1, 1);  /* call 'openf' to open module */
-    irin_pushvalue(L, -1);  /* make copy of module (call result) */
-    irin_setfield(L, -3, modname);  /* LOADED[modname] = module */
+LUALIB_API void luaL_requiref (ilya_State *L, const char *modname,
+                               ilya_CFunction openf, int glb) {
+  luaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
+  ilya_getfield(L, -1, modname);  /* LOADED[modname] */
+  if (!ilya_toboolean(L, -1)) {  /* package not already loaded? */
+    ilya_pop(L, 1);  /* remove field */
+    ilya_pushcfunction(L, openf);
+    ilya_pushstring(L, modname);  /* argument to open fn */
+    ilya_call(L, 1, 1);  /* call 'openf' to open module */
+    ilya_pushvalue(L, -1);  /* make copy of module (call result) */
+    ilya_setfield(L, -3, modname);  /* LOADED[modname] = module */
   }
-  irin_remove(L, -2);  /* remove LOADED table */
+  ilya_remove(L, -2);  /* remove LOADED table */
   if (glb) {
-    irin_pushvalue(L, -1);  /* copy of module */
-    irin_setglobal(L, modname);  /* _G[modname] = module */
+    ilya_pushvalue(L, -1);  /* copy of module */
+    ilya_setglobal(L, modname);  /* _G[modname] = module */
   }
 }
 
@@ -1036,13 +1036,13 @@ LUALIB_API void luaL_addgsub (luaL_Buffer *b, const char *s,
 }
 
 
-LUALIB_API const char *luaL_gsub (irin_State *L, const char *s,
+LUALIB_API const char *luaL_gsub (ilya_State *L, const char *s,
                                   const char *p, const char *r) {
   luaL_Buffer b;
   luaL_buffinit(L, &b);
   luaL_addgsub(&b, s, p, r);
   luaL_pushresult(&b);
-  return irin_tostring(L, -1);
+  return ilya_tostring(L, -1);
 }
 
 
@@ -1059,15 +1059,15 @@ static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
 
 /*
 ** Standard panic fn just prints an error message. The test
-** with 'irin_type' avoids possible memory errors in 'irin_tostring'.
+** with 'ilya_type' avoids possible memory errors in 'ilya_tostring'.
 */
-static int panic (irin_State *L) {
-  const char *msg = (irin_type(L, -1) == IRIN_TSTRING)
-                  ? irin_tostring(L, -1)
+static int panic (ilya_State *L) {
+  const char *msg = (ilya_type(L, -1) == ILYA_TSTRING)
+                  ? ilya_tostring(L, -1)
                   : "error object is not a string";
-  irin_writestringerror("PANIC: unprotected error in call to Irin API (%s)\n",
+  ilya_writestringerror("PANIC: unprotected error in call to Ilya API (%s)\n",
                         msg);
-  return 0;  /* return to Irin to abort */
+  return 0;  /* return to Ilya to abort */
 }
 
 
@@ -1086,21 +1086,21 @@ static void warnfcont (void *ud, const char *message, int tocont);
 ** Check whether message is a control message. If so, execute the
 ** control or ignore it if unknown.
 */
-static int checkcontrol (irin_State *L, const char *message, int tocont) {
+static int checkcontrol (ilya_State *L, const char *message, int tocont) {
   if (tocont || *(message++) != '@')  /* not a control message? */
     return 0;
   else {
     if (strcmp(message, "off") == 0)
-      irin_setwarnf(L, warnfoff, L);  /* turn warnings off */
+      ilya_setwarnf(L, warnfoff, L);  /* turn warnings off */
     else if (strcmp(message, "on") == 0)
-      irin_setwarnf(L, warnfon, L);   /* turn warnings on */
+      ilya_setwarnf(L, warnfon, L);   /* turn warnings on */
     return 1;  /* it was a control message */
   }
 }
 
 
 static void warnfoff (void *ud, const char *message, int tocont) {
-  checkcontrol((irin_State *)ud, message, tocont);
+  checkcontrol((ilya_State *)ud, message, tocont);
 }
 
 
@@ -1109,21 +1109,21 @@ static void warnfoff (void *ud, const char *message, int tocont) {
 ** if needed and setting the next warn fn.
 */
 static void warnfcont (void *ud, const char *message, int tocont) {
-  irin_State *L = (irin_State *)ud;
-  irin_writestringerror("%s", message);  /* write message */
+  ilya_State *L = (ilya_State *)ud;
+  ilya_writestringerror("%s", message);  /* write message */
   if (tocont)  /* not the last part? */
-    irin_setwarnf(L, warnfcont, L);  /* to be continued */
+    ilya_setwarnf(L, warnfcont, L);  /* to be continued */
   else {  /* last part */
-    irin_writestringerror("%s", "\n");  /* finish message with end-of-line */
-    irin_setwarnf(L, warnfon, L);  /* next call is a new message */
+    ilya_writestringerror("%s", "\n");  /* finish message with end-of-line */
+    ilya_setwarnf(L, warnfon, L);  /* next call is a new message */
   }
 }
 
 
 static void warnfon (void *ud, const char *message, int tocont) {
-  if (checkcontrol((irin_State *)ud, message, tocont))  /* control message? */
+  if (checkcontrol((ilya_State *)ud, message, tocont))  /* control message? */
     return;  /* nothing else to be done */
-  irin_writestringerror("%s", "Irin warning: ");  /* start a new warning */
+  ilya_writestringerror("%s", "Ilya warning: ");  /* start a new warning */
   warnfcont(ud, message, tocont);  /* finish processing */
 }
 
@@ -1171,28 +1171,28 @@ static unsigned int luai_makeseed (void) {
 #endif
 
 
-LUALIB_API unsigned int luaL_makeseed (irin_State *L) {
+LUALIB_API unsigned int luaL_makeseed (ilya_State *L) {
   (void)L;  /* unused */
   return luai_makeseed();
 }
 
 
-LUALIB_API irin_State *luaL_newstate (void) {
-  irin_State *L = irin_newstate(l_alloc, NULL, luai_makeseed());
+LUALIB_API ilya_State *luaL_newstate (void) {
+  ilya_State *L = ilya_newstate(l_alloc, NULL, luai_makeseed());
   if (l_likely(L)) {
-    irin_atpanic(L, &panic);
-    irin_setwarnf(L, warnfoff, L);  /* default is warnings off */
+    ilya_atpanic(L, &panic);
+    ilya_setwarnf(L, warnfoff, L);  /* default is warnings off */
   }
   return L;
 }
 
 
-LUALIB_API void luaL_checkversion_ (irin_State *L, irin_Number ver, size_t sz) {
-  irin_Number v = irin_version(L);
+LUALIB_API void luaL_checkversion_ (ilya_State *L, ilya_Number ver, size_t sz) {
+  ilya_Number v = ilya_version(L);
   if (sz != LUAL_NUMSIZES)  /* check numeric types */
     luaL_error(L, "core and library have incompatible numeric types");
   else if (v != ver)
-    luaL_error(L, "version mismatch: app. needs %f, Irin core provides %f",
+    luaL_error(L, "version mismatch: app. needs %f, Ilya core provides %f",
                   (LUAI_UACNUMBER)ver, (LUAI_UACNUMBER)v);
 }
 

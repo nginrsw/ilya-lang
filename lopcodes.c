@@ -1,11 +1,11 @@
 /*
 ** $Id: lopcodes.c $
-** Opcodes for Irin virtual machine
-** See Copyright Notice in irin.h
+** Opcodes for Ilya virtual machine
+** See Copyright Notice in ilya.h
 */
 
 #define lopcodes_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 

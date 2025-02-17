@@ -1,14 +1,14 @@
 /*
 ** $Id: lzio.h $
 ** Buffered streams
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 
 #ifndef lzio_h
 #define lzio_h
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lmem.h"
 
@@ -44,7 +44,7 @@ typedef struct Mbuffer {
 #define luaZ_freebuffer(L, buff)	luaZ_resizebuffer(L, buff, 0)
 
 
-LUAI_FUNC void luaZ_init (irin_State *L, ZIO *z, irin_Reader reader,
+LUAI_FUNC void luaZ_init (ilya_State *L, ZIO *z, ilya_Reader reader,
                                         void *data);
 LUAI_FUNC size_t luaZ_read (ZIO* z, void *b, size_t n);	/* read next n bytes */
 
@@ -56,9 +56,9 @@ LUAI_FUNC const void *luaZ_getaddr (ZIO* z, size_t n);
 struct Zio {
   size_t n;			/* bytes still unread */
   const char *p;		/* current position in buffer */
-  irin_Reader reader;		/* reader fn */
+  ilya_Reader reader;		/* reader fn */
   void *data;			/* additional data */
-  irin_State *L;			/* Irin state (for reader) */
+  ilya_State *L;			/* Ilya state (for reader) */
 };
 
 

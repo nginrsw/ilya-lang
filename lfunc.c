@@ -1,18 +1,18 @@
 /*
 ** $Id: lfunc.c $
 ** Auxiliary functions to manipulate prototypes and closures
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lfunc_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 
 #include <stddef.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "ldebug.h"
 #include "ldo.h"
@@ -24,16 +24,16 @@
 
 
 
-CClosure *luaF_newCclosure (irin_State *L, int nupvals) {
-  GCObject *o = luaC_newobj(L, IRIN_VCCL, sizeCclosure(nupvals));
+CClosure *luaF_newCclosure (ilya_State *L, int nupvals) {
+  GCObject *o = luaC_newobj(L, ILYA_VCCL, sizeCclosure(nupvals));
   CClosure *c = gco2ccl(o);
   c->nupvalues = cast_byte(nupvals);
   return c;
 }
 
 
-LClosure *luaF_newLclosure (irin_State *L, int nupvals) {
-  GCObject *o = luaC_newobj(L, IRIN_VLCL, sizeLclosure(nupvals));
+LClosure *luaF_newLclosure (ilya_State *L, int nupvals) {
+  GCObject *o = luaC_newobj(L, ILYA_VLCL, sizeLclosure(nupvals));
   LClosure *c = gco2lcl(o);
   c->p = NULL;
   c->nupvalues = cast_byte(nupvals);
@@ -45,10 +45,10 @@ LClosure *luaF_newLclosure (irin_State *L, int nupvals) {
 /*
 ** fill a closure with new closed upvalues
 */
-void luaF_initupvals (irin_State *L, LClosure *cl) {
+void luaF_initupvals (ilya_State *L, LClosure *cl) {
   int i;
   for (i = 0; i < cl->nupvalues; i++) {
-    GCObject *o = luaC_newobj(L, IRIN_VUPVAL, sizeof(UpVal));
+    GCObject *o = luaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
     UpVal *uv = gco2upv(o);
     uv->v.p = &uv->u.value;  /* make it closed */
     setnilvalue(uv->v.p);
@@ -62,8 +62,8 @@ void luaF_initupvals (irin_State *L, LClosure *cl) {
 ** Create a new upvalue at the given level, and link it to the list of
 ** open upvalues of 'L' after entry 'prev'.
 **/
-static UpVal *newupval (irin_State *L, StkId level, UpVal **prev) {
-  GCObject *o = luaC_newobj(L, IRIN_VUPVAL, sizeof(UpVal));
+static UpVal *newupval (ilya_State *L, StkId level, UpVal **prev) {
+  GCObject *o = luaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
   UpVal *uv = gco2upv(o);
   UpVal *next = *prev;
   uv->v.p = s2v(level);  /* current value lives in the stack */
@@ -84,12 +84,12 @@ static UpVal *newupval (irin_State *L, StkId level, UpVal **prev) {
 ** Find and reuse, or create if it does not exist, an upvalue
 ** at the given level.
 */
-UpVal *luaF_findupval (irin_State *L, StkId level) {
+UpVal *luaF_findupval (ilya_State *L, StkId level) {
   UpVal **pp = &L->openupval;
   UpVal *p;
-  irin_assert(isintwups(L) || L->openupval == NULL);
+  ilya_assert(isintwups(L) || L->openupval == NULL);
   while ((p = *pp) != NULL && uplevel(p) >= level) {  /* search for it */
-    irin_assert(!isdead(G(L), p));
+    ilya_assert(!isdead(G(L), p));
     if (uplevel(p) == level)  /* corresponding upvalue? */
       return p;  /* return it */
     pp = &p->u.open.next;
@@ -104,7 +104,7 @@ UpVal *luaF_findupval (irin_State *L, StkId level) {
 ** boolean 'yy' controls whether the call is yieldable.
 ** (This fn assumes EXTRA_STACK.)
 */
-static void callclosemethod (irin_State *L, TValue *obj, TValue *err, int yy) {
+static void callclosemethod (ilya_State *L, TValue *obj, TValue *err, int yy) {
   StkId top = L->top.p;
   const TValue *tm = luaT_gettmbyobj(L, obj, TM_CLOSE);
   setobj2s(L, top, tm);  /* will call metamethod... */
@@ -122,7 +122,7 @@ static void callclosemethod (irin_State *L, TValue *obj, TValue *err, int yy) {
 ** Check whether object at given level has a close metamethod and raise
 ** an error if not.
 */
-static void checkclosemth (irin_State *L, StkId level) {
+static void checkclosemth (ilya_State *L, StkId level) {
   const TValue *tm = luaT_gettmbyobj(L, s2v(level), TM_CLOSE);
   if (ttisnil(tm)) {  /* no metamethod? */
     int idx = cast_int(level - L->ci->func.p);  /* variable index */
@@ -140,7 +140,7 @@ static void checkclosemth (irin_State *L, StkId level) {
 ** the 'level' of the upvalue being closed, as everything after that
 ** won't be used again.
 */
-static void prepcallclosemth (irin_State *L, StkId level, int status, int yy) {
+static void prepcallclosemth (ilya_State *L, StkId level, int status, int yy) {
   TValue *uv = s2v(level);  /* value being closed */
   TValue *errobj;
   if (status == CLOSEKTOP)
@@ -165,8 +165,8 @@ static void prepcallclosemth (irin_State *L, StkId level, int status, int yy) {
 /*
 ** Insert a variable in the list of to-be-closed variables.
 */
-void luaF_newtbcupval (irin_State *L, StkId level) {
-  irin_assert(level > L->tbclist.p);
+void luaF_newtbcupval (ilya_State *L, StkId level) {
+  ilya_assert(level > L->tbclist.p);
   if (l_isfalse(s2v(level)))
     return;  /* false doesn't need to be closed */
   checkclosemth(L, level);  /* value must have a close method */
@@ -180,7 +180,7 @@ void luaF_newtbcupval (irin_State *L, StkId level) {
 
 
 void luaF_unlinkupval (UpVal *uv) {
-  irin_assert(upisopen(uv));
+  ilya_assert(upisopen(uv));
   *uv->u.open.previous = uv->u.open.next;
   if (uv->u.open.next)
     uv->u.open.next->u.open.previous = uv->u.open.previous;
@@ -190,12 +190,12 @@ void luaF_unlinkupval (UpVal *uv) {
 /*
 ** Close all upvalues up to the given stack level.
 */
-void luaF_closeupval (irin_State *L, StkId level) {
+void luaF_closeupval (ilya_State *L, StkId level) {
   UpVal *uv;
   StkId upl;  /* stack index pointed by 'uv' */
   while ((uv = L->openupval) != NULL && (upl = uplevel(uv)) >= level) {
     TValue *slot = &uv->u.value;  /* new position for value */
-    irin_assert(uplevel(uv) < L->top.p);
+    ilya_assert(uplevel(uv) < L->top.p);
     luaF_unlinkupval(uv);  /* remove upvalue from 'openupval' list */
     setobj(L, slot, uv->v.p);  /* move value to upvalue slot */
     uv->v.p = slot;  /* now current value lives here */
@@ -210,9 +210,9 @@ void luaF_closeupval (irin_State *L, StkId level) {
 /*
 ** Remove first element from the tbclist plus its dummy nodes.
 */
-static void poptbclist (irin_State *L) {
+static void poptbclist (ilya_State *L) {
   StkId tbc = L->tbclist.p;
-  irin_assert(tbc->tbclist.delta > 0);  /* first element cannot be dummy */
+  ilya_assert(tbc->tbclist.delta > 0);  /* first element cannot be dummy */
   tbc -= tbc->tbclist.delta;
   while (tbc > L->stack.p && tbc->tbclist.delta == 0)
     tbc -= MAXDELTA;  /* remove dummy nodes */
@@ -224,7 +224,7 @@ static void poptbclist (irin_State *L) {
 ** Close all upvalues and to-be-closed variables up to the given stack
 ** level. Return restored 'level'.
 */
-StkId luaF_close (irin_State *L, StkId level, int status, int yy) {
+StkId luaF_close (ilya_State *L, StkId level, int status, int yy) {
   ptrdiff_t levelrel = savestack(L, level);
   luaF_closeupval(L, level);  /* first, close the upvalues */
   while (L->tbclist.p >= level) {  /* traverse tbc's down to that level */
@@ -237,8 +237,8 @@ StkId luaF_close (irin_State *L, StkId level, int status, int yy) {
 }
 
 
-Proto *luaF_newproto (irin_State *L) {
-  GCObject *o = luaC_newobj(L, IRIN_VPROTO, sizeof(Proto));
+Proto *luaF_newproto (ilya_State *L) {
+  GCObject *o = luaC_newobj(L, ILYA_VPROTO, sizeof(Proto));
   Proto *f = gco2p(o);
   f->k = NULL;
   f->sizek = 0;
@@ -279,7 +279,7 @@ lu_mem luaF_protosize (Proto *p) {
 }
 
 
-void luaF_freeproto (irin_State *L, Proto *f) {
+void luaF_freeproto (ilya_State *L, Proto *f) {
   if (!(f->flag & PF_FIXED)) {
     luaM_freearray(L, f->code, cast_sizet(f->sizecode));
     luaM_freearray(L, f->lineinfo, cast_sizet(f->sizelineinfo));

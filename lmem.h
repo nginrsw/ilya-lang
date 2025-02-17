@@ -1,7 +1,7 @@
 /*
 ** $Id: lmem.h $
 ** Interface to Memory Manager
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lmem_h
@@ -11,10 +11,10 @@
 #include <stddef.h>
 
 #include "llimits.h"
-#include "irin.h"
+#include "ilya.h"
 
 
-#define luaM_error(L)	luaD_throw(L, IRIN_ERRMEM)
+#define luaM_error(L)	luaD_throw(L, ILYA_ERRMEM)
 
 
 /*
@@ -76,20 +76,20 @@
 #define luaM_shrinkvector(L,v,size,fs,t) \
    ((v)=cast(t *, luaM_shrinkvector_(L, v, &(size), fs, sizeof(t))))
 
-LUAI_FUNC l_noret luaM_toobig (irin_State *L);
+LUAI_FUNC l_noret luaM_toobig (ilya_State *L);
 
 /* not to be called directly */
-LUAI_FUNC void *luaM_realloc_ (irin_State *L, void *block, size_t oldsize,
+LUAI_FUNC void *luaM_realloc_ (ilya_State *L, void *block, size_t oldsize,
                                                           size_t size);
-LUAI_FUNC void *luaM_saferealloc_ (irin_State *L, void *block, size_t oldsize,
+LUAI_FUNC void *luaM_saferealloc_ (ilya_State *L, void *block, size_t oldsize,
                                                               size_t size);
-LUAI_FUNC void luaM_free_ (irin_State *L, void *block, size_t osize);
-LUAI_FUNC void *luaM_growaux_ (irin_State *L, void *block, int nelems,
+LUAI_FUNC void luaM_free_ (ilya_State *L, void *block, size_t osize);
+LUAI_FUNC void *luaM_growaux_ (ilya_State *L, void *block, int nelems,
                                int *size, unsigned size_elem, int limit,
                                const char *what);
-LUAI_FUNC void *luaM_shrinkvector_ (irin_State *L, void *block, int *nelem,
+LUAI_FUNC void *luaM_shrinkvector_ (ilya_State *L, void *block, int *nelem,
                                     int final_n, unsigned size_elem);
-LUAI_FUNC void *luaM_malloc_ (irin_State *L, size_t size, int tag);
+LUAI_FUNC void *luaM_malloc_ (ilya_State *L, size_t size, int tag);
 
 #endif
 

@@ -1,18 +1,18 @@
 /*
 ** $Id: lzio.c $
 ** Buffered streams
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lzio_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "llimits.h"
@@ -23,11 +23,11 @@
 
 int luaZ_fill (ZIO *z) {
   size_t size;
-  irin_State *L = z->L;
+  ilya_State *L = z->L;
   const char *buff;
-  irin_unlock(L);
+  ilya_unlock(L);
   buff = z->reader(L, z->data, &size);
-  irin_lock(L);
+  ilya_lock(L);
   if (buff == NULL || size == 0)
     return EOZ;
   z->n = size - 1;  /* discount char being returned */
@@ -36,7 +36,7 @@ int luaZ_fill (ZIO *z) {
 }
 
 
-void luaZ_init (irin_State *L, ZIO *z, irin_Reader reader, void *data) {
+void luaZ_init (ilya_State *L, ZIO *z, ilya_Reader reader, void *data) {
   z->L = L;
   z->reader = reader;
   z->data = data;

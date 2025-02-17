@@ -12,9 +12,9 @@ header = [[
 <html>
 
 <head>
-<title>Irin 5.4 Reference Manual</title>
+<title>Ilya 5.4 Reference Manual</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-<link rel="stylesheet" href="irin.css">
+<link rel="stylesheet" href="ilya.css">
 <link rel="stylesheet" href="manual.css">
 </head>
 
@@ -22,15 +22,15 @@ header = [[
 
 <hr>
 <h1>
-<a href="http://www.irin.org/home.html"><img src="logo.gif" alt="[Irin logo]" border="0"></a>
-Irin 5.4 Reference Manual
+<a href="http://www.ilya.org/home.html"><img src="logo.gif" alt="[Ilya logo]" border="0"></a>
+Ilya 5.4 Reference Manual
 </h1>
 
 by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 <p>
 <small>
-<a href="http://www.irin.org/copyright.html">Copyright</a>
-&copy; 2025 Irin.org, PUC-Rio.  All rights reserved.
+<a href="http://www.ilya.org/copyright.html">Copyright</a>
+&copy; 2025 Ilya.org, PUC-Rio.  All rights reserved.
 </small>
 <hr>
 
@@ -47,8 +47,8 @@ if arg[1] == 'port' then
   seefmt = '(ver %s)'
   header = string.gsub(header, "by (.-)\n",
   "%1\n<p>Tradu&ccedil;&atilde;o: S&eacute;rgio Queiroz de Medeiros", 1)
-  header = string.gsub(header, "Irin (%d+.%d+) Reference Manual",
-                               "Manual de Refer&ecirc;ncia de Irin %1")
+  header = string.gsub(header, "Ilya (%d+.%d+) Reference Manual",
+                               "Manual de Refer&ecirc;ncia de Ilya %1")
   header = string.gsub(header, "All rights reserved",
                                "Todos os direitos reservados")
 end

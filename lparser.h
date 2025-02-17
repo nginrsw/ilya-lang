@@ -1,7 +1,7 @@
 /*
 ** $Id: lparser.h $
-** Irin Parser
-** See Copyright Notice in irin.h
+** Ilya Parser
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lparser_h
@@ -68,8 +68,8 @@ typedef enum {
 typedef struct expdesc {
   expkind k;
   union {
-    irin_Integer ival;    /* for VKINT */
-    irin_Number nval;  /* for VKFLT */
+    ilya_Integer ival;    /* for VKINT */
+    ilya_Number nval;  /* for VKFLT */
     TString *strval;  /* for VKSTR */
     int info;  /* for generic use */
     struct {  /* for indexed variables */
@@ -167,7 +167,7 @@ typedef struct FuncState {
 LUAI_FUNC lu_byte luaY_nvarstack (FuncState *fs);
 LUAI_FUNC void luaY_checklimit (FuncState *fs, int v, int l,
                                 const char *what);
-LUAI_FUNC LClosure *luaY_parser (irin_State *L, ZIO *z, Mbuffer *buff,
+LUAI_FUNC LClosure *luaY_parser (ilya_State *L, ZIO *z, Mbuffer *buff,
                                  Dyndata *dyd, const char *name, int firstchar);
 
 

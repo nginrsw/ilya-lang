@@ -1,11 +1,11 @@
 /*
 ** $Id: ltests.c $
-** Internal Module for Debugging of the Irin Implementation
-** See Copyright Notice in irin.h
+** Internal Module for Debugging of the Ilya Implementation
+** See Copyright Notice in ilya.h
 */
 
 #define ltests_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "lauxlib.h"
@@ -31,14 +31,14 @@
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
-#include "irinlib.h"
+#include "ilyalib.h"
 
 
 
 /*
-** The whole module only makes sense with IRIN_DEBUG on
+** The whole module only makes sense with ILYA_DEBUG on
 */
-#if defined(IRIN_DEBUG)
+#if defined(ILYA_DEBUG)
 
 
 void *l_Trick = 0;
@@ -47,16 +47,16 @@ void *l_Trick = 0;
 #define obj_at(L,k)	s2v(L->ci->func.p + (k))
 
 
-static int runC (irin_State *L, irin_State *L1, const char *pc);
+static int runC (ilya_State *L, ilya_State *L1, const char *pc);
 
 
-static void setnameval (irin_State *L, const char *name, int val) {
-  irin_pushinteger(L, val);
-  irin_setfield(L, -2, name);
+static void setnameval (ilya_State *L, const char *name, int val) {
+  ilya_pushinteger(L, val);
+  ilya_setfield(L, -2, name);
 }
 
 
-static void pushobject (irin_State *L, const TValue *o) {
+static void pushobject (ilya_State *L, const TValue *o) {
   setobj2s(L, L->top.p, o);
   api_incr_top(L);
 }
@@ -72,13 +72,13 @@ static void badexit (const char *fmt, const char *s1, const char *s2) {
 }
 
 
-static int tpanic (irin_State *L) {
-  const char *msg = (irin_type(L, -1) == IRIN_TSTRING)
-                  ? irin_tostring(L, -1)
+static int tpanic (ilya_State *L) {
+  const char *msg = (ilya_type(L, -1) == ILYA_TSTRING)
+                  ? ilya_tostring(L, -1)
                   : "error object is not a string";
-  return (badexit("PANIC: unprotected error in call to Irin API (%s)\n",
+  return (badexit("PANIC: unprotected error in call to Ilya API (%s)\n",
                    msg, NULL),
-          0);  /* do not return to Irin */
+          0);  /* do not return to Ilya */
 }
 
 
@@ -93,7 +93,7 @@ static int tpanic (irin_State *L) {
 ** - 2.store: all warnings go to the global '_WARN';
 */
 static void warnf (void *ud, const char *msg, int tocont) {
-  irin_State *L = cast(irin_State *, ud);
+  ilya_State *L = cast(ilya_State *, ud);
   static char buff[200] = "";  /* should be enough for tests... */
   static int onoff = 0;
   static int mode = 0;  /* start in normal mode */
@@ -121,16 +121,16 @@ static void warnf (void *ud, const char *msg, int tocont) {
     badexit("warnf-buffer overflow (%s)\n", msg, buff);
   strcat(buff, msg);  /* add new message to current warning */
   if (!tocont) {  /* message finished? */
-    irin_unlock(L);
+    ilya_unlock(L);
     luaL_checkstack(L, 1, "warn stack space");
-    irin_getglobal(L, "_WARN");
-    if (!irin_toboolean(L, -1))
-      irin_pop(L, 1);  /* ok, no previous unexpected warning */
+    ilya_getglobal(L, "_WARN");
+    if (!ilya_toboolean(L, -1))
+      ilya_pop(L, 1);  /* ok, no previous unexpected warning */
     else {
       badexit("Unhandled warning in store mode: %s\naborting...\n",
-              irin_tostring(L, -1), buff);
+              ilya_tostring(L, -1), buff);
     }
-    irin_lock(L);
+    ilya_lock(L);
     switch (mode) {
       case 0: {  /* normal */
         if (buff[0] != '#' && onoff)  /* unexpected warning? */
@@ -139,15 +139,15 @@ static void warnf (void *ud, const char *msg, int tocont) {
       }  /* FALLTHROUGH */
       case 1: {  /* allow */
         if (onoff)
-          fprintf(stderr, "Irin warning: %s\n", buff);  /* print warning */
+          fprintf(stderr, "Ilya warning: %s\n", buff);  /* print warning */
         break;
       }
       case 2: {  /* store */
-        irin_unlock(L);
+        ilya_unlock(L);
         luaL_checkstack(L, 1, "warn stack space");
-        irin_pushstring(L, buff);
-        irin_setglobal(L, "_WARN");  /* assign message to global '_WARN' */
-        irin_lock(L);
+        ilya_pushstring(L, buff);
+        ilya_setglobal(L, "_WARN");  /* assign message to global '_WARN' */
+        ilya_lock(L);
         break;
       }
     }
@@ -198,7 +198,7 @@ static void freeblock (Memcontrol *mc, Header *block) {
     size_t size = block->d.size;
     int i;
     for (i = 0; i < MARKSIZE; i++)  /* check marks after block */
-      irin_assert(*(cast_charp(block + 1) + size + i) == MARK);
+      ilya_assert(*(cast_charp(block + 1) + size + i) == MARK);
     mc->objcount[block->d.type]--;
     fillmem(block, sizeof(Header) + size + MARKSIZE);  /* erase block */
     free(block);  /* actually free block */
@@ -217,13 +217,13 @@ void *debug_realloc (void *ud, void *b, size_t oldsize, size_t size) {
     mc->memlimit = limit ? strtoul(limit, NULL, 10) : ULONG_MAX;
   }
   if (block == NULL) {
-    type = (oldsize < IRIN_NUMTYPES) ? cast_int(oldsize) : 0;
+    type = (oldsize < ILYA_NUMTYPES) ? cast_int(oldsize) : 0;
     oldsize = 0;
   }
   else {
     block--;  /* go to real header */
     type = block->d.type;
-    irin_assert(oldsize == block->d.size);
+    ilya_assert(oldsize == block->d.size);
   }
   if (size == 0) {
     freeblock(mc, block);
@@ -279,7 +279,7 @@ void *debug_realloc (void *ud, void *b, size_t oldsize, size_t size) {
 ** Functions to check memory consistency.
 ** Most of these checks are done through asserts, so this code does
 ** not make sense with asserts off. For this reason, it uses 'assert'
-** directly, instead of 'irin_assert'.
+** directly, instead of 'ilya_assert'.
 ** ======================================================================
 */
 
@@ -316,38 +316,38 @@ static void printobj (global_State *g, GCObject *o) {
            ttypename(novariant(o->tt)), (void *)o,
            isdead(g,o) ? 'd' : isblack(o) ? 'b' : iswhite(o) ? 'w' : 'g',
            "ns01oTt"[getage(o)], o->marked);
-  if (o->tt == IRIN_VSHRSTR || o->tt == IRIN_VLNGSTR)
+  if (o->tt == ILYA_VSHRSTR || o->tt == ILYA_VLNGSTR)
     printf(" '%s'", getstr(gco2ts(o)));
 }
 
 
-void irin_printobj (irin_State *L, struct GCObject *o) {
+void ilya_printobj (ilya_State *L, struct GCObject *o) {
   printobj(G(L), o);
 }
 
 
-void irin_printvalue (TValue *v) {
+void ilya_printvalue (TValue *v) {
   switch (ttype(v)) {
-    case IRIN_TNUMBER: {
-      char buff[IRIN_N2SBUFFSZ];
+    case ILYA_TNUMBER: {
+      char buff[ILYA_N2SBUFFSZ];
       unsigned len = luaO_tostringbuff(v, buff);
       buff[len] = '\0';
       printf("%s", buff);
       break;
     }
-    case IRIN_TSTRING: {
+    case ILYA_TSTRING: {
       printf("'%s'", getstr(tsvalue(v)));
       break;
     }
-    case IRIN_TBOOLEAN: {
+    case ILYA_TBOOLEAN: {
       printf("%s", (!l_isfalse(v) ? "true" : "false"));
       break;
     }
-    case IRIN_TLIGHTUSERDATA: {
+    case ILYA_TLIGHTUSERDATA: {
       printf("light udata: %p", pvalue(v));
       break;
     }
-    case IRIN_TNIL: {
+    case ILYA_TNIL: {
       printf("nil");
       break;
     }
@@ -466,7 +466,7 @@ static void checkLclosure (global_State *g, LClosure *cl) {
 }
 
 
-static int irin_checkpc (CallInfo *ci) {
+static int ilya_checkpc (CallInfo *ci) {
   if (!isLua(ci)) return 1;
   else {
     StkId f = ci->func.p;
@@ -477,7 +477,7 @@ static int irin_checkpc (CallInfo *ci) {
 }
 
 
-static void checkstack (global_State *g, irin_State *L1) {
+static void checkstack (global_State *g, ilya_State *L1) {
   StkId o;
   CallInfo *ci;
   UpVal *uv;
@@ -492,7 +492,7 @@ static void checkstack (global_State *g, irin_State *L1) {
   assert(L1->tbclist.p <= L1->top.p);
   for (ci = L1->ci; ci != NULL; ci = ci->previous) {
     assert(ci->top.p <= L1->stack_last.p);
-    assert(irin_checkpc(ci));
+    assert(ilya_checkpc(ci));
   }
   for (o = L1->stack.p; o < L1->stack_last.p; o++)
     checkliveness(L1, s2v(o));  /* entire stack must have valid values */
@@ -501,36 +501,36 @@ static void checkstack (global_State *g, irin_State *L1) {
 
 static void checkrefs (global_State *g, GCObject *o) {
   switch (o->tt) {
-    case IRIN_VUSERDATA: {
+    case ILYA_VUSERDATA: {
       checkudata(g, gco2u(o));
       break;
     }
-    case IRIN_VUPVAL: {
+    case ILYA_VUPVAL: {
       checkvalref(g, o, gco2upv(o)->v.p);
       break;
     }
-    case IRIN_VTABLE: {
+    case ILYA_VTABLE: {
       checktable(g, gco2t(o));
       break;
     }
-    case IRIN_VTHREAD: {
+    case ILYA_VTHREAD: {
       checkstack(g, gco2th(o));
       break;
     }
-    case IRIN_VLCL: {
+    case ILYA_VLCL: {
       checkLclosure(g, gco2lcl(o));
       break;
     }
-    case IRIN_VCCL: {
+    case ILYA_VCCL: {
       checkCclosure(g, gco2ccl(o));
       break;
     }
-    case IRIN_VPROTO: {
+    case ILYA_VPROTO: {
       checkproto(g, gco2p(o));
       break;
     }
-    case IRIN_VSHRSTR:
-    case IRIN_VLNGSTR: {
+    case ILYA_VSHRSTR:
+    case ILYA_VLNGSTR: {
       assert(!isgray(o));  /* strings are never gray */
       break;
     }
@@ -564,8 +564,8 @@ static void checkobject (global_State *g, GCObject *o, int maybedead,
         assert(isblack(o) ||
         getage(o) == G_TOUCHED1 ||
         getage(o) == G_OLD0 ||
-        o->tt == IRIN_VTHREAD ||
-        (o->tt == IRIN_VUPVAL && upisopen(gco2upv(o))));
+        o->tt == ILYA_VTHREAD ||
+        (o->tt == ILYA_VUPVAL && upisopen(gco2upv(o))));
       }
       assert(getage(o) != G_TOUCHED1 || isgray(o));
     }
@@ -584,12 +584,12 @@ static l_mem checkgraylist (global_State *g, GCObject *o) {
       l_setbit(o->marked, TESTBIT);  /* mark that object is in a gray list */
     total++;
     switch (o->tt) {
-      case IRIN_VTABLE: o = gco2t(o)->gclist; break;
-      case IRIN_VLCL: o = gco2lcl(o)->gclist; break;
-      case IRIN_VCCL: o = gco2ccl(o)->gclist; break;
-      case IRIN_VTHREAD: o = gco2th(o)->gclist; break;
-      case IRIN_VPROTO: o = gco2p(o)->gclist; break;
-      case IRIN_VUSERDATA:
+      case ILYA_VTABLE: o = gco2t(o)->gclist; break;
+      case ILYA_VLCL: o = gco2lcl(o)->gclist; break;
+      case ILYA_VCCL: o = gco2ccl(o)->gclist; break;
+      case ILYA_VTHREAD: o = gco2th(o)->gclist; break;
+      case ILYA_VPROTO: o = gco2p(o)->gclist; break;
+      case ILYA_VUSERDATA:
         assert(gco2u(o)->nuvalue > 0);
         o = gco2u(o)->gclist;
         break;
@@ -623,7 +623,7 @@ static l_mem checkgrays (global_State *g) {
 static void incifingray (global_State *g, GCObject *o, l_mem *count) {
   if (!keepinvariant(g))
     return;  /* gray lists not being kept in these phases */
-  if (o->tt == IRIN_VUPVAL) {
+  if (o->tt == ILYA_VUPVAL) {
     /* only open upvalues can be gray */
     assert(!isgray(o) || upisopen(gco2upv(o)));
     return;  /* upvalues are never in gray lists */
@@ -665,7 +665,7 @@ static l_mem checklist (global_State *g, int maybedead, int tof,
 }
 
 
-int irin_checkmemory (irin_State *L) {
+int ilya_checkmemory (ilya_State *L) {
   global_State *g = G(L);
   GCObject *o;
   int maybedead;
@@ -681,7 +681,7 @@ int irin_checkmemory (irin_State *L) {
 
   /* check 'fixedgc' list */
   for (o = g->fixedgc; o != NULL; o = o->next) {
-    assert(o->tt == IRIN_VSHRSTR && isgray(o) && getage(o) == G_OLD);
+    assert(o->tt == ILYA_VSHRSTR && isgray(o) && getage(o) == G_OLD);
   }
 
   /* check 'allgc' list */
@@ -698,7 +698,7 @@ int irin_checkmemory (irin_State *L) {
     checkobject(g, o, 0, G_NEW);
     incifingray(g, o, &totalshould);
     assert(tofinalize(o));
-    assert(o->tt == IRIN_VUSERDATA || o->tt == IRIN_VTABLE);
+    assert(o->tt == ILYA_VUSERDATA || o->tt == ILYA_VTABLE);
   }
   if (keepinvariant(g))
     assert(totalin == totalshould);
@@ -774,30 +774,30 @@ void luaI_printinst (Proto *pt, int pc) {
 #endif
 
 
-static int listcode (irin_State *L) {
+static int listcode (ilya_State *L) {
   int pc;
   Proto *p;
-  luaL_argcheck(L, irin_isfunction(L, 1) && !irin_iscfunction(L, 1),
-                 1, "Irin fn expected");
+  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+                 1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
-  irin_newtable(L);
+  ilya_newtable(L);
   setnameval(L, "maxstack", p->maxstacksize);
   setnameval(L, "numparams", p->numparams);
   for (pc=0; pc<p->sizecode; pc++) {
     char buff[100];
-    irin_pushinteger(L, pc+1);
-    irin_pushstring(L, buildop(p, pc, buff));
-    irin_settable(L, -3);
+    ilya_pushinteger(L, pc+1);
+    ilya_pushstring(L, buildop(p, pc, buff));
+    ilya_settable(L, -3);
   }
   return 1;
 }
 
 
-static int printcode (irin_State *L) {
+static int printcode (ilya_State *L) {
   int pc;
   Proto *p;
-  luaL_argcheck(L, irin_isfunction(L, 1) && !irin_iscfunction(L, 1),
-                 1, "Irin fn expected");
+  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+                 1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   printf("maxstack: %d\n", p->maxstacksize);
   printf("numparams: %d\n", p->numparams);
@@ -809,49 +809,49 @@ static int printcode (irin_State *L) {
 }
 
 
-static int listk (irin_State *L) {
+static int listk (ilya_State *L) {
   Proto *p;
   int i;
-  luaL_argcheck(L, irin_isfunction(L, 1) && !irin_iscfunction(L, 1),
-                 1, "Irin fn expected");
+  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+                 1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
-  irin_createtable(L, p->sizek, 0);
+  ilya_createtable(L, p->sizek, 0);
   for (i=0; i<p->sizek; i++) {
     pushobject(L, p->k+i);
-    irin_rawseti(L, -2, i+1);
+    ilya_rawseti(L, -2, i+1);
   }
   return 1;
 }
 
 
-static int listabslineinfo (irin_State *L) {
+static int listabslineinfo (ilya_State *L) {
   Proto *p;
   int i;
-  luaL_argcheck(L, irin_isfunction(L, 1) && !irin_iscfunction(L, 1),
-                 1, "Irin fn expected");
+  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+                 1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   luaL_argcheck(L, p->abslineinfo != NULL, 1, "fn has no debug info");
-  irin_createtable(L, 2 * p->sizeabslineinfo, 0);
+  ilya_createtable(L, 2 * p->sizeabslineinfo, 0);
   for (i=0; i < p->sizeabslineinfo; i++) {
-    irin_pushinteger(L, p->abslineinfo[i].pc);
-    irin_rawseti(L, -2, 2 * i + 1);
-    irin_pushinteger(L, p->abslineinfo[i].line);
-    irin_rawseti(L, -2, 2 * i + 2);
+    ilya_pushinteger(L, p->abslineinfo[i].pc);
+    ilya_rawseti(L, -2, 2 * i + 1);
+    ilya_pushinteger(L, p->abslineinfo[i].line);
+    ilya_rawseti(L, -2, 2 * i + 2);
   }
   return 1;
 }
 
 
-static int listlocals (irin_State *L) {
+static int listlocals (ilya_State *L) {
   Proto *p;
   int pc = cast_int(luaL_checkinteger(L, 2)) - 1;
   int i = 0;
   const char *name;
-  luaL_argcheck(L, irin_isfunction(L, 1) && !irin_iscfunction(L, 1),
-                 1, "Irin fn expected");
+  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+                 1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   while ((name = luaF_getlocalname(p, ++i, pc)) != NULL)
-    irin_pushstring(L, name);
+    ilya_pushstring(L, name);
   return i-1;
 }
 
@@ -859,21 +859,21 @@ static int listlocals (irin_State *L) {
 
 
 
-void irin_printstack (irin_State *L) {
+void ilya_printstack (ilya_State *L) {
   int i;
-  int n = irin_gettop(L);
+  int n = ilya_gettop(L);
   printf("stack: >>\n");
   for (i = 1; i <= n; i++) {
     printf("%3d: ", i);
-    irin_printvalue(s2v(L->ci->func.p + i));
+    ilya_printvalue(s2v(L->ci->func.p + i));
     printf("\n");
   }
   printf("<<\n");
 }
 
 
-static int get_limits (irin_State *L) {
-  irin_createtable(L, 0, 5);
+static int get_limits (ilya_State *L) {
+  ilya_createtable(L, 0, 5);
   setnameval(L, "IS32INT", LUAI_IS32INT);
   setnameval(L, "MAXARG_Ax", MAXARG_Ax);
   setnameval(L, "MAXARG_Bx", MAXARG_Bx);
@@ -883,14 +883,14 @@ static int get_limits (irin_State *L) {
 }
 
 
-static int mem_query (irin_State *L) {
-  if (irin_isnone(L, 1)) {
-    irin_pushinteger(L, cast(irin_Integer, l_memcontrol.total));
-    irin_pushinteger(L, cast(irin_Integer, l_memcontrol.numblocks));
-    irin_pushinteger(L, cast(irin_Integer, l_memcontrol.maxmem));
+static int mem_query (ilya_State *L) {
+  if (ilya_isnone(L, 1)) {
+    ilya_pushinteger(L, cast(ilya_Integer, l_memcontrol.total));
+    ilya_pushinteger(L, cast(ilya_Integer, l_memcontrol.numblocks));
+    ilya_pushinteger(L, cast(ilya_Integer, l_memcontrol.maxmem));
     return 3;
   }
-  else if (irin_isnumber(L, 1)) {
+  else if (ilya_isnumber(L, 1)) {
     unsigned long limit = cast(unsigned long, luaL_checkinteger(L, 1));
     if (limit == 0) limit = ULONG_MAX;
     l_memcontrol.memlimit = limit;
@@ -899,9 +899,9 @@ static int mem_query (irin_State *L) {
   else {
     const char *t = luaL_checkstring(L, 1);
     int i;
-    for (i = IRIN_NUMTYPES - 1; i >= 0; i--) {
+    for (i = ILYA_NUMTYPES - 1; i >= 0; i--) {
       if (strcmp(t, ttypename(i)) == 0) {
-        irin_pushinteger(L, cast(irin_Integer, l_memcontrol.objcount[i]));
+        ilya_pushinteger(L, cast(ilya_Integer, l_memcontrol.objcount[i]));
         return 1;
       }
     }
@@ -910,8 +910,8 @@ static int mem_query (irin_State *L) {
 }
 
 
-static int alloc_count (irin_State *L) {
-  if (irin_isnone(L, 1))
+static int alloc_count (ilya_State *L) {
+  if (ilya_isnone(L, 1))
     l_memcontrol.countlimit = cast(unsigned long, ~0L);
   else
     l_memcontrol.countlimit = cast(unsigned long, luaL_checkinteger(L, 1));
@@ -919,14 +919,14 @@ static int alloc_count (irin_State *L) {
 }
 
 
-static int alloc_failnext (irin_State *L) {
+static int alloc_failnext (ilya_State *L) {
   UNUSED(L);
   l_memcontrol.failnext = 1;
   return 0;
 }
 
 
-static int settrick (irin_State *L) {
+static int settrick (ilya_State *L) {
   if (ttisnil(obj_at(L, 1)))
     l_Trick = NULL;
   else
@@ -935,15 +935,15 @@ static int settrick (irin_State *L) {
 }
 
 
-static int gc_color (irin_State *L) {
+static int gc_color (ilya_State *L) {
   TValue *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!iscollectable(o))
-    irin_pushstring(L, "no collectable");
+    ilya_pushstring(L, "no collectable");
   else {
     GCObject *obj = gcvalue(o);
-    irin_pushstring(L, isdead(G(L), obj) ? "dead" :
+    ilya_pushstring(L, isdead(G(L), obj) ? "dead" :
                       iswhite(obj) ? "white" :
                       isblack(obj) ? "black" : "gray");
   }
@@ -951,23 +951,23 @@ static int gc_color (irin_State *L) {
 }
 
 
-static int gc_age (irin_State *L) {
+static int gc_age (ilya_State *L) {
   TValue *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!iscollectable(o))
-    irin_pushstring(L, "no collectable");
+    ilya_pushstring(L, "no collectable");
   else {
     static const char *gennames[] = {"new", "survival", "old0", "old1",
                                      "old", "touched1", "touched2"};
     GCObject *obj = gcvalue(o);
-    irin_pushstring(L, gennames[getage(obj)]);
+    ilya_pushstring(L, gennames[getage(obj)]);
   }
   return 1;
 }
 
 
-static int gc_printobj (irin_State *L) {
+static int gc_printobj (ilya_State *L) {
   TValue *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
@@ -986,107 +986,107 @@ static const char *statenames[] = {
   "propagate", "enteratomic", "atomic", "sweepallgc", "sweepfinobj",
   "sweeptobefnz", "sweepend", "callfin", "pause", ""};
 
-static int gc_state (irin_State *L) {
+static int gc_state (ilya_State *L) {
   static const int states[] = {
     GCSpropagate, GCSenteratomic, GCSatomic, GCSswpallgc, GCSswpfinobj,
     GCSswptobefnz, GCSswpend, GCScallfin, GCSpause, -1};
   int option = states[luaL_checkoption(L, 1, "", statenames)];
   global_State *g = G(L);
   if (option == -1) {
-    irin_pushstring(L, statenames[g->gcstate]);
+    ilya_pushstring(L, statenames[g->gcstate]);
     return 1;
   }
   else {
     if (g->gckind != KGC_INC)
       luaL_error(L, "cannot change states in generational mode");
-    irin_lock(L);
+    ilya_lock(L);
     if (option < g->gcstate) {  /* must cross 'pause'? */
       luaC_runtilstate(L, GCSpause, 1);  /* run until pause */
     }
     luaC_runtilstate(L, option, 0);  /* do not skip propagation state */
-    irin_assert(g->gcstate == option);
-    irin_unlock(L);
+    ilya_assert(g->gcstate == option);
+    ilya_unlock(L);
     return 0;
   }
 }
 
 
 static int tracinggc = 0;
-void luai_tracegctest (irin_State *L, int first) {
+void luai_tracegctest (ilya_State *L, int first) {
   if (!tracinggc) return;
   else {
     global_State *g = G(L);
-    irin_unlock(L);
+    ilya_unlock(L);
     g->gcstp = GCSTPGC;
-    irin_checkstack(L, 10);
-    irin_getfield(L, IRIN_REGISTRYINDEX, "tracegc");
-    irin_pushboolean(L, first);
-    irin_call(L, 1, 0);
+    ilya_checkstack(L, 10);
+    ilya_getfield(L, ILYA_REGISTRYINDEX, "tracegc");
+    ilya_pushboolean(L, first);
+    ilya_call(L, 1, 0);
     g->gcstp = 0;
-    irin_lock(L);
+    ilya_lock(L);
   }
 }
 
 
-static int tracegc (irin_State *L) {
-  if (irin_isnil(L, 1))
+static int tracegc (ilya_State *L) {
+  if (ilya_isnil(L, 1))
     tracinggc = 0;
   else {
     tracinggc = 1;
-    irin_setfield(L, IRIN_REGISTRYINDEX, "tracegc");
+    ilya_setfield(L, ILYA_REGISTRYINDEX, "tracegc");
   }
   return 0;
 }
 
 
-static int hash_query (irin_State *L) {
-  if (irin_isnone(L, 2)) {
-    luaL_argcheck(L, irin_type(L, 1) == IRIN_TSTRING, 1, "string expected");
-    irin_pushinteger(L, cast_int(tsvalue(obj_at(L, 1))->hash));
+static int hash_query (ilya_State *L) {
+  if (ilya_isnone(L, 2)) {
+    luaL_argcheck(L, ilya_type(L, 1) == ILYA_TSTRING, 1, "string expected");
+    ilya_pushinteger(L, cast_int(tsvalue(obj_at(L, 1))->hash));
   }
   else {
     TValue *o = obj_at(L, 1);
     Table *t;
-    luaL_checktype(L, 2, IRIN_TTABLE);
+    luaL_checktype(L, 2, ILYA_TTABLE);
     t = hvalue(obj_at(L, 2));
-    irin_pushinteger(L, cast(irin_Integer, luaH_mainposition(t, o) - t->node));
+    ilya_pushinteger(L, cast(ilya_Integer, luaH_mainposition(t, o) - t->node));
   }
   return 1;
 }
 
 
-static int stacklevel (irin_State *L) {
+static int stacklevel (ilya_State *L) {
   int a = 0;
-  irin_pushinteger(L, cast(irin_Integer, L->top.p - L->stack.p));
-  irin_pushinteger(L, stacksize(L));
-  irin_pushinteger(L, cast(irin_Integer, L->nCcalls));
-  irin_pushinteger(L, L->nci);
-  irin_pushinteger(L, (irin_Integer)(size_t)&a);
+  ilya_pushinteger(L, cast(ilya_Integer, L->top.p - L->stack.p));
+  ilya_pushinteger(L, stacksize(L));
+  ilya_pushinteger(L, cast(ilya_Integer, L->nCcalls));
+  ilya_pushinteger(L, L->nci);
+  ilya_pushinteger(L, (ilya_Integer)(size_t)&a);
   return 5;
 }
 
 
-static int table_query (irin_State *L) {
+static int table_query (ilya_State *L) {
   const Table *t;
   int i = cast_int(luaL_optinteger(L, 2, -1));
   unsigned int asize;
-  luaL_checktype(L, 1, IRIN_TTABLE);
+  luaL_checktype(L, 1, ILYA_TTABLE);
   t = hvalue(obj_at(L, 1));
   asize = t->asize;
   if (i == -1) {
-    irin_pushinteger(L, cast(irin_Integer, asize));
-    irin_pushinteger(L, cast(irin_Integer, allocsizenode(t)));
-    irin_pushinteger(L, cast(irin_Integer, asize > 0 ? *lenhint(t) : 0));
+    ilya_pushinteger(L, cast(ilya_Integer, asize));
+    ilya_pushinteger(L, cast(ilya_Integer, allocsizenode(t)));
+    ilya_pushinteger(L, cast(ilya_Integer, asize > 0 ? *lenhint(t) : 0));
     return 3;
   }
   else if (cast_uint(i) < asize) {
-    irin_pushinteger(L, i);
+    ilya_pushinteger(L, i);
     if (!tagisempty(*getArrTag(t, i)))
       arr2obj(t, cast_uint(i), s2v(L->top.p));
     else
       setnilvalue(s2v(L->top.p));
     api_incr_top(L);
-    irin_pushnil(L);
+    ilya_pushnil(L);
   }
   else if (cast_uint(i -= cast_int(asize)) < sizenode(t)) {
     TValue k;
@@ -1097,52 +1097,52 @@ static int table_query (irin_State *L) {
       pushobject(L, &k);
     }
     else
-      irin_pushliteral(L, "<undef>");
+      ilya_pushliteral(L, "<undef>");
     if (!isempty(gval(gnode(t, i))))
       pushobject(L, gval(gnode(t, i)));
     else
-      irin_pushnil(L);
-    irin_pushinteger(L, gnext(&t->node[i]));
+      ilya_pushnil(L);
+    ilya_pushinteger(L, gnext(&t->node[i]));
   }
   return 3;
 }
 
 
-static int gc_query (irin_State *L) {
+static int gc_query (ilya_State *L) {
   global_State *g = G(L);
-  irin_pushstring(L, g->gckind == KGC_INC ? "inc"
+  ilya_pushstring(L, g->gckind == KGC_INC ? "inc"
                   : g->gckind == KGC_GENMAJOR ? "genmajor"
                   : "genminor");
-  irin_pushstring(L, statenames[g->gcstate]);
-  irin_pushinteger(L, cast_st2S(gettotalbytes(g)));
-  irin_pushinteger(L, cast_st2S(g->GCdebt));
-  irin_pushinteger(L, cast_st2S(g->GCmarked));
-  irin_pushinteger(L, cast_st2S(g->GCmajorminor));
+  ilya_pushstring(L, statenames[g->gcstate]);
+  ilya_pushinteger(L, cast_st2S(gettotalbytes(g)));
+  ilya_pushinteger(L, cast_st2S(g->GCdebt));
+  ilya_pushinteger(L, cast_st2S(g->GCmarked));
+  ilya_pushinteger(L, cast_st2S(g->GCmajorminor));
   return 6;
 }
 
 
-static int test_codeparam (irin_State *L) {
-  irin_Integer p = luaL_checkinteger(L, 1);
-  irin_pushinteger(L, luaO_codeparam(cast_uint(p)));
+static int test_codeparam (ilya_State *L) {
+  ilya_Integer p = luaL_checkinteger(L, 1);
+  ilya_pushinteger(L, luaO_codeparam(cast_uint(p)));
   return 1;
 }
 
 
-static int test_applyparam (irin_State *L) {
-  irin_Integer p = luaL_checkinteger(L, 1);
-  irin_Integer x = luaL_checkinteger(L, 2);
-  irin_pushinteger(L, cast(irin_Integer, luaO_applyparam(cast_byte(p), x)));
+static int test_applyparam (ilya_State *L) {
+  ilya_Integer p = luaL_checkinteger(L, 1);
+  ilya_Integer x = luaL_checkinteger(L, 2);
+  ilya_pushinteger(L, cast(ilya_Integer, luaO_applyparam(cast_byte(p), x)));
   return 1;
 }
 
 
-static int string_query (irin_State *L) {
+static int string_query (ilya_State *L) {
   stringtable *tb = &G(L)->strt;
   int s = cast_int(luaL_optinteger(L, 1, 0)) - 1;
   if (s == -1) {
-    irin_pushinteger(L ,tb->size);
-    irin_pushinteger(L ,tb->nuse);
+    ilya_pushinteger(L ,tb->size);
+    ilya_pushinteger(L ,tb->nuse);
     return 2;
   }
   else if (s < tb->size) {
@@ -1159,243 +1159,243 @@ static int string_query (irin_State *L) {
 }
 
 
-static int getreftable (irin_State *L) {
-  if (irin_istable(L, 2))  /* is there a table as second argument? */
+static int getreftable (ilya_State *L) {
+  if (ilya_istable(L, 2))  /* is there a table as second argument? */
     return 2;  /* use it as the table */
   else
-    return IRIN_REGISTRYINDEX;  /* default is to use the register */
+    return ILYA_REGISTRYINDEX;  /* default is to use the register */
 }
 
 
-static int tref (irin_State *L) {
+static int tref (ilya_State *L) {
   int t = getreftable(L);
-  int level = irin_gettop(L);
+  int level = ilya_gettop(L);
   luaL_checkany(L, 1);
-  irin_pushvalue(L, 1);
-  irin_pushinteger(L, luaL_ref(L, t));
+  ilya_pushvalue(L, 1);
+  ilya_pushinteger(L, luaL_ref(L, t));
   cast_void(level);  /* to avoid warnings */
-  irin_assert(irin_gettop(L) == level+1);  /* +1 for result */
+  ilya_assert(ilya_gettop(L) == level+1);  /* +1 for result */
   return 1;
 }
 
 
-static int getref (irin_State *L) {
+static int getref (ilya_State *L) {
   int t = getreftable(L);
-  int level = irin_gettop(L);
-  irin_rawgeti(L, t, luaL_checkinteger(L, 1));
+  int level = ilya_gettop(L);
+  ilya_rawgeti(L, t, luaL_checkinteger(L, 1));
   cast_void(level);  /* to avoid warnings */
-  irin_assert(irin_gettop(L) == level+1);
+  ilya_assert(ilya_gettop(L) == level+1);
   return 1;
 }
 
-static int unref (irin_State *L) {
+static int unref (ilya_State *L) {
   int t = getreftable(L);
-  int level = irin_gettop(L);
+  int level = ilya_gettop(L);
   luaL_unref(L, t, cast_int(luaL_checkinteger(L, 1)));
   cast_void(level);  /* to avoid warnings */
-  irin_assert(irin_gettop(L) == level);
+  ilya_assert(ilya_gettop(L) == level);
   return 0;
 }
 
 
-static int upvalue (irin_State *L) {
+static int upvalue (ilya_State *L) {
   int n = cast_int(luaL_checkinteger(L, 2));
-  luaL_checktype(L, 1, IRIN_TFUNCTION);
-  if (irin_isnone(L, 3)) {
-    const char *name = irin_getupvalue(L, 1, n);
+  luaL_checktype(L, 1, ILYA_TFUNCTION);
+  if (ilya_isnone(L, 3)) {
+    const char *name = ilya_getupvalue(L, 1, n);
     if (name == NULL) return 0;
-    irin_pushstring(L, name);
+    ilya_pushstring(L, name);
     return 2;
   }
   else {
-    const char *name = irin_setupvalue(L, 1, n);
-    irin_pushstring(L, name);
+    const char *name = ilya_setupvalue(L, 1, n);
+    ilya_pushstring(L, name);
     return 1;
   }
 }
 
 
-static int newuserdata (irin_State *L) {
+static int newuserdata (ilya_State *L) {
   size_t size = cast_sizet(luaL_optinteger(L, 1, 0));
   int nuv = cast_int(luaL_optinteger(L, 2, 0));
-  char *p = cast_charp(irin_newuserdatauv(L, size, nuv));
+  char *p = cast_charp(ilya_newuserdatauv(L, size, nuv));
   while (size--) *p++ = '\0';
   return 1;
 }
 
 
-static int pushuserdata (irin_State *L) {
-  irin_Integer u = luaL_checkinteger(L, 1);
-  irin_pushlightuserdata(L, cast_voidp(cast_sizet(u)));
+static int pushuserdata (ilya_State *L) {
+  ilya_Integer u = luaL_checkinteger(L, 1);
+  ilya_pushlightuserdata(L, cast_voidp(cast_sizet(u)));
   return 1;
 }
 
 
-static int udataval (irin_State *L) {
-  irin_pushinteger(L, cast(irin_Integer, cast(size_t, irin_touserdata(L, 1))));
+static int udataval (ilya_State *L) {
+  ilya_pushinteger(L, cast(ilya_Integer, cast(size_t, ilya_touserdata(L, 1))));
   return 1;
 }
 
 
-static int doonnewstack (irin_State *L) {
-  irin_State *L1 = irin_newthread(L);
+static int doonnewstack (ilya_State *L) {
+  ilya_State *L1 = ilya_newthread(L);
   size_t l;
   const char *s = luaL_checklstring(L, 1, &l);
   int status = luaL_loadbuffer(L1, s, l, s);
-  if (status == IRIN_OK)
-    status = irin_pcall(L1, 0, 0, 0);
-  irin_pushinteger(L, status);
+  if (status == ILYA_OK)
+    status = ilya_pcall(L1, 0, 0, 0);
+  ilya_pushinteger(L, status);
   return 1;
 }
 
 
-static int s2d (irin_State *L) {
-  irin_pushnumber(L, cast_num(*cast(const double *, luaL_checkstring(L, 1))));
+static int s2d (ilya_State *L) {
+  ilya_pushnumber(L, cast_num(*cast(const double *, luaL_checkstring(L, 1))));
   return 1;
 }
 
 
-static int d2s (irin_State *L) {
+static int d2s (ilya_State *L) {
   double d = cast(double, luaL_checknumber(L, 1));
-  irin_pushlstring(L, cast_charp(&d), sizeof(d));
+  ilya_pushlstring(L, cast_charp(&d), sizeof(d));
   return 1;
 }
 
 
-static int num2int (irin_State *L) {
-  irin_pushinteger(L, irin_tointeger(L, 1));
+static int num2int (ilya_State *L) {
+  ilya_pushinteger(L, ilya_tointeger(L, 1));
   return 1;
 }
 
 
-static int makeseed (irin_State *L) {
-  irin_pushinteger(L, cast(irin_Integer, luaL_makeseed(L)));
+static int makeseed (ilya_State *L) {
+  ilya_pushinteger(L, cast(ilya_Integer, luaL_makeseed(L)));
   return 1;
 }
 
 
-static int newstate (irin_State *L) {
+static int newstate (ilya_State *L) {
   void *ud;
-  irin_Alloc f = irin_getallocf(L, &ud);
-  irin_State *L1 = irin_newstate(f, ud, 0);
+  ilya_Alloc f = ilya_getallocf(L, &ud);
+  ilya_State *L1 = ilya_newstate(f, ud, 0);
   if (L1) {
-    irin_atpanic(L1, tpanic);
-    irin_pushlightuserdata(L, L1);
+    ilya_atpanic(L1, tpanic);
+    ilya_pushlightuserdata(L, L1);
   }
   else
-    irin_pushnil(L);
+    ilya_pushnil(L);
   return 1;
 }
 
 
-static irin_State *getstate (irin_State *L) {
-  irin_State *L1 = cast(irin_State *, irin_touserdata(L, 1));
+static ilya_State *getstate (ilya_State *L) {
+  ilya_State *L1 = cast(ilya_State *, ilya_touserdata(L, 1));
   luaL_argcheck(L, L1 != NULL, 1, "state expected");
   return L1;
 }
 
 
-static int loadlib (irin_State *L) {
-  irin_State *L1 = getstate(L);
+static int loadlib (ilya_State *L) {
+  ilya_State *L1 = getstate(L);
   int load = cast_int(luaL_checkinteger(L, 2));
   int preload = cast_int(luaL_checkinteger(L, 3));
   luaL_openselectedlibs(L1, load, preload);
   luaL_requiref(L1, "T", luaB_opentests, 0);
-  irin_assert(irin_type(L1, -1) == IRIN_TTABLE);
+  ilya_assert(ilya_type(L1, -1) == ILYA_TTABLE);
   /* 'requiref' should not reload module already loaded... */
   luaL_requiref(L1, "T", NULL, 1);  /* seg. fault if it reloads */
   /* ...but should return the same module */
-  irin_assert(irin_compare(L1, -1, -2, IRIN_OPEQ));
+  ilya_assert(ilya_compare(L1, -1, -2, ILYA_OPEQ));
   return 0;
 }
 
-static int closestate (irin_State *L) {
-  irin_State *L1 = getstate(L);
-  irin_close(L1);
+static int closestate (ilya_State *L) {
+  ilya_State *L1 = getstate(L);
+  ilya_close(L1);
   return 0;
 }
 
-static int doremote (irin_State *L) {
-  irin_State *L1 = getstate(L);
+static int doremote (ilya_State *L) {
+  ilya_State *L1 = getstate(L);
   size_t lcode;
   const char *code = luaL_checklstring(L, 2, &lcode);
   int status;
-  irin_settop(L1, 0);
+  ilya_settop(L1, 0);
   status = luaL_loadbuffer(L1, code, lcode, code);
-  if (status == IRIN_OK)
-    status = irin_pcall(L1, 0, IRIN_MULTRET, 0);
-  if (status != IRIN_OK) {
-    irin_pushnil(L);
-    irin_pushstring(L, irin_tostring(L1, -1));
-    irin_pushinteger(L, status);
+  if (status == ILYA_OK)
+    status = ilya_pcall(L1, 0, ILYA_MULTRET, 0);
+  if (status != ILYA_OK) {
+    ilya_pushnil(L);
+    ilya_pushstring(L, ilya_tostring(L1, -1));
+    ilya_pushinteger(L, status);
     return 3;
   }
   else {
     int i = 0;
-    while (!irin_isnone(L1, ++i))
-      irin_pushstring(L, irin_tostring(L1, i));
-    irin_pop(L1, i-1);
+    while (!ilya_isnone(L1, ++i))
+      ilya_pushstring(L, ilya_tostring(L1, i));
+    ilya_pop(L1, i-1);
     return i-1;
   }
 }
 
 
-static int log2_aux (irin_State *L) {
+static int log2_aux (ilya_State *L) {
   unsigned int x = (unsigned int)luaL_checkinteger(L, 1);
-  irin_pushinteger(L, luaO_ceillog2(x));
+  ilya_pushinteger(L, luaO_ceillog2(x));
   return 1;
 }
 
 
-struct Aux { jmp_buf jb; const char *paniccode; irin_State *L; };
+struct Aux { jmp_buf jb; const char *paniccode; ilya_State *L; };
 
 /*
 ** does a long-jump back to "main program".
 */
-static int panicback (irin_State *L) {
+static int panicback (ilya_State *L) {
   struct Aux *b;
-  irin_checkstack(L, 1);  /* open space for 'Aux' struct */
-  irin_getfield(L, IRIN_REGISTRYINDEX, "_jmpbuf");  /* get 'Aux' struct */
-  b = (struct Aux *)irin_touserdata(L, -1);
-  irin_pop(L, 1);  /* remove 'Aux' struct */
+  ilya_checkstack(L, 1);  /* open space for 'Aux' struct */
+  ilya_getfield(L, ILYA_REGISTRYINDEX, "_jmpbuf");  /* get 'Aux' struct */
+  b = (struct Aux *)ilya_touserdata(L, -1);
+  ilya_pop(L, 1);  /* remove 'Aux' struct */
   runC(b->L, L, b->paniccode);  /* run optional panic code */
   longjmp(b->jb, 1);
   return 1;  /* to avoid warnings */
 }
 
-static int checkpanic (irin_State *L) {
+static int checkpanic (ilya_State *L) {
   struct Aux b;
   void *ud;
-  irin_State *L1;
+  ilya_State *L1;
   const char *code = luaL_checkstring(L, 1);
-  irin_Alloc f = irin_getallocf(L, &ud);
+  ilya_Alloc f = ilya_getallocf(L, &ud);
   b.paniccode = luaL_optstring(L, 2, "");
   b.L = L;
-  L1 = irin_newstate(f, ud, 0);  /* create new state */
+  L1 = ilya_newstate(f, ud, 0);  /* create new state */
   if (L1 == NULL) {  /* error? */
-    irin_pushstring(L, MEMERRMSG);
+    ilya_pushstring(L, MEMERRMSG);
     return 1;
   }
-  irin_atpanic(L1, panicback);  /* set its panic fn */
-  irin_pushlightuserdata(L1, &b);
-  irin_setfield(L1, IRIN_REGISTRYINDEX, "_jmpbuf");  /* store 'Aux' struct */
+  ilya_atpanic(L1, panicback);  /* set its panic fn */
+  ilya_pushlightuserdata(L1, &b);
+  ilya_setfield(L1, ILYA_REGISTRYINDEX, "_jmpbuf");  /* store 'Aux' struct */
   if (setjmp(b.jb) == 0) {  /* set jump buffer */
     runC(L, L1, code);  /* run code unprotected */
-    irin_pushliteral(L, "no errors");
+    ilya_pushliteral(L, "no errors");
   }
   else {  /* error handling */
     /* move error message to original state */
-    irin_pushstring(L, irin_tostring(L1, -1));
+    ilya_pushstring(L, ilya_tostring(L1, -1));
   }
-  irin_close(L1);
+  ilya_close(L1);
   return 1;
 }
 
 
-static int externKstr (irin_State *L) {
+static int externKstr (ilya_State *L) {
   size_t len;
   const char *s = luaL_checklstring(L, 1, &len);
-  irin_pushexternalstring(L, s, len, NULL, NULL);
+  ilya_pushexternalstring(L, s, len, NULL, NULL);
   return 1;
 }
 
@@ -1403,23 +1403,23 @@ static int externKstr (irin_State *L) {
 /*
 ** Create a buffer with the content of a given string and then
 ** create an external string using that buffer. Use the allocation
-** fn from Irin to create and free the buffer.
+** fn from Ilya to create and free the buffer.
 */
-static int externstr (irin_State *L) {
+static int externstr (ilya_State *L) {
   size_t len;
   const char *s = luaL_checklstring(L, 1, &len);
   void *ud;
-  irin_Alloc allocf = irin_getallocf(L, &ud);  /* get allocation fn */
+  ilya_Alloc allocf = ilya_getallocf(L, &ud);  /* get allocation fn */
   /* create the buffer */
   char *buff = cast_charp((*allocf)(ud, NULL, 0, len + 1));
   if (buff == NULL) {  /* memory error? */
-    irin_pushliteral(L, "not enough memory");
-    irin_error(L);  /* raise a memory error */
+    ilya_pushliteral(L, "not enough memory");
+    ilya_error(L);  /* raise a memory error */
   }
   /* copy string content to buffer, including ending 0 */
   memcpy(buff, s, (len + 1) * sizeof(char));
   /* create external string */
-  irin_pushexternalstring(L, buff, len, allocf, ud);
+  ilya_pushexternalstring(L, buff, len, allocf, ud);
   return 1;
 }
 
@@ -1427,12 +1427,12 @@ static int externstr (irin_State *L) {
 /*
 ** {====================================================================
 ** fn to test the API with C. It interprets a kind of assembler
-** language with calls to the API, so the test can be driven by Irin code
+** language with calls to the API, so the test can be driven by Ilya code
 ** =====================================================================
 */
 
 
-static void sethookaux (irin_State *L, int mask, int count, const char *code);
+static void sethookaux (ilya_State *L, int mask, int count, const char *code);
 
 static const char *const delimits = " \t\n,;";
 
@@ -1446,28 +1446,28 @@ static void skip (const char **pc) {
   }
 }
 
-static int getnum_aux (irin_State *L, irin_State *L1, const char **pc) {
+static int getnum_aux (ilya_State *L, ilya_State *L1, const char **pc) {
   int res = 0;
   int sig = 1;
   skip(pc);
   if (**pc == '.') {
-    res = cast_int(irin_tointeger(L1, -1));
-    irin_pop(L1, 1);
+    res = cast_int(ilya_tointeger(L1, -1));
+    ilya_pop(L1, 1);
     (*pc)++;
     return res;
   }
   else if (**pc == '*') {
-    res = irin_gettop(L1);
+    res = ilya_gettop(L1);
     (*pc)++;
     return res;
   }
   else if (**pc == '!') {
     (*pc)++;
     if (**pc == 'G')
-      res = IRIN_RIDX_GLOBALS;
+      res = ILYA_RIDX_GLOBALS;
     else if (**pc == 'M')
-      res = IRIN_RIDX_MAINTHREAD;
-    else irin_assert(0);
+      res = ILYA_RIDX_MAINTHREAD;
+    else ilya_assert(0);
     (*pc)++;
     return res;
   }
@@ -1481,7 +1481,7 @@ static int getnum_aux (irin_State *L, irin_State *L1, const char **pc) {
   return sig*res;
 }
 
-static const char *getstring_aux (irin_State *L, char *buff, const char **pc) {
+static const char *getstring_aux (ilya_State *L, char *buff, const char **pc) {
   int i = 0;
   skip(pc);
   if (**pc == '"' || **pc == '\'') {  /* quoted string? */
@@ -1501,17 +1501,17 @@ static const char *getstring_aux (irin_State *L, char *buff, const char **pc) {
 }
 
 
-static int getindex_aux (irin_State *L, irin_State *L1, const char **pc) {
+static int getindex_aux (ilya_State *L, ilya_State *L1, const char **pc) {
   skip(pc);
   switch (*(*pc)++) {
-    case 'R': return IRIN_REGISTRYINDEX;
-    case 'U': return irin_upvalueindex(getnum_aux(L, L1, pc));
+    case 'R': return ILYA_REGISTRYINDEX;
+    case 'U': return ilya_upvalueindex(getnum_aux(L, L1, pc));
     default: {
       int n;
       (*pc)--;  /* to read again */
       n = getnum_aux(L, L1, pc);
       if (n == 0) return 0;
-      else return irin_absindex(L1, n);
+      else return ilya_absindex(L1, n);
     }
   }
 }
@@ -1524,11 +1524,11 @@ static const char *const statcodes[] = {"OK", "YIELD", "ERRRUN",
 ** Avoid these stat codes from being collected, to avoid possible
 ** memory error when pushing them.
 */
-static void regcodes (irin_State *L) {
+static void regcodes (ilya_State *L) {
   unsigned int i;
   for (i = 0; i < sizeof(statcodes) / sizeof(statcodes[0]); i++) {
-    irin_pushboolean(L, 1);
-    irin_setfield(L, IRIN_REGISTRYINDEX, statcodes[i]);
+    ilya_pushboolean(L, 1);
+    ilya_setfield(L, ILYA_REGISTRYINDEX, statcodes[i]);
   }
 }
 
@@ -1540,20 +1540,20 @@ static void regcodes (irin_State *L) {
 #define getindex	(getindex_aux(L, L1, &pc))
 
 
-static int testC (irin_State *L);
-static int Cfunck (irin_State *L, int status, irin_KContext ctx);
+static int testC (ilya_State *L);
+static int Cfunck (ilya_State *L, int status, ilya_KContext ctx);
 
 /*
 ** arithmetic operation encoding for 'arith' instruction
-** IRIN_OPIDIV  -> \
-** IRIN_OPSHL   -> <
-** IRIN_OPSHR   -> >
-** IRIN_OPUNM   -> _
-** IRIN_OPBNOT  -> !
+** ILYA_OPIDIV  -> \
+** ILYA_OPSHL   -> <
+** ILYA_OPSHR   -> >
+** ILYA_OPUNM   -> _
+** ILYA_OPBNOT  -> !
 */
 static const char ops[] = "+-*%^/\\&|~<>_!";
 
-static int runC (irin_State *L, irin_State *L1, const char *pc) {
+static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
   char buff[300];
   int status = 0;
   if (pc == NULL) return luaL_error(L, "attempt to runC null script");
@@ -1561,29 +1561,29 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
     const char *inst = getstring;
     if EQ("") return 0;
     else if EQ("absindex") {
-      irin_pushinteger(L1, getindex);
+      ilya_pushinteger(L1, getindex);
     }
     else if EQ("append") {
       int t = getindex;
-      int i = cast_int(irin_rawlen(L1, t));
-      irin_rawseti(L1, t, i + 1);
+      int i = cast_int(ilya_rawlen(L1, t));
+      ilya_rawseti(L1, t, i + 1);
     }
     else if EQ("arith") {
       int op;
       skip(&pc);
       op = cast_int(strchr(ops, *pc++) - ops);
-      irin_arith(L1, op);
+      ilya_arith(L1, op);
     }
     else if EQ("call") {
       int narg = getnum;
       int nres = getnum;
-      irin_call(L1, narg, nres);
+      ilya_call(L1, narg, nres);
     }
     else if EQ("callk") {
       int narg = getnum;
       int nres = getnum;
       int i = getindex;
-      irin_callk(L1, narg, nres, i, Cfunck);
+      ilya_callk(L1, narg, nres, i, Cfunck);
     }
     else if EQ("checkstack") {
       int sz = getnum;
@@ -1594,87 +1594,87 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
     }
     else if EQ("rawcheckstack") {
       int sz = getnum;
-      irin_pushboolean(L1, irin_checkstack(L1, sz));
+      ilya_pushboolean(L1, ilya_checkstack(L1, sz));
     }
     else if EQ("compare") {
       const char *opt = getstring;  /* EQ, LT, or LE */
-      int op = (opt[0] == 'E') ? IRIN_OPEQ
-                               : (opt[1] == 'T') ? IRIN_OPLT : IRIN_OPLE;
+      int op = (opt[0] == 'E') ? ILYA_OPEQ
+                               : (opt[1] == 'T') ? ILYA_OPLT : ILYA_OPLE;
       int a = getindex;
       int b = getindex;
-      irin_pushboolean(L1, irin_compare(L1, a, b, op));
+      ilya_pushboolean(L1, ilya_compare(L1, a, b, op));
     }
     else if EQ("concat") {
-      irin_concat(L1, getnum);
+      ilya_concat(L1, getnum);
     }
     else if EQ("copy") {
       int f = getindex;
-      irin_copy(L1, f, getindex);
+      ilya_copy(L1, f, getindex);
     }
     else if EQ("func2num") {
-      irin_CFunction func = irin_tocfunction(L1, getindex);
-      irin_pushinteger(L1, cast(irin_Integer, cast(size_t, func)));
+      ilya_CFunction func = ilya_tocfunction(L1, getindex);
+      ilya_pushinteger(L1, cast(ilya_Integer, cast(size_t, func)));
     }
     else if EQ("getfield") {
       int t = getindex;
-      int tp = irin_getfield(L1, t, getstring);
-      irin_assert(tp == irin_type(L1, -1));
+      int tp = ilya_getfield(L1, t, getstring);
+      ilya_assert(tp == ilya_type(L1, -1));
     }
     else if EQ("getglobal") {
-      irin_getglobal(L1, getstring);
+      ilya_getglobal(L1, getstring);
     }
     else if EQ("getmetatable") {
-      if (irin_getmetatable(L1, getindex) == 0)
-        irin_pushnil(L1);
+      if (ilya_getmetatable(L1, getindex) == 0)
+        ilya_pushnil(L1);
     }
     else if EQ("gettable") {
-      int tp = irin_gettable(L1, getindex);
-      irin_assert(tp == irin_type(L1, -1));
+      int tp = ilya_gettable(L1, getindex);
+      ilya_assert(tp == ilya_type(L1, -1));
     }
     else if EQ("gettop") {
-      irin_pushinteger(L1, irin_gettop(L1));
+      ilya_pushinteger(L1, ilya_gettop(L1));
     }
     else if EQ("gsub") {
       int a = getnum; int b = getnum; int c = getnum;
-      luaL_gsub(L1, irin_tostring(L1, a),
-                    irin_tostring(L1, b),
-                    irin_tostring(L1, c));
+      luaL_gsub(L1, ilya_tostring(L1, a),
+                    ilya_tostring(L1, b),
+                    ilya_tostring(L1, c));
     }
     else if EQ("insert") {
-      irin_insert(L1, getnum);
+      ilya_insert(L1, getnum);
     }
     else if EQ("iscfunction") {
-      irin_pushboolean(L1, irin_iscfunction(L1, getindex));
+      ilya_pushboolean(L1, ilya_iscfunction(L1, getindex));
     }
     else if EQ("isfunction") {
-      irin_pushboolean(L1, irin_isfunction(L1, getindex));
+      ilya_pushboolean(L1, ilya_isfunction(L1, getindex));
     }
     else if EQ("isnil") {
-      irin_pushboolean(L1, irin_isnil(L1, getindex));
+      ilya_pushboolean(L1, ilya_isnil(L1, getindex));
     }
     else if EQ("isnull") {
-      irin_pushboolean(L1, irin_isnone(L1, getindex));
+      ilya_pushboolean(L1, ilya_isnone(L1, getindex));
     }
     else if EQ("isnumber") {
-      irin_pushboolean(L1, irin_isnumber(L1, getindex));
+      ilya_pushboolean(L1, ilya_isnumber(L1, getindex));
     }
     else if EQ("isstring") {
-      irin_pushboolean(L1, irin_isstring(L1, getindex));
+      ilya_pushboolean(L1, ilya_isstring(L1, getindex));
     }
     else if EQ("istable") {
-      irin_pushboolean(L1, irin_istable(L1, getindex));
+      ilya_pushboolean(L1, ilya_istable(L1, getindex));
     }
     else if EQ("isudataval") {
-      irin_pushboolean(L1, irin_islightuserdata(L1, getindex));
+      ilya_pushboolean(L1, ilya_islightuserdata(L1, getindex));
     }
     else if EQ("isuserdata") {
-      irin_pushboolean(L1, irin_isuserdata(L1, getindex));
+      ilya_pushboolean(L1, ilya_isuserdata(L1, getindex));
     }
     else if EQ("len") {
-      irin_len(L1, getindex);
+      ilya_len(L1, getindex);
     }
     else if EQ("Llen") {
-      irin_pushinteger(L1, luaL_len(L1, getindex));
+      ilya_pushinteger(L1, luaL_len(L1, getindex));
     }
     else if EQ("loadfile") {
       luaL_loadfile(L1, luaL_checkstring(L1, getnum));
@@ -1687,47 +1687,47 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
       luaL_loadbufferx(L1, s, slen, name, mode);
     }
     else if EQ("newmetatable") {
-      irin_pushboolean(L1, luaL_newmetatable(L1, getstring));
+      ilya_pushboolean(L1, luaL_newmetatable(L1, getstring));
     }
     else if EQ("newtable") {
-      irin_newtable(L1);
+      ilya_newtable(L1);
     }
     else if EQ("newthread") {
-      irin_newthread(L1);
+      ilya_newthread(L1);
     }
     else if EQ("resetthread") {
-      irin_pushinteger(L1, irin_resetthread(L1));  /* deprecated */
+      ilya_pushinteger(L1, ilya_resetthread(L1));  /* deprecated */
     }
     else if EQ("newuserdata") {
-      irin_newuserdata(L1, cast_sizet(getnum));
+      ilya_newuserdata(L1, cast_sizet(getnum));
     }
     else if EQ("next") {
-      irin_next(L1, -2);
+      ilya_next(L1, -2);
     }
     else if EQ("objsize") {
-      irin_pushinteger(L1, l_castU2S(irin_rawlen(L1, getindex)));
+      ilya_pushinteger(L1, l_castU2S(ilya_rawlen(L1, getindex)));
     }
     else if EQ("pcall") {
       int narg = getnum;
       int nres = getnum;
-      status = irin_pcall(L1, narg, nres, getnum);
+      status = ilya_pcall(L1, narg, nres, getnum);
     }
     else if EQ("pcallk") {
       int narg = getnum;
       int nres = getnum;
       int i = getindex;
-      status = irin_pcallk(L1, narg, nres, 0, i, Cfunck);
+      status = ilya_pcallk(L1, narg, nres, 0, i, Cfunck);
     }
     else if EQ("pop") {
-      irin_pop(L1, getnum);
+      ilya_pop(L1, getnum);
     }
     else if EQ("printstack") {
       int n = getnum;
       if (n != 0) {
-        irin_printvalue(s2v(L->ci->func.p + n));
+        ilya_printvalue(s2v(L->ci->func.p + n));
         printf("\n");
       }
-      else irin_printstack(L1);
+      else ilya_printstack(L1);
     }
     else if EQ("print") {
       const char *msg = getstring;
@@ -1735,82 +1735,82 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
     }
     else if EQ("warningC") {
       const char *msg = getstring;
-      irin_warning(L1, msg, 1);
+      ilya_warning(L1, msg, 1);
     }
     else if EQ("warning") {
       const char *msg = getstring;
-      irin_warning(L1, msg, 0);
+      ilya_warning(L1, msg, 0);
     }
     else if EQ("pushbool") {
-      irin_pushboolean(L1, getnum);
+      ilya_pushboolean(L1, getnum);
     }
     else if EQ("pushcclosure") {
-      irin_pushcclosure(L1, testC, getnum);
+      ilya_pushcclosure(L1, testC, getnum);
     }
     else if EQ("pushint") {
-      irin_pushinteger(L1, getnum);
+      ilya_pushinteger(L1, getnum);
     }
     else if EQ("pushnil") {
-      irin_pushnil(L1);
+      ilya_pushnil(L1);
     }
     else if EQ("pushnum") {
-      irin_pushnumber(L1, (irin_Number)getnum);
+      ilya_pushnumber(L1, (ilya_Number)getnum);
     }
     else if EQ("pushstatus") {
-      irin_pushstring(L1, statcodes[status]);
+      ilya_pushstring(L1, statcodes[status]);
     }
     else if EQ("pushstring") {
-      irin_pushstring(L1, getstring);
+      ilya_pushstring(L1, getstring);
     }
     else if EQ("pushupvalueindex") {
-      irin_pushinteger(L1, irin_upvalueindex(getnum));
+      ilya_pushinteger(L1, ilya_upvalueindex(getnum));
     }
     else if EQ("pushvalue") {
-      irin_pushvalue(L1, getindex);
+      ilya_pushvalue(L1, getindex);
     }
     else if EQ("pushfstringI") {
-      irin_pushfstring(L1, irin_tostring(L, -2), (int)irin_tointeger(L, -1));
+      ilya_pushfstring(L1, ilya_tostring(L, -2), (int)ilya_tointeger(L, -1));
     }
     else if EQ("pushfstringS") {
-      irin_pushfstring(L1, irin_tostring(L, -2), irin_tostring(L, -1));
+      ilya_pushfstring(L1, ilya_tostring(L, -2), ilya_tostring(L, -1));
     }
     else if EQ("pushfstringP") {
-      irin_pushfstring(L1, irin_tostring(L, -2), irin_topointer(L, -1));
+      ilya_pushfstring(L1, ilya_tostring(L, -2), ilya_topointer(L, -1));
     }
     else if EQ("rawget") {
       int t = getindex;
-      irin_rawget(L1, t);
+      ilya_rawget(L1, t);
     }
     else if EQ("rawgeti") {
       int t = getindex;
-      irin_rawgeti(L1, t, getnum);
+      ilya_rawgeti(L1, t, getnum);
     }
     else if EQ("rawgetp") {
       int t = getindex;
-      irin_rawgetp(L1, t, cast_voidp(cast_sizet(getnum)));
+      ilya_rawgetp(L1, t, cast_voidp(cast_sizet(getnum)));
     }
     else if EQ("rawset") {
       int t = getindex;
-      irin_rawset(L1, t);
+      ilya_rawset(L1, t);
     }
     else if EQ("rawseti") {
       int t = getindex;
-      irin_rawseti(L1, t, getnum);
+      ilya_rawseti(L1, t, getnum);
     }
     else if EQ("rawsetp") {
       int t = getindex;
-      irin_rawsetp(L1, t, cast_voidp(cast_sizet(getnum)));
+      ilya_rawsetp(L1, t, cast_voidp(cast_sizet(getnum)));
     }
     else if EQ("remove") {
-      irin_remove(L1, getnum);
+      ilya_remove(L1, getnum);
     }
     else if EQ("replace") {
-      irin_replace(L1, getindex);
+      ilya_replace(L1, getindex);
     }
     else if EQ("resume") {
       int i = getindex;
       int nres;
-      status = irin_resume(irin_tothread(L1, i), L, getnum, &nres);
+      status = ilya_resume(ilya_tothread(L1, i), L, getnum, &nres);
     }
     else if EQ("traceback") {
       const char *msg = getstring;
@@ -1818,7 +1818,7 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
       luaL_traceback(L1, L1, msg, level);
     }
     else if EQ("threadstatus") {
-      irin_pushstring(L1, statcodes[irin_status(L1)]);
+      ilya_pushstring(L1, statcodes[ilya_status(L1)]);
     }
     else if EQ("alloccount") {
       l_memcontrol.countlimit = cast_uint(getnum);
@@ -1829,12 +1829,12 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
         int i;
         for (i = 0; i < n; i++) {
           int idx = -(n - i);
-          switch (irin_type(L1, idx)) {
-            case IRIN_TBOOLEAN:
-              irin_pushboolean(L, irin_toboolean(L1, idx));
+          switch (ilya_type(L1, idx)) {
+            case ILYA_TBOOLEAN:
+              ilya_pushboolean(L, ilya_toboolean(L1, idx));
               break;
             default:
-              irin_pushstring(L, irin_tostring(L1, idx));
+              ilya_pushstring(L, ilya_tostring(L1, idx));
               break;
           }
         }
@@ -1843,20 +1843,20 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
     }
     else if EQ("rotate") {
       int i = getindex;
-      irin_rotate(L1, i, getnum);
+      ilya_rotate(L1, i, getnum);
     }
     else if EQ("setfield") {
       int t = getindex;
       const char *s = getstring;
-      irin_setfield(L1, t, s);
+      ilya_setfield(L1, t, s);
     }
     else if EQ("seti") {
       int t = getindex;
-      irin_seti(L1, t, getnum);
+      ilya_seti(L1, t, getnum);
     }
     else if EQ("setglobal") {
       const char *s = getstring;
-      irin_setglobal(L1, s);
+      ilya_setglobal(L1, s);
     }
     else if EQ("sethook") {
       int mask = getnum;
@@ -1866,20 +1866,20 @@ static int runC (irin_State *L, irin_State *L1, const char *pc) {
     }
     else if EQ("setmetatable") {
       int idx = getindex;
-      irin_setmetatable(L1, idx);
+      ilya_setmetatable(L1, idx);
     }
     else if EQ("settable") {
-      irin_settable(L1, getindex);
+      ilya_settable(L1, getindex);
     }
     else if EQ("settop") {
-      irin_settop(L1, getnum);
+      ilya_settop(L1, getnum);
     }
     else if EQ("testudata") {
       int i = getindex;
-      irin_pushboolean(L1, luaL_testudata(L1, i, getstring) != NULL);
+      ilya_pushboolean(L1, luaL_testudata(L1, i, getstring) != NULL);
     }
     else if EQ("error") {
-      irin_error(L1);
+      ilya_error(L1);
     }
     else if EQ("abort") {
       abort();
@@ -1894,60 +1894,60 @@ static struct X { int x; } x;
       break;
     }
     else if EQ("tobool") {
-      irin_pushboolean(L1, irin_toboolean(L1, getindex));
+      ilya_pushboolean(L1, ilya_toboolean(L1, getindex));
     }
     else if EQ("tocfunction") {
-      irin_pushcfunction(L1, irin_tocfunction(L1, getindex));
+      ilya_pushcfunction(L1, ilya_tocfunction(L1, getindex));
     }
     else if EQ("tointeger") {
-      irin_pushinteger(L1, irin_tointeger(L1, getindex));
+      ilya_pushinteger(L1, ilya_tointeger(L1, getindex));
     }
     else if EQ("tonumber") {
-      irin_pushnumber(L1, irin_tonumber(L1, getindex));
+      ilya_pushnumber(L1, ilya_tonumber(L1, getindex));
     }
     else if EQ("topointer") {
-      irin_pushlightuserdata(L1, cast_voidp(irin_topointer(L1, getindex)));
+      ilya_pushlightuserdata(L1, cast_voidp(ilya_topointer(L1, getindex)));
     }
     else if EQ("touserdata") {
-      irin_pushlightuserdata(L1, irin_touserdata(L1, getindex));
+      ilya_pushlightuserdata(L1, ilya_touserdata(L1, getindex));
     }
     else if EQ("tostring") {
-      const char *s = irin_tostring(L1, getindex);
-      const char *s1 = irin_pushstring(L1, s);
+      const char *s = ilya_tostring(L1, getindex);
+      const char *s1 = ilya_pushstring(L1, s);
       cast_void(s1);  /* to avoid warnings */
-      irin_longassert((s == NULL && s1 == NULL) || strcmp(s, s1) == 0);
+      ilya_longassert((s == NULL && s1 == NULL) || strcmp(s, s1) == 0);
     }
     else if EQ("Ltolstring") {
       luaL_tolstring(L1, getindex, NULL);
     }
     else if EQ("type") {
-      irin_pushstring(L1, luaL_typename(L1, getnum));
+      ilya_pushstring(L1, luaL_typename(L1, getnum));
     }
     else if EQ("xmove") {
       int f = getindex;
       int t = getindex;
-      irin_State *fs = (f == 0) ? L1 : irin_tothread(L1, f);
-      irin_State *ts = (t == 0) ? L1 : irin_tothread(L1, t);
+      ilya_State *fs = (f == 0) ? L1 : ilya_tothread(L1, f);
+      ilya_State *ts = (t == 0) ? L1 : ilya_tothread(L1, t);
       int n = getnum;
-      if (n == 0) n = irin_gettop(fs);
-      irin_xmove(fs, ts, n);
+      if (n == 0) n = ilya_gettop(fs);
+      ilya_xmove(fs, ts, n);
     }
     else if EQ("isyieldable") {
-      irin_pushboolean(L1, irin_isyieldable(irin_tothread(L1, getindex)));
+      ilya_pushboolean(L1, ilya_isyieldable(ilya_tothread(L1, getindex)));
     }
     else if EQ("yield") {
-      return irin_yield(L1, getnum);
+      return ilya_yield(L1, getnum);
     }
     else if EQ("yieldk") {
       int nres = getnum;
       int i = getindex;
-      return irin_yieldk(L1, nres, i, Cfunck);
+      return ilya_yieldk(L1, nres, i, Cfunck);
     }
     else if EQ("toclose") {
-      irin_toclose(L1, getnum);
+      ilya_toclose(L1, getnum);
     }
     else if EQ("closeslot") {
-      irin_closeslot(L1, getnum);
+      ilya_closeslot(L1, getnum);
     }
     else if EQ("argerror") {
       int arg = getnum;
@@ -1959,15 +1959,15 @@ static struct X { int x; } x;
 }
 
 
-static int testC (irin_State *L) {
-  irin_State *L1;
+static int testC (ilya_State *L) {
+  ilya_State *L1;
   const char *pc;
-  if (irin_isuserdata(L, 1)) {
+  if (ilya_isuserdata(L, 1)) {
     L1 = getstate(L);
     pc = luaL_checkstring(L, 2);
   }
-  else if (irin_isthread(L, 1)) {
-    L1 = irin_tothread(L, 1);
+  else if (ilya_isthread(L, 1)) {
+    L1 = ilya_tothread(L, 1);
     pc = luaL_checkstring(L, 2);
   }
   else {
@@ -1978,23 +1978,23 @@ static int testC (irin_State *L) {
 }
 
 
-static int Cfunc (irin_State *L) {
-  return runC(L, L, irin_tostring(L, irin_upvalueindex(1)));
+static int Cfunc (ilya_State *L) {
+  return runC(L, L, ilya_tostring(L, ilya_upvalueindex(1)));
 }
 
 
-static int Cfunck (irin_State *L, int status, irin_KContext ctx) {
-  irin_pushstring(L, statcodes[status]);
-  irin_setglobal(L, "status");
-  irin_pushinteger(L, cast(irin_Integer, ctx));
-  irin_setglobal(L, "ctx");
-  return runC(L, L, irin_tostring(L, cast_int(ctx)));
+static int Cfunck (ilya_State *L, int status, ilya_KContext ctx) {
+  ilya_pushstring(L, statcodes[status]);
+  ilya_setglobal(L, "status");
+  ilya_pushinteger(L, cast(ilya_Integer, ctx));
+  ilya_setglobal(L, "ctx");
+  return runC(L, L, ilya_tostring(L, cast_int(ctx)));
 }
 
 
-static int makeCfunc (irin_State *L) {
+static int makeCfunc (ilya_State *L) {
   luaL_checkstring(L, 1);
-  irin_pushcclosure(L, Cfunc, irin_gettop(L));
+  ilya_pushcclosure(L, Cfunc, ilya_gettop(L));
   return 1;
 }
 
@@ -2011,16 +2011,16 @@ static int makeCfunc (irin_State *L) {
 /*
 ** C hook that runs the C script stored in registry.C_HOOK[L]
 */
-static void Chook (irin_State *L, irin_Debug *ar) {
+static void Chook (ilya_State *L, ilya_Debug *ar) {
   const char *scpt;
   const char *const events [] = {"call", "ret", "line", "count", "tailcall"};
-  irin_getfield(L, IRIN_REGISTRYINDEX, "C_HOOK");
-  irin_pushlightuserdata(L, L);
-  irin_gettable(L, -2);  /* get C_HOOK[L] (script saved by sethookaux) */
-  scpt = irin_tostring(L, -1);  /* not very religious (string will be popped) */
-  irin_pop(L, 2);  /* remove C_HOOK and script */
-  irin_pushstring(L, events[ar->event]);  /* may be used by script */
-  irin_pushinteger(L, ar->currentline);  /* may be used by script */
+  ilya_getfield(L, ILYA_REGISTRYINDEX, "C_HOOK");
+  ilya_pushlightuserdata(L, L);
+  ilya_gettable(L, -2);  /* get C_HOOK[L] (script saved by sethookaux) */
+  scpt = ilya_tostring(L, -1);  /* not very religious (string will be popped) */
+  ilya_pop(L, 2);  /* remove C_HOOK and script */
+  ilya_pushstring(L, events[ar->event]);  /* may be used by script */
+  ilya_pushinteger(L, ar->currentline);  /* may be used by script */
   runC(L, L, scpt);  /* run script from C_HOOK[L] */
 }
 
@@ -2028,55 +2028,55 @@ static void Chook (irin_State *L, irin_Debug *ar) {
 /*
 ** sets 'registry.C_HOOK[L] = scpt' and sets 'Chook' as a hook
 */
-static void sethookaux (irin_State *L, int mask, int count, const char *scpt) {
+static void sethookaux (ilya_State *L, int mask, int count, const char *scpt) {
   if (*scpt == '\0') {  /* no script? */
-    irin_sethook(L, NULL, 0, 0);  /* turn off hooks */
+    ilya_sethook(L, NULL, 0, 0);  /* turn off hooks */
     return;
   }
-  irin_getfield(L, IRIN_REGISTRYINDEX, "C_HOOK");  /* get C_HOOK table */
-  if (!irin_istable(L, -1)) {  /* no hook table? */
-    irin_pop(L, 1);  /* remove previous value */
-    irin_newtable(L);  /* create new C_HOOK table */
-    irin_pushvalue(L, -1);
-    irin_setfield(L, IRIN_REGISTRYINDEX, "C_HOOK");  /* register it */
+  ilya_getfield(L, ILYA_REGISTRYINDEX, "C_HOOK");  /* get C_HOOK table */
+  if (!ilya_istable(L, -1)) {  /* no hook table? */
+    ilya_pop(L, 1);  /* remove previous value */
+    ilya_newtable(L);  /* create new C_HOOK table */
+    ilya_pushvalue(L, -1);
+    ilya_setfield(L, ILYA_REGISTRYINDEX, "C_HOOK");  /* register it */
   }
-  irin_pushlightuserdata(L, L);
-  irin_pushstring(L, scpt);
-  irin_settable(L, -3);  /* C_HOOK[L] = script */
-  irin_sethook(L, Chook, mask, count);
+  ilya_pushlightuserdata(L, L);
+  ilya_pushstring(L, scpt);
+  ilya_settable(L, -3);  /* C_HOOK[L] = script */
+  ilya_sethook(L, Chook, mask, count);
 }
 
 
-static int sethook (irin_State *L) {
-  if (irin_isnoneornil(L, 1))
-    irin_sethook(L, NULL, 0, 0);  /* turn off hooks */
+static int sethook (ilya_State *L) {
+  if (ilya_isnoneornil(L, 1))
+    ilya_sethook(L, NULL, 0, 0);  /* turn off hooks */
   else {
     const char *scpt = luaL_checkstring(L, 1);
     const char *smask = luaL_checkstring(L, 2);
     int count = cast_int(luaL_optinteger(L, 3, 0));
     int mask = 0;
-    if (strchr(smask, 'c')) mask |= IRIN_MASKCALL;
-    if (strchr(smask, 'r')) mask |= IRIN_MASKRET;
-    if (strchr(smask, 'l')) mask |= IRIN_MASKLINE;
-    if (count > 0) mask |= IRIN_MASKCOUNT;
+    if (strchr(smask, 'c')) mask |= ILYA_MASKCALL;
+    if (strchr(smask, 'r')) mask |= ILYA_MASKRET;
+    if (strchr(smask, 'l')) mask |= ILYA_MASKLINE;
+    if (count > 0) mask |= ILYA_MASKCOUNT;
     sethookaux(L, mask, count, scpt);
   }
   return 0;
 }
 
 
-static int coresume (irin_State *L) {
+static int coresume (ilya_State *L) {
   int status, nres;
-  irin_State *co = irin_tothread(L, 1);
+  ilya_State *co = ilya_tothread(L, 1);
   luaL_argcheck(L, co, 1, "coroutine expected");
-  status = irin_resume(co, L, 0, &nres);
-  if (status != IRIN_OK && status != IRIN_YIELD) {
-    irin_pushboolean(L, 0);
-    irin_insert(L, -2);
+  status = ilya_resume(co, L, 0, &nres);
+  if (status != ILYA_OK && status != ILYA_YIELD) {
+    ilya_pushboolean(L, 0);
+    ilya_insert(L, -2);
     return 2;  /* return false + error message */
   }
   else {
-    irin_pushboolean(L, 1);
+    ilya_pushboolean(L, 1);
     return 1;
   }
 }
@@ -2086,7 +2086,7 @@ static int coresume (irin_State *L) {
 
 
 static const struct luaL_Reg tests_funcs[] = {
-  {"checkmemory", irin_checkmemory},
+  {"checkmemory", ilya_checkmemory},
   {"closestate", closestate},
   {"d2s", d2s},
   {"doonnewstack", doonnewstack},
@@ -2138,22 +2138,22 @@ static const struct luaL_Reg tests_funcs[] = {
 
 
 static void checkfinalmem (void) {
-  irin_assert(l_memcontrol.numblocks == 0);
-  irin_assert(l_memcontrol.total == 0);
+  ilya_assert(l_memcontrol.numblocks == 0);
+  ilya_assert(l_memcontrol.total == 0);
 }
 
 
-int luaB_opentests (irin_State *L) {
+int luaB_opentests (ilya_State *L) {
   void *ud;
-  irin_Alloc f = irin_getallocf(L, &ud);
-  irin_atpanic(L, &tpanic);
-  irin_setwarnf(L, &warnf, L);
-  irin_pushboolean(L, 0);
-  irin_setglobal(L, "_WARN");  /* _WARN = false */
+  ilya_Alloc f = ilya_getallocf(L, &ud);
+  ilya_atpanic(L, &tpanic);
+  ilya_setwarnf(L, &warnf, L);
+  ilya_pushboolean(L, 0);
+  ilya_setglobal(L, "_WARN");  /* _WARN = false */
   regcodes(L);
   atexit(checkfinalmem);
-  irin_assert(f == debug_realloc && ud == cast_voidp(&l_memcontrol));
-  irin_setallocf(L, f, ud);  /* exercise this fn */
+  ilya_assert(f == debug_realloc && ud == cast_voidp(&l_memcontrol));
+  ilya_setallocf(L, f, ud);  /* exercise this fn */
   luaL_newlib(L, tests_funcs);
   return 1;
 }

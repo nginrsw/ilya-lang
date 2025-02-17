@@ -1,11 +1,11 @@
 /*
 ** $Id: lmathlib.c $
 ** Standard mathematical library
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lmathlib_c
-#define IRIN_LIB
+#define ILYA_LIB
 
 #include "lprefix.h"
 
@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lauxlib.h"
-#include "irinlib.h"
+#include "ilyalib.h"
 #include "llimits.h"
 
 
@@ -27,55 +27,55 @@
 #define PI	(l_mathop(3.141592653589793238462643383279502884))
 
 
-static int math_abs (irin_State *L) {
-  if (irin_isinteger(L, 1)) {
-    irin_Integer n = irin_tointeger(L, 1);
-    if (n < 0) n = (irin_Integer)(0u - (irin_Unsigned)n);
-    irin_pushinteger(L, n);
+static int math_abs (ilya_State *L) {
+  if (ilya_isinteger(L, 1)) {
+    ilya_Integer n = ilya_tointeger(L, 1);
+    if (n < 0) n = (ilya_Integer)(0u - (ilya_Unsigned)n);
+    ilya_pushinteger(L, n);
   }
   else
-    irin_pushnumber(L, l_mathop(fabs)(luaL_checknumber(L, 1)));
+    ilya_pushnumber(L, l_mathop(fabs)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_sin (irin_State *L) {
-  irin_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1)));
+static int math_sin (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_cos (irin_State *L) {
-  irin_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1)));
+static int math_cos (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_tan (irin_State *L) {
-  irin_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1)));
+static int math_tan (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_asin (irin_State *L) {
-  irin_pushnumber(L, l_mathop(asin)(luaL_checknumber(L, 1)));
+static int math_asin (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(asin)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_acos (irin_State *L) {
-  irin_pushnumber(L, l_mathop(acos)(luaL_checknumber(L, 1)));
+static int math_acos (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(acos)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_atan (irin_State *L) {
-  irin_Number y = luaL_checknumber(L, 1);
-  irin_Number x = luaL_optnumber(L, 2, 1);
-  irin_pushnumber(L, l_mathop(atan2)(y, x));
+static int math_atan (ilya_State *L) {
+  ilya_Number y = luaL_checknumber(L, 1);
+  ilya_Number x = luaL_optnumber(L, 2, 1);
+  ilya_pushnumber(L, l_mathop(atan2)(y, x));
   return 1;
 }
 
 
-static int math_toint (irin_State *L) {
+static int math_toint (ilya_State *L) {
   int valid;
-  irin_Integer n = irin_tointegerx(L, 1, &valid);
+  ilya_Integer n = ilya_tointegerx(L, 1, &valid);
   if (l_likely(valid))
-    irin_pushinteger(L, n);
+    ilya_pushinteger(L, n);
   else {
     luaL_checkany(L, 1);
     luaL_pushfail(L);  /* value is not convertible to integer */
@@ -84,49 +84,49 @@ static int math_toint (irin_State *L) {
 }
 
 
-static void pushnumint (irin_State *L, irin_Number d) {
-  irin_Integer n;
-  if (irin_numbertointeger(d, &n))  /* does 'd' fit in an integer? */
-    irin_pushinteger(L, n);  /* result is integer */
+static void pushnumint (ilya_State *L, ilya_Number d) {
+  ilya_Integer n;
+  if (ilya_numbertointeger(d, &n))  /* does 'd' fit in an integer? */
+    ilya_pushinteger(L, n);  /* result is integer */
   else
-    irin_pushnumber(L, d);  /* result is float */
+    ilya_pushnumber(L, d);  /* result is float */
 }
 
 
-static int math_floor (irin_State *L) {
-  if (irin_isinteger(L, 1))
-    irin_settop(L, 1);  /* integer is its own floor */
+static int math_floor (ilya_State *L) {
+  if (ilya_isinteger(L, 1))
+    ilya_settop(L, 1);  /* integer is its own floor */
   else {
-    irin_Number d = l_mathop(floor)(luaL_checknumber(L, 1));
+    ilya_Number d = l_mathop(floor)(luaL_checknumber(L, 1));
     pushnumint(L, d);
   }
   return 1;
 }
 
 
-static int math_ceil (irin_State *L) {
-  if (irin_isinteger(L, 1))
-    irin_settop(L, 1);  /* integer is its own ceiling */
+static int math_ceil (ilya_State *L) {
+  if (ilya_isinteger(L, 1))
+    ilya_settop(L, 1);  /* integer is its own ceiling */
   else {
-    irin_Number d = l_mathop(ceil)(luaL_checknumber(L, 1));
+    ilya_Number d = l_mathop(ceil)(luaL_checknumber(L, 1));
     pushnumint(L, d);
   }
   return 1;
 }
 
 
-static int math_fmod (irin_State *L) {
-  if (irin_isinteger(L, 1) && irin_isinteger(L, 2)) {
-    irin_Integer d = irin_tointeger(L, 2);
-    if ((irin_Unsigned)d + 1u <= 1u) {  /* special cases: -1 or 0 */
+static int math_fmod (ilya_State *L) {
+  if (ilya_isinteger(L, 1) && ilya_isinteger(L, 2)) {
+    ilya_Integer d = ilya_tointeger(L, 2);
+    if ((ilya_Unsigned)d + 1u <= 1u) {  /* special cases: -1 or 0 */
       luaL_argcheck(L, d != 0, 2, "zero");
-      irin_pushinteger(L, 0);  /* avoid overflow with 0x80000... / -1 */
+      ilya_pushinteger(L, 0);  /* avoid overflow with 0x80000... / -1 */
     }
     else
-      irin_pushinteger(L, irin_tointeger(L, 1) % d);
+      ilya_pushinteger(L, ilya_tointeger(L, 1) % d);
   }
   else
-    irin_pushnumber(L, l_mathop(fmod)(luaL_checknumber(L, 1),
+    ilya_pushnumber(L, l_mathop(fmod)(luaL_checknumber(L, 1),
                                      luaL_checknumber(L, 2)));
   return 1;
 }
@@ -134,47 +134,47 @@ static int math_fmod (irin_State *L) {
 
 /*
 ** next fn does not use 'modf', avoiding problems with 'double*'
-** (which is not compatible with 'float*') when irin_Number is not
+** (which is not compatible with 'float*') when ilya_Number is not
 ** 'double'.
 */
-static int math_modf (irin_State *L) {
-  if (irin_isinteger(L ,1)) {
-    irin_settop(L, 1);  /* number is its own integer part */
-    irin_pushnumber(L, 0);  /* no fractional part */
+static int math_modf (ilya_State *L) {
+  if (ilya_isinteger(L ,1)) {
+    ilya_settop(L, 1);  /* number is its own integer part */
+    ilya_pushnumber(L, 0);  /* no fractional part */
   }
   else {
-    irin_Number n = luaL_checknumber(L, 1);
+    ilya_Number n = luaL_checknumber(L, 1);
     /* integer part (rounds toward zero) */
-    irin_Number ip = (n < 0) ? l_mathop(ceil)(n) : l_mathop(floor)(n);
+    ilya_Number ip = (n < 0) ? l_mathop(ceil)(n) : l_mathop(floor)(n);
     pushnumint(L, ip);
     /* fractional part (test needed for inf/-inf) */
-    irin_pushnumber(L, (n == ip) ? l_mathop(0.0) : (n - ip));
+    ilya_pushnumber(L, (n == ip) ? l_mathop(0.0) : (n - ip));
   }
   return 2;
 }
 
 
-static int math_sqrt (irin_State *L) {
-  irin_pushnumber(L, l_mathop(sqrt)(luaL_checknumber(L, 1)));
+static int math_sqrt (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(sqrt)(luaL_checknumber(L, 1)));
   return 1;
 }
 
 
-static int math_ult (irin_State *L) {
-  irin_Integer a = luaL_checkinteger(L, 1);
-  irin_Integer b = luaL_checkinteger(L, 2);
-  irin_pushboolean(L, (irin_Unsigned)a < (irin_Unsigned)b);
+static int math_ult (ilya_State *L) {
+  ilya_Integer a = luaL_checkinteger(L, 1);
+  ilya_Integer b = luaL_checkinteger(L, 2);
+  ilya_pushboolean(L, (ilya_Unsigned)a < (ilya_Unsigned)b);
   return 1;
 }
 
-static int math_log (irin_State *L) {
-  irin_Number x = luaL_checknumber(L, 1);
-  irin_Number res;
-  if (irin_isnoneornil(L, 2))
+static int math_log (ilya_State *L) {
+  ilya_Number x = luaL_checknumber(L, 1);
+  ilya_Number res;
+  if (ilya_isnoneornil(L, 2))
     res = l_mathop(log)(x);
   else {
-    irin_Number base = luaL_checknumber(L, 2);
-#if !defined(IRIN_USE_C89)
+    ilya_Number base = luaL_checknumber(L, 2);
+#if !defined(ILYA_USE_C89)
     if (base == l_mathop(2.0))
       res = l_mathop(log2)(x);
     else
@@ -184,57 +184,57 @@ static int math_log (irin_State *L) {
     else
       res = l_mathop(log)(x)/l_mathop(log)(base);
   }
-  irin_pushnumber(L, res);
+  ilya_pushnumber(L, res);
   return 1;
 }
 
-static int math_exp (irin_State *L) {
-  irin_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
+static int math_exp (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_deg (irin_State *L) {
-  irin_pushnumber(L, luaL_checknumber(L, 1) * (l_mathop(180.0) / PI));
+static int math_deg (ilya_State *L) {
+  ilya_pushnumber(L, luaL_checknumber(L, 1) * (l_mathop(180.0) / PI));
   return 1;
 }
 
-static int math_rad (irin_State *L) {
-  irin_pushnumber(L, luaL_checknumber(L, 1) * (PI / l_mathop(180.0)));
+static int math_rad (ilya_State *L) {
+  ilya_pushnumber(L, luaL_checknumber(L, 1) * (PI / l_mathop(180.0)));
   return 1;
 }
 
 
-static int math_min (irin_State *L) {
-  int n = irin_gettop(L);  /* number of arguments */
+static int math_min (ilya_State *L) {
+  int n = ilya_gettop(L);  /* number of arguments */
   int imin = 1;  /* index of current minimum value */
   int i;
   luaL_argcheck(L, n >= 1, 1, "value expected");
   for (i = 2; i <= n; i++) {
-    if (irin_compare(L, i, imin, IRIN_OPLT))
+    if (ilya_compare(L, i, imin, ILYA_OPLT))
       imin = i;
   }
-  irin_pushvalue(L, imin);
+  ilya_pushvalue(L, imin);
   return 1;
 }
 
 
-static int math_max (irin_State *L) {
-  int n = irin_gettop(L);  /* number of arguments */
+static int math_max (ilya_State *L) {
+  int n = ilya_gettop(L);  /* number of arguments */
   int imax = 1;  /* index of current maximum value */
   int i;
   luaL_argcheck(L, n >= 1, 1, "value expected");
   for (i = 2; i <= n; i++) {
-    if (irin_compare(L, imax, i, IRIN_OPLT))
+    if (ilya_compare(L, imax, i, ILYA_OPLT))
       imax = i;
   }
-  irin_pushvalue(L, imax);
+  ilya_pushvalue(L, imax);
   return 1;
 }
 
 
-static int math_type (irin_State *L) {
-  if (irin_type(L, 1) == IRIN_TNUMBER)
-    irin_pushstring(L, (irin_isinteger(L, 1)) ? "integer" : "float");
+static int math_type (ilya_State *L) {
+  if (ilya_type(L, 1) == ILYA_TNUMBER)
+    ilya_pushstring(L, (ilya_isinteger(L, 1)) ? "integer" : "float");
   else {
     luaL_checkany(L, 1);
     luaL_pushfail(L);
@@ -270,10 +270,10 @@ static int math_type (irin_State *L) {
 
 
 /*
-** IRIN_RAND32 forces the use of 32-bit integers in the implementation
+** ILYA_RAND32 forces the use of 32-bit integers in the implementation
 ** of the PRN generator (mainly for testing).
 */
-#if !defined(IRIN_RAND32) && !defined(Rand64)
+#if !defined(ILYA_RAND32) && !defined(Rand64)
 
 /* try to find an integer type with at least 64 bits */
 
@@ -283,17 +283,17 @@ static int math_type (irin_State *L) {
 #define Rand64		unsigned long
 #define SRand64		long
 
-#elif !defined(IRIN_USE_C89) && defined(LLONG_MAX)
+#elif !defined(ILYA_USE_C89) && defined(LLONG_MAX)
 
 /* there is a 'long long' type (which must have at least 64 bits) */
 #define Rand64		unsigned long long
 #define SRand64		long long
 
-#elif ((IRIN_MAXUNSIGNED >> 31) >> 31) >= 3
+#elif ((ILYA_MAXUNSIGNED >> 31) >> 31) >= 3
 
-/* 'irin_Unsigned' has at least 64 bits */
-#define Rand64		irin_Unsigned
-#define SRand64		irin_Integer
+/* 'ilya_Unsigned' has at least 64 bits */
+#define Rand64		ilya_Unsigned
+#define SRand64		ilya_Integer
 
 #endif
 
@@ -338,7 +338,7 @@ static Rand64 nextrand (Rand64 *state) {
 ** random unsigned integer and converting that to a float.
 ** Some old Microsoft compilers cannot cast an unsigned long
 ** to a floating-point number, so we use a signed long as an
-** intermediary. When irin_Number is float or double, the shift ensures
+** intermediary. When ilya_Number is float or double, the shift ensures
 ** that 'sx' is non negative; in that case, a good compiler will remove
 ** the correction.
 */
@@ -349,19 +349,19 @@ static Rand64 nextrand (Rand64 *state) {
 /* 2^(-FIGS) == 2^-1 / 2^(FIGS-1) */
 #define scaleFIG	(l_mathop(0.5) / ((Rand64)1 << (FIGS - 1)))
 
-static irin_Number I2d (Rand64 x) {
+static ilya_Number I2d (Rand64 x) {
   SRand64 sx = (SRand64)(trim64(x) >> shift64_FIG);
-  irin_Number res = (irin_Number)(sx) * scaleFIG;
+  ilya_Number res = (ilya_Number)(sx) * scaleFIG;
   if (sx < 0)
     res += l_mathop(1.0);  /* correct the two's complement if negative */
-  irin_assert(0 <= res && res < 1);
+  ilya_assert(0 <= res && res < 1);
   return res;
 }
 
-/* convert a 'Rand64' to a 'irin_Unsigned' */
-#define I2UInt(x)	((irin_Unsigned)trim64(x))
+/* convert a 'Rand64' to a 'ilya_Unsigned' */
+#define I2UInt(x)	((ilya_Unsigned)trim64(x))
 
-/* convert a 'irin_Unsigned' to a 'Rand64' */
+/* convert a 'ilya_Unsigned' to a 'Rand64' */
 #define Int2I(x)	((Rand64)(x))
 
 
@@ -400,7 +400,7 @@ static Rand64 packI (l_uint32 h, l_uint32 l) {
 
 /* return i << n */
 static Rand64 Ishl (Rand64 i, int n) {
-  irin_assert(n > 0 && n < 32);
+  ilya_assert(n > 0 && n < 32);
   return packI((i.h << n) | (trim32(i.l) >> (32 - n)), i.l << n);
 }
 
@@ -430,14 +430,14 @@ static Rand64 times9 (Rand64 i) {
 
 /* return 'i' rotated left 'n' bits */
 static Rand64 rotl (Rand64 i, int n) {
-  irin_assert(n > 0 && n < 32);
+  ilya_assert(n > 0 && n < 32);
   return packI((i.h << n) | (trim32(i.l) >> (32 - n)),
                (trim32(i.h) >> (32 - n)) | (i.l << n));
 }
 
 /* for offsets larger than 32, rotate right by 64 - offset */
 static Rand64 rotl1 (Rand64 i, int n) {
-  irin_assert(n > 32 && n < 64);
+  ilya_assert(n > 32 && n < 64);
   n = 64 - n;
   return packI((trim32(i.h) >> n) | (i.l << (32 - n)),
                (i.h << (32 - n)) | (trim32(i.l) >> n));
@@ -476,8 +476,8 @@ static Rand64 nextrand (Rand64 *state) {
 ** get up to 32 bits from higher half, shifting right to
 ** throw out the extra bits.
 */
-static irin_Number I2d (Rand64 x) {
-  irin_Number h = (irin_Number)(trim32(x.h) >> (32 - FIGS));
+static ilya_Number I2d (Rand64 x) {
+  ilya_Number h = (ilya_Number)(trim32(x.h) >> (32 - FIGS));
   return h * scaleFIG;
 }
 
@@ -496,25 +496,25 @@ static irin_Number I2d (Rand64 x) {
 /*
 ** higher 32 bits go after those (FIGS - 32) bits: shiftHI = 2^(FIGS - 32)
 */
-#define shiftHI		((irin_Number)(UONE << (FIGS - 33)) * l_mathop(2.0))
+#define shiftHI		((ilya_Number)(UONE << (FIGS - 33)) * l_mathop(2.0))
 
 
-static irin_Number I2d (Rand64 x) {
-  irin_Number h = (irin_Number)trim32(x.h) * shiftHI;
-  irin_Number l = (irin_Number)(trim32(x.l) >> shiftLOW);
+static ilya_Number I2d (Rand64 x) {
+  ilya_Number h = (ilya_Number)trim32(x.h) * shiftHI;
+  ilya_Number l = (ilya_Number)(trim32(x.l) >> shiftLOW);
   return (h + l) * scaleFIG;
 }
 
 #endif
 
 
-/* convert a 'Rand64' to a 'irin_Unsigned' */
-static irin_Unsigned I2UInt (Rand64 x) {
-  return (((irin_Unsigned)trim32(x.h) << 31) << 1) | (irin_Unsigned)trim32(x.l);
+/* convert a 'Rand64' to a 'ilya_Unsigned' */
+static ilya_Unsigned I2UInt (Rand64 x) {
+  return (((ilya_Unsigned)trim32(x.h) << 31) << 1) | (ilya_Unsigned)trim32(x.l);
 }
 
-/* convert a 'irin_Unsigned' to a 'Rand64' */
-static Rand64 Int2I (irin_Unsigned n) {
+/* convert a 'ilya_Unsigned' to a 'Rand64' */
+static Rand64 Int2I (ilya_Unsigned n) {
   return packI((l_uint32)((n >> 31) >> 1), (l_uint32)n);
 }
 
@@ -539,22 +539,22 @@ typedef struct {
 ** is inside [0, n], we are done. Otherwise, we try with another 'ran',
 ** until we have a result inside the interval.
 */
-static irin_Unsigned project (irin_Unsigned ran, irin_Unsigned n,
+static ilya_Unsigned project (ilya_Unsigned ran, ilya_Unsigned n,
                              RanState *state) {
   if ((n & (n + 1)) == 0)  /* is 'n + 1' a power of 2? */
     return ran & n;  /* no bias */
   else {
-    irin_Unsigned lim = n;
+    ilya_Unsigned lim = n;
     /* compute the smallest (2^b - 1) not smaller than 'n' */
     lim |= (lim >> 1);
     lim |= (lim >> 2);
     lim |= (lim >> 4);
     lim |= (lim >> 8);
     lim |= (lim >> 16);
-#if (IRIN_MAXUNSIGNED >> 31) >= 3
+#if (ILYA_MAXUNSIGNED >> 31) >= 3
     lim |= (lim >> 32);  /* integer type has more than 32 bits */
 #endif
-    irin_assert((lim & (lim + 1)) == 0  /* 'lim + 1' is a power of 2, */
+    ilya_assert((lim & (lim + 1)) == 0  /* 'lim + 1' is a power of 2, */
       && lim >= n  /* not smaller than 'n', */
       && (lim >> 1) < n);  /* and it is the smallest one */
     while ((ran &= lim) > n)  /* project 'ran' into [0..lim] */
@@ -564,21 +564,21 @@ static irin_Unsigned project (irin_Unsigned ran, irin_Unsigned n,
 }
 
 
-static int math_random (irin_State *L) {
-  irin_Integer low, up;
-  irin_Unsigned p;
-  RanState *state = (RanState *)irin_touserdata(L, irin_upvalueindex(1));
+static int math_random (ilya_State *L) {
+  ilya_Integer low, up;
+  ilya_Unsigned p;
+  RanState *state = (RanState *)ilya_touserdata(L, ilya_upvalueindex(1));
   Rand64 rv = nextrand(state->s);  /* next pseudo-random value */
-  switch (irin_gettop(L)) {  /* check number of arguments */
+  switch (ilya_gettop(L)) {  /* check number of arguments */
     case 0: {  /* no arguments */
-      irin_pushnumber(L, I2d(rv));  /* float between 0 and 1 */
+      ilya_pushnumber(L, I2d(rv));  /* float between 0 and 1 */
       return 1;
     }
     case 1: {  /* only upper limit */
       low = 1;
       up = luaL_checkinteger(L, 1);
       if (up == 0) {  /* single 0 as argument? */
-        irin_pushinteger(L, l_castU2S(I2UInt(rv)));  /* full random integer */
+        ilya_pushinteger(L, l_castU2S(I2UInt(rv)));  /* full random integer */
         return 1;
       }
       break;
@@ -593,14 +593,14 @@ static int math_random (irin_State *L) {
   /* random integer in the interval [low, up] */
   luaL_argcheck(L, low <= up, 1, "interval is empty");
   /* project random integer into the interval [0, up - low] */
-  p = project(I2UInt(rv), (irin_Unsigned)up - (irin_Unsigned)low, state);
-  irin_pushinteger(L, l_castU2S(p) + low);
+  p = project(I2UInt(rv), (ilya_Unsigned)up - (ilya_Unsigned)low, state);
+  ilya_pushinteger(L, l_castU2S(p) + low);
   return 1;
 }
 
 
-static void setseed (irin_State *L, Rand64 *state,
-                     irin_Unsigned n1, irin_Unsigned n2) {
+static void setseed (ilya_State *L, Rand64 *state,
+                     ilya_Unsigned n1, ilya_Unsigned n2) {
   int i;
   state[0] = Int2I(n1);
   state[1] = Int2I(0xff);  /* avoid a zero state */
@@ -608,15 +608,15 @@ static void setseed (irin_State *L, Rand64 *state,
   state[3] = Int2I(0);
   for (i = 0; i < 16; i++)
     nextrand(state);  /* discard initial values to "spread" seed */
-  irin_pushinteger(L, l_castU2S(n1));
-  irin_pushinteger(L, l_castU2S(n2));
+  ilya_pushinteger(L, l_castU2S(n1));
+  ilya_pushinteger(L, l_castU2S(n2));
 }
 
 
-static int math_randomseed (irin_State *L) {
-  RanState *state = (RanState *)irin_touserdata(L, irin_upvalueindex(1));
-  irin_Unsigned n1, n2;
-  if (irin_isnone(L, 1)) {
+static int math_randomseed (ilya_State *L) {
+  RanState *state = (RanState *)ilya_touserdata(L, ilya_upvalueindex(1));
+  ilya_Unsigned n1, n2;
+  if (ilya_isnone(L, 1)) {
     n1 = luaL_makeseed(L);  /* "random" seed */
     n2 = I2UInt(nextrand(state->s));  /* in case seed is not that random... */
   }
@@ -639,10 +639,10 @@ static const luaL_Reg randfuncs[] = {
 /*
 ** Register the random functions and initialize their state.
 */
-static void setrandfunc (irin_State *L) {
-  RanState *state = (RanState *)irin_newuserdatauv(L, sizeof(RanState), 0);
+static void setrandfunc (ilya_State *L) {
+  RanState *state = (RanState *)ilya_newuserdatauv(L, sizeof(RanState), 0);
   setseed(L, state->s, luaL_makeseed(L), 0);  /* initialize with random seed */
-  irin_pop(L, 2);  /* remove pushed seeds */
+  ilya_pop(L, 2);  /* remove pushed seeds */
   luaL_setfuncs(L, randfuncs, 1);
 }
 
@@ -654,46 +654,46 @@ static void setrandfunc (irin_State *L) {
 ** Deprecated functions (for compatibility only)
 ** ===================================================================
 */
-#if defined(IRIN_COMPAT_MATHLIB)
+#if defined(ILYA_COMPAT_MATHLIB)
 
-static int math_cosh (irin_State *L) {
-  irin_pushnumber(L, l_mathop(cosh)(luaL_checknumber(L, 1)));
+static int math_cosh (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(cosh)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_sinh (irin_State *L) {
-  irin_pushnumber(L, l_mathop(sinh)(luaL_checknumber(L, 1)));
+static int math_sinh (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(sinh)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_tanh (irin_State *L) {
-  irin_pushnumber(L, l_mathop(tanh)(luaL_checknumber(L, 1)));
+static int math_tanh (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(tanh)(luaL_checknumber(L, 1)));
   return 1;
 }
 
-static int math_pow (irin_State *L) {
-  irin_Number x = luaL_checknumber(L, 1);
-  irin_Number y = luaL_checknumber(L, 2);
-  irin_pushnumber(L, l_mathop(pow)(x, y));
+static int math_pow (ilya_State *L) {
+  ilya_Number x = luaL_checknumber(L, 1);
+  ilya_Number y = luaL_checknumber(L, 2);
+  ilya_pushnumber(L, l_mathop(pow)(x, y));
   return 1;
 }
 
-static int math_frexp (irin_State *L) {
+static int math_frexp (ilya_State *L) {
   int e;
-  irin_pushnumber(L, l_mathop(frexp)(luaL_checknumber(L, 1), &e));
-  irin_pushinteger(L, e);
+  ilya_pushnumber(L, l_mathop(frexp)(luaL_checknumber(L, 1), &e));
+  ilya_pushinteger(L, e);
   return 2;
 }
 
-static int math_ldexp (irin_State *L) {
-  irin_Number x = luaL_checknumber(L, 1);
+static int math_ldexp (ilya_State *L) {
+  ilya_Number x = luaL_checknumber(L, 1);
   int ep = (int)luaL_checkinteger(L, 2);
-  irin_pushnumber(L, l_mathop(ldexp)(x, ep));
+  ilya_pushnumber(L, l_mathop(ldexp)(x, ep));
   return 1;
 }
 
-static int math_log10 (irin_State *L) {
-  irin_pushnumber(L, l_mathop(log10)(luaL_checknumber(L, 1)));
+static int math_log10 (ilya_State *L) {
+  ilya_pushnumber(L, l_mathop(log10)(luaL_checknumber(L, 1)));
   return 1;
 }
 
@@ -724,7 +724,7 @@ static const luaL_Reg mathlib[] = {
   {"sqrt",  math_sqrt},
   {"tan",   math_tan},
   {"type", math_type},
-#if defined(IRIN_COMPAT_MATHLIB)
+#if defined(ILYA_COMPAT_MATHLIB)
   {"atan2", math_atan},
   {"cosh",   math_cosh},
   {"sinh",   math_sinh},
@@ -748,16 +748,16 @@ static const luaL_Reg mathlib[] = {
 /*
 ** Open math library
 */
-LUAMOD_API int luaopen_math (irin_State *L) {
+LUAMOD_API int luaopen_math (ilya_State *L) {
   luaL_newlib(L, mathlib);
-  irin_pushnumber(L, PI);
-  irin_setfield(L, -2, "pi");
-  irin_pushnumber(L, (irin_Number)HUGE_VAL);
-  irin_setfield(L, -2, "huge");
-  irin_pushinteger(L, IRIN_MAXINTEGER);
-  irin_setfield(L, -2, "maxinteger");
-  irin_pushinteger(L, IRIN_MININTEGER);
-  irin_setfield(L, -2, "mininteger");
+  ilya_pushnumber(L, PI);
+  ilya_setfield(L, -2, "pi");
+  ilya_pushnumber(L, (ilya_Number)HUGE_VAL);
+  ilya_setfield(L, -2, "huge");
+  ilya_pushinteger(L, ILYA_MAXINTEGER);
+  ilya_setfield(L, -2, "maxinteger");
+  ilya_pushinteger(L, ILYA_MININTEGER);
+  ilya_setfield(L, -2, "mininteger");
   setrandfunc(L);
   return 1;
 }

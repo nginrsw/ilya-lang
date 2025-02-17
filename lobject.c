@@ -1,11 +1,11 @@
 /*
 ** $Id: lobject.c $
-** Some generic functions over Irin objects
-** See Copyright Notice in irin.h
+** Some generic functions over Ilya objects
+** See Copyright Notice in ilya.h
 */
 
 #define lobject_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lctype.h"
 #include "ldebug.h"
@@ -111,57 +111,57 @@ l_mem luaO_applyparam (lu_byte p, l_mem x) {
 }
 
 
-static irin_Integer intarith (irin_State *L, int op, irin_Integer v1,
-                                                   irin_Integer v2) {
+static ilya_Integer intarith (ilya_State *L, int op, ilya_Integer v1,
+                                                   ilya_Integer v2) {
   switch (op) {
-    case IRIN_OPADD: return intop(+, v1, v2);
-    case IRIN_OPSUB:return intop(-, v1, v2);
-    case IRIN_OPMUL:return intop(*, v1, v2);
-    case IRIN_OPMOD: return luaV_mod(L, v1, v2);
-    case IRIN_OPIDIV: return luaV_idiv(L, v1, v2);
-    case IRIN_OPBAND: return intop(&, v1, v2);
-    case IRIN_OPBOR: return intop(|, v1, v2);
-    case IRIN_OPBXOR: return intop(^, v1, v2);
-    case IRIN_OPSHL: return luaV_shiftl(v1, v2);
-    case IRIN_OPSHR: return luaV_shiftr(v1, v2);
-    case IRIN_OPUNM: return intop(-, 0, v1);
-    case IRIN_OPBNOT: return intop(^, ~l_castS2U(0), v1);
-    default: irin_assert(0); return 0;
+    case ILYA_OPADD: return intop(+, v1, v2);
+    case ILYA_OPSUB:return intop(-, v1, v2);
+    case ILYA_OPMUL:return intop(*, v1, v2);
+    case ILYA_OPMOD: return luaV_mod(L, v1, v2);
+    case ILYA_OPIDIV: return luaV_idiv(L, v1, v2);
+    case ILYA_OPBAND: return intop(&, v1, v2);
+    case ILYA_OPBOR: return intop(|, v1, v2);
+    case ILYA_OPBXOR: return intop(^, v1, v2);
+    case ILYA_OPSHL: return luaV_shiftl(v1, v2);
+    case ILYA_OPSHR: return luaV_shiftr(v1, v2);
+    case ILYA_OPUNM: return intop(-, 0, v1);
+    case ILYA_OPBNOT: return intop(^, ~l_castS2U(0), v1);
+    default: ilya_assert(0); return 0;
   }
 }
 
 
-static irin_Number numarith (irin_State *L, int op, irin_Number v1,
-                                                  irin_Number v2) {
+static ilya_Number numarith (ilya_State *L, int op, ilya_Number v1,
+                                                  ilya_Number v2) {
   switch (op) {
-    case IRIN_OPADD: return luai_numadd(L, v1, v2);
-    case IRIN_OPSUB: return luai_numsub(L, v1, v2);
-    case IRIN_OPMUL: return luai_nummul(L, v1, v2);
-    case IRIN_OPDIV: return luai_numdiv(L, v1, v2);
-    case IRIN_OPPOW: return luai_numpow(L, v1, v2);
-    case IRIN_OPIDIV: return luai_numidiv(L, v1, v2);
-    case IRIN_OPUNM: return luai_numunm(L, v1);
-    case IRIN_OPMOD: return luaV_modf(L, v1, v2);
-    default: irin_assert(0); return 0;
+    case ILYA_OPADD: return luai_numadd(L, v1, v2);
+    case ILYA_OPSUB: return luai_numsub(L, v1, v2);
+    case ILYA_OPMUL: return luai_nummul(L, v1, v2);
+    case ILYA_OPDIV: return luai_numdiv(L, v1, v2);
+    case ILYA_OPPOW: return luai_numpow(L, v1, v2);
+    case ILYA_OPIDIV: return luai_numidiv(L, v1, v2);
+    case ILYA_OPUNM: return luai_numunm(L, v1);
+    case ILYA_OPMOD: return luaV_modf(L, v1, v2);
+    default: ilya_assert(0); return 0;
   }
 }
 
 
-int luaO_rawarith (irin_State *L, int op, const TValue *p1, const TValue *p2,
+int luaO_rawarith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
                    TValue *res) {
   switch (op) {
-    case IRIN_OPBAND: case IRIN_OPBOR: case IRIN_OPBXOR:
-    case IRIN_OPSHL: case IRIN_OPSHR:
-    case IRIN_OPBNOT: {  /* operate only on integers */
-      irin_Integer i1; irin_Integer i2;
+    case ILYA_OPBAND: case ILYA_OPBOR: case ILYA_OPBXOR:
+    case ILYA_OPSHL: case ILYA_OPSHR:
+    case ILYA_OPBNOT: {  /* operate only on integers */
+      ilya_Integer i1; ilya_Integer i2;
       if (tointegerns(p1, &i1) && tointegerns(p2, &i2)) {
         setivalue(res, intarith(L, op, i1, i2));
         return 1;
       }
       else return 0;  /* fail */
     }
-    case IRIN_OPDIV: case IRIN_OPPOW: {  /* operate only on floats */
-      irin_Number n1; irin_Number n2;
+    case ILYA_OPDIV: case ILYA_OPPOW: {  /* operate only on floats */
+      ilya_Number n1; ilya_Number n2;
       if (tonumberns(p1, n1) && tonumberns(p2, n2)) {
         setfltvalue(res, numarith(L, op, n1, n2));
         return 1;
@@ -169,7 +169,7 @@ int luaO_rawarith (irin_State *L, int op, const TValue *p1, const TValue *p2,
       else return 0;  /* fail */
     }
     default: {  /* other operations */
-      irin_Number n1; irin_Number n2;
+      ilya_Number n1; ilya_Number n2;
       if (ttisinteger(p1) && ttisinteger(p2)) {
         setivalue(res, intarith(L, op, ivalue(p1), ivalue(p2)));
         return 1;
@@ -184,17 +184,17 @@ int luaO_rawarith (irin_State *L, int op, const TValue *p1, const TValue *p2,
 }
 
 
-void luaO_arith (irin_State *L, int op, const TValue *p1, const TValue *p2,
+void luaO_arith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
                  StkId res) {
   if (!luaO_rawarith(L, op, p1, p2, s2v(res))) {
     /* could not perform raw operation; try metamethod */
-    luaT_trybinTM(L, p1, p2, res, cast(TMS, (op - IRIN_OPADD) + TM_ADD));
+    luaT_trybinTM(L, p1, p2, res, cast(TMS, (op - ILYA_OPADD) + TM_ADD));
   }
 }
 
 
 lu_byte luaO_hexavalue (int c) {
-  irin_assert(lisxdigit(c));
+  ilya_assert(lisxdigit(c));
   if (lisdigit(c)) return cast_byte(c - '0');
   else return cast_byte((ltolower(c) - 'a') + 10);
 }
@@ -210,11 +210,11 @@ static int isneg (const char **s) {
 
 /*
 ** {==================================================================
-** Irin's implementation for 'irin_strx2number'
+** Ilya's implementation for 'ilya_strx2number'
 ** ===================================================================
 */
 
-#if !defined(irin_strx2number)
+#if !defined(ilya_strx2number)
 
 /* maximum number of significant digits to read (to avoid overflows
    even with single floats) */
@@ -224,9 +224,9 @@ static int isneg (const char **s) {
 ** convert a hexadecimal numeric string to a number, following
 ** C99 specification for 'strtod'
 */
-static irin_Number irin_strx2number (const char *s, char **endptr) {
-  int dot = irin_getlocaledecpoint();
-  irin_Number r = l_mathop(0.0);  /* result (accumulator) */
+static ilya_Number ilya_strx2number (const char *s, char **endptr) {
+  int dot = ilya_getlocaledecpoint();
+  ilya_Number r = l_mathop(0.0);  /* result (accumulator) */
   int sigdig = 0;  /* number of significant digits */
   int nosigdig = 0;  /* number of non-significant digits */
   int e = 0;  /* exponent correction */
@@ -283,14 +283,14 @@ static irin_Number irin_strx2number (const char *s, char **endptr) {
 #endif
 
 /*
-** Convert string 's' to a Irin number (put in 'result'). Return NULL on
+** Convert string 's' to a Ilya number (put in 'result'). Return NULL on
 ** fail or the address of the ending '\0' on success. ('mode' == 'x')
 ** means a hexadecimal numeral.
 */
-static const char *l_str2dloc (const char *s, irin_Number *result, int mode) {
+static const char *l_str2dloc (const char *s, ilya_Number *result, int mode) {
   char *endptr;
-  *result = (mode == 'x') ? irin_strx2number(s, &endptr)  /* try to convert */
-                          : irin_str2number(s, &endptr);
+  *result = (mode == 'x') ? ilya_strx2number(s, &endptr)  /* try to convert */
+                          : ilya_str2number(s, &endptr);
   if (endptr == s) return NULL;  /* nothing recognized? */
   while (lisspace(cast_uchar(*endptr))) endptr++;  /* skip trailing spaces */
   return (*endptr == '\0') ? endptr : NULL;  /* OK iff no trailing chars */
@@ -298,7 +298,7 @@ static const char *l_str2dloc (const char *s, irin_Number *result, int mode) {
 
 
 /*
-** Convert string 's' to a Irin number (put in 'result') handling the
+** Convert string 's' to a Ilya number (put in 'result') handling the
 ** current locale.
 ** This fn accepts both the current locale or a dot as the radix
 ** mark. If the conversion fails, it may mean number has a dot but
@@ -310,7 +310,7 @@ static const char *l_str2dloc (const char *s, irin_Number *result, int mode) {
 ** - 'x' means a hexadecimal numeral
 ** - '.' just optimizes the search for the common case (no special chars)
 */
-static const char *l_str2d (const char *s, irin_Number *result) {
+static const char *l_str2d (const char *s, ilya_Number *result) {
   const char *endptr;
   const char *pmode = strpbrk(s, ".xXnN");  /* look for special chars */
   int mode = pmode ? ltolower(cast_uchar(*pmode)) : 0;
@@ -323,7 +323,7 @@ static const char *l_str2d (const char *s, irin_Number *result) {
     if (pdot == NULL || strlen(s) > L_MAXLENNUM)
       return NULL;  /* string too long or no dot; fail */
     strcpy(buff, s);  /* copy string to buffer */
-    buff[pdot - s] = irin_getlocaledecpoint();  /* correct decimal point */
+    buff[pdot - s] = ilya_getlocaledecpoint();  /* correct decimal point */
     endptr = l_str2dloc(buff, result, mode);  /* try again */
     if (endptr != NULL)
       endptr = s + (endptr - buff);  /* make relative to 's' */
@@ -332,11 +332,11 @@ static const char *l_str2d (const char *s, irin_Number *result) {
 }
 
 
-#define MAXBY10		cast(irin_Unsigned, IRIN_MAXINTEGER / 10)
-#define MAXLASTD	cast_int(IRIN_MAXINTEGER % 10)
+#define MAXBY10		cast(ilya_Unsigned, ILYA_MAXINTEGER / 10)
+#define MAXLASTD	cast_int(ILYA_MAXINTEGER % 10)
 
-static const char *l_str2int (const char *s, irin_Integer *result) {
-  irin_Unsigned a = 0;
+static const char *l_str2int (const char *s, ilya_Integer *result) {
+  ilya_Unsigned a = 0;
   int empty = 1;
   int neg;
   while (lisspace(cast_uchar(*s))) s++;  /* skip initial spaces */
@@ -368,7 +368,7 @@ static const char *l_str2int (const char *s, irin_Integer *result) {
 
 
 size_t luaO_str2num (const char *s, TValue *o) {
-  irin_Integer i; irin_Number n;
+  ilya_Integer i; ilya_Number n;
   const char *e;
   if ((e = l_str2int(s, &i)) != NULL) {  /* try as an integer */
     setivalue(o, i);
@@ -384,7 +384,7 @@ size_t luaO_str2num (const char *s, TValue *o) {
 
 int luaO_utf8esc (char *buff, unsigned long x) {
   int n = 1;  /* number of bytes put in buffer (backwards) */
-  irin_assert(x <= 0x7FFFFFFFu);
+  ilya_assert(x <= 0x7FFFFFFFu);
   if (x < 0x80)  /* ascii? */
     buff[UTF8BUFFSZ - 1] = cast_char(x);
   else {  /* need continuation bytes */
@@ -402,15 +402,15 @@ int luaO_utf8esc (char *buff, unsigned long x) {
 
 /*
 ** The size of the buffer for the conversion of a number to a string
-** 'IRIN_N2SBUFFSZ' must be enough to accommodate both IRIN_INTEGER_FMT
-** and IRIN_NUMBER_FMT.  For a long long int, this is 19 digits plus a
+** 'ILYA_N2SBUFFSZ' must be enough to accommodate both ILYA_INTEGER_FMT
+** and ILYA_NUMBER_FMT.  For a long long int, this is 19 digits plus a
 ** sign and a final '\0', adding to 21. For a long double, it can go to
 ** a sign, the dot, an exponent letter, an exponent sign, 4 exponent
 ** digits, the final '\0', plus the significant digits, which are
 ** approximately the *_DIG attribute.
 */
-#if IRIN_N2SBUFFSZ < (20 + l_floatatt(DIG))
-#error "invalid value for IRIN_N2SBUFFSZ"
+#if ILYA_N2SBUFFSZ < (20 + l_floatatt(DIG))
+#error "invalid value for ILYA_N2SBUFFSZ"
 #endif
 
 
@@ -423,19 +423,19 @@ int luaO_utf8esc (char *buff, unsigned long x) {
 ** like an integer (without a decimal point or an exponent), add ".0" to
 ** its end.
 */
-static int tostringbuffFloat (irin_Number n, char *buff) {
+static int tostringbuffFloat (ilya_Number n, char *buff) {
   /* first conversion */
-  int len = l_sprintf(buff, IRIN_N2SBUFFSZ, IRIN_NUMBER_FMT,
+  int len = l_sprintf(buff, ILYA_N2SBUFFSZ, ILYA_NUMBER_FMT,
                             (LUAI_UACNUMBER)n);
-  irin_Number check = irin_str2number(buff, NULL);  /* read it back */
+  ilya_Number check = ilya_str2number(buff, NULL);  /* read it back */
   if (check != n) {  /* not enough precision? */
     /* convert again with more precision */
-    len = l_sprintf(buff, IRIN_N2SBUFFSZ, IRIN_NUMBER_FMT_N,
+    len = l_sprintf(buff, ILYA_N2SBUFFSZ, ILYA_NUMBER_FMT_N,
                           (LUAI_UACNUMBER)n);
   }
   /* looks like an integer? */
   if (buff[strspn(buff, "-0123456789")] == '\0') {
-    buff[len++] = irin_getlocaledecpoint();
+    buff[len++] = ilya_getlocaledecpoint();
     buff[len++] = '0';  /* adds '.0' to result */
   }
   return len;
@@ -447,21 +447,21 @@ static int tostringbuffFloat (irin_Number n, char *buff) {
 */
 unsigned luaO_tostringbuff (const TValue *obj, char *buff) {
   int len;
-  irin_assert(ttisnumber(obj));
+  ilya_assert(ttisnumber(obj));
   if (ttisinteger(obj))
-    len = irin_integer2str(buff, IRIN_N2SBUFFSZ, ivalue(obj));
+    len = ilya_integer2str(buff, ILYA_N2SBUFFSZ, ivalue(obj));
   else
     len = tostringbuffFloat(fltvalue(obj), buff);
-  irin_assert(len < IRIN_N2SBUFFSZ);
+  ilya_assert(len < ILYA_N2SBUFFSZ);
   return cast_uint(len);
 }
 
 
 /*
-** Convert a number object to a Irin string, replacing the value at 'obj'
+** Convert a number object to a Ilya string, replacing the value at 'obj'
 */
-void luaO_tostring (irin_State *L, TValue *obj) {
-  char buff[IRIN_N2SBUFFSZ];
+void luaO_tostring (ilya_State *L, TValue *obj) {
+  char buff[ILYA_N2SBUFFSZ];
   unsigned len = luaO_tostringbuff(obj, buff);
   setsvalue(L, obj, luaS_newlstr(L, buff, len));
 }
@@ -477,17 +477,17 @@ void luaO_tostring (irin_State *L, TValue *obj) {
 
 /*
 ** Size for buffer space used by 'luaO_pushvfstring'. It should be
-** (IRIN_IDSIZE + IRIN_N2SBUFFSZ) + a minimal space for basic messages,
+** (ILYA_IDSIZE + ILYA_N2SBUFFSZ) + a minimal space for basic messages,
 ** so that 'luaG_addinfo' can work directly on the static buffer.
 */
-#define BUFVFS		cast_uint(IRIN_IDSIZE + IRIN_N2SBUFFSZ + 95)
+#define BUFVFS		cast_uint(ILYA_IDSIZE + ILYA_N2SBUFFSZ + 95)
 
 /*
 ** Buffer used by 'luaO_pushvfstring'. 'err' signals an error while
 ** building result (memory error [1] or buffer overflow [2]).
 */
 typedef struct BuffFS {
-  irin_State *L;
+  ilya_State *L;
   char *b;
   size_t buffsize;
   size_t blen;  /* length of string in 'buff' */
@@ -496,7 +496,7 @@ typedef struct BuffFS {
 } BuffFS;
 
 
-static void initbuff (irin_State *L, BuffFS *buff) {
+static void initbuff (ilya_State *L, BuffFS *buff) {
   buff->L = L;
   buff->b = buff->space;
   buff->buffsize = sizeof(buff->space);
@@ -509,11 +509,11 @@ static void initbuff (irin_State *L, BuffFS *buff) {
 ** Push final result from 'luaO_pushvfstring'. This fn may raise
 ** errors explicitly or through memory errors, so it must run protected.
 */
-static void pushbuff (irin_State *L, void *ud) {
+static void pushbuff (ilya_State *L, void *ud) {
   BuffFS *buff = cast(BuffFS*, ud);
   switch (buff->err) {
     case 1:
-      luaD_throw(L, IRIN_ERRMEM);
+      luaD_throw(L, ILYA_ERRMEM);
       break;
     case 2:  /* length overflow: Add "..." at the end of result */
       if (buff->buffsize - buff->blen < 3)
@@ -533,9 +533,9 @@ static void pushbuff (irin_State *L, void *ud) {
 
 
 static const char *clearbuff (BuffFS *buff) {
-  irin_State *L = buff->L;
+  ilya_State *L = buff->L;
   const char *res;
-  if (luaD_rawrunprotected(L, pushbuff, buff) != IRIN_OK)  /* errors? */
+  if (luaD_rawrunprotected(L, pushbuff, buff) != ILYA_OK)  /* errors? */
     res = NULL;  /* error message is on the top of the stack */
   else
     res = getstr(tsvalue(s2v(L->top.p - 1)));
@@ -582,7 +582,7 @@ static void addstr2buff (BuffFS *buff, const char *str, size_t slen) {
 ** Add a numeral to the buffer.
 */
 static void addnum2buff (BuffFS *buff, TValue *num) {
-  char numbuff[IRIN_N2SBUFFSZ];
+  char numbuff[ILYA_N2SBUFFSZ];
   unsigned len = luaO_tostringbuff(num, numbuff);
   addstr2buff(buff, numbuff, len);
 }
@@ -590,9 +590,9 @@ static void addnum2buff (BuffFS *buff, TValue *num) {
 
 /*
 ** this fn handles only '%d', '%c', '%f', '%p', '%s', and '%%'
-   conventional formats, plus Irin-specific '%I' and '%U'
+   conventional formats, plus Ilya-specific '%I' and '%U'
 */
-const char *luaO_pushvfstring (irin_State *L, const char *fmt, va_list argp) {
+const char *luaO_pushvfstring (ilya_State *L, const char *fmt, va_list argp) {
   BuffFS buff;  /* holds last part of the result */
   const char *e;  /* points to next '%' */
   initbuff(L, &buff);
@@ -616,22 +616,22 @@ const char *luaO_pushvfstring (irin_State *L, const char *fmt, va_list argp) {
         addnum2buff(&buff, &num);
         break;
       }
-      case 'I': {  /* a 'irin_Integer' */
+      case 'I': {  /* a 'ilya_Integer' */
         TValue num;
-        setivalue(&num, cast(irin_Integer, va_arg(argp, l_uacInt)));
+        setivalue(&num, cast(ilya_Integer, va_arg(argp, l_uacInt)));
         addnum2buff(&buff, &num);
         break;
       }
-      case 'f': {  /* a 'irin_Number' */
+      case 'f': {  /* a 'ilya_Number' */
         TValue num;
         setfltvalue(&num, cast_num(va_arg(argp, l_uacNumber)));
         addnum2buff(&buff, &num);
         break;
       }
       case 'p': {  /* a pointer */
-        char bf[IRIN_N2SBUFFSZ];  /* enough space for '%p' */
+        char bf[ILYA_N2SBUFFSZ];  /* enough space for '%p' */
         void *p = va_arg(argp, void *);
-        int len = irin_pointer2str(bf, IRIN_N2SBUFFSZ, p);
+        int len = ilya_pointer2str(bf, ILYA_N2SBUFFSZ, p);
         addstr2buff(&buff, bf, cast_uint(len));
         break;
       }
@@ -657,14 +657,14 @@ const char *luaO_pushvfstring (irin_State *L, const char *fmt, va_list argp) {
 }
 
 
-const char *luaO_pushfstring (irin_State *L, const char *fmt, ...) {
+const char *luaO_pushfstring (ilya_State *L, const char *fmt, ...) {
   const char *msg;
   va_list argp;
   va_start(argp, fmt);
   msg = luaO_pushvfstring(L, fmt, argp);
   va_end(argp);
   if (msg == NULL)  /* error? */
-    luaD_throw(L, IRIN_ERRMEM);
+    luaD_throw(L, ILYA_ERRMEM);
   return msg;
 }
 
@@ -678,7 +678,7 @@ const char *luaO_pushfstring (irin_State *L, const char *fmt, ...) {
 #define addstr(a,b,l)	( memcpy(a,b,(l) * sizeof(char)), a += (l) )
 
 void luaO_chunkid (char *out, const char *source, size_t srclen) {
-  size_t bufflen = IRIN_IDSIZE;  /* free space in buffer */
+  size_t bufflen = ILYA_IDSIZE;  /* free space in buffer */
   if (*source == '=') {  /* 'literal' source */
     if (srclen <= bufflen)  /* small enough? */
       memcpy(out, source + 1, srclen * sizeof(char));

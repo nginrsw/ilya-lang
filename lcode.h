@@ -1,7 +1,7 @@
 /*
 ** $Id: lcode.h $
-** Code generator for Irin
-** See Copyright Notice in irin.h
+** Code generator for Ilya
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lcode_h
@@ -55,7 +55,7 @@ typedef enum UnOpr { OPR_MINUS, OPR_BNOT, OPR_NOT, OPR_LEN, OPR_NOUNOPR } UnOpr;
 #define getinstruction(fs,e)	((fs)->f->code[(e)->u.info])
 
 
-#define luaK_setmultret(fs,e)	luaK_setreturns(fs, e, IRIN_MULTRET)
+#define luaK_setmultret(fs,e)	luaK_setreturns(fs, e, ILYA_MULTRET)
 
 #define luaK_jumpto(fs,t)	luaK_patchlist(fs, luaK_jump(fs), t)
 
@@ -70,7 +70,7 @@ LUAI_FUNC void luaK_fixline (FuncState *fs, int line);
 LUAI_FUNC void luaK_nil (FuncState *fs, int from, int n);
 LUAI_FUNC void luaK_reserveregs (FuncState *fs, int n);
 LUAI_FUNC void luaK_checkstack (FuncState *fs, int n);
-LUAI_FUNC void luaK_int (FuncState *fs, int reg, irin_Integer n);
+LUAI_FUNC void luaK_int (FuncState *fs, int reg, ilya_Integer n);
 LUAI_FUNC void luaK_dischargevars (FuncState *fs, expdesc *e);
 LUAI_FUNC int luaK_exp2anyreg (FuncState *fs, expdesc *e);
 LUAI_FUNC void luaK_exp2anyregup (FuncState *fs, expdesc *e);

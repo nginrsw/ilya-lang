@@ -1,11 +1,11 @@
 /*
 ** $Id: ldebug.c $
 ** Debug Interface
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define ldebug_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "lcode.h"
@@ -31,15 +31,15 @@
 
 
 
-#define LuaClosure(f)		((f) != NULL && (f)->c.tt == IRIN_VLCL)
+#define LuaClosure(f)		((f) != NULL && (f)->c.tt == ILYA_VLCL)
 
 
-static const char *funcnamefromcall (irin_State *L, CallInfo *ci,
+static const char *funcnamefromcall (ilya_State *L, CallInfo *ci,
                                                    const char **name);
 
 
 static int currentpc (CallInfo *ci) {
-  irin_assert(isLua(ci));
+  ilya_assert(isLua(ci));
   return pcRel(ci->u.l.savedpc, ci_func(ci)->p);
 }
 
@@ -65,7 +65,7 @@ static int getbaseline (const Proto *f, int pc, int *basepc) {
   else {
     int i = pc / MAXIWTHABS - 1;  /* get an estimate */
     /* estimate must be a lower bound of the correct base */
-    irin_assert(i < 0 ||
+    ilya_assert(i < 0 ||
               (i < f->sizeabslineinfo && f->abslineinfo[i].pc <= pc));
     while (i + 1 < f->sizeabslineinfo && pc >= f->abslineinfo[i + 1].pc)
       i++;  /* low estimate; adjust it */
@@ -87,7 +87,7 @@ int luaG_getfuncline (const Proto *f, int pc) {
     int basepc;
     int baseline = getbaseline(f, pc, &basepc);
     while (basepc++ < pc) {  /* walk until given instruction */
-      irin_assert(f->lineinfo[basepc] != ABSLINEINFO);
+      ilya_assert(f->lineinfo[basepc] != ABSLINEINFO);
       baseline += f->lineinfo[basepc];  /* correct line */
     }
     return baseline;
@@ -101,7 +101,7 @@ static int getcurrentline (CallInfo *ci) {
 
 
 /*
-** Set 'trap' for all active Irin frames.
+** Set 'trap' for all active Ilya frames.
 ** This fn can be called during a signal, under "reasonable"
 ** assumptions. A new 'ci' is completely linked in the list before it
 ** becomes part of the "active" list, and we assume that pointers are
@@ -128,7 +128,7 @@ static void settraps (CallInfo *ci) {
 ** for all platforms where it runs). Moreover, 'hook' is always checked
 ** before being called (see 'luaD_hook').
 */
-IRIN_API void irin_sethook (irin_State *L, irin_Hook func, int mask, int count) {
+ILYA_API void ilya_sethook (ilya_State *L, ilya_Hook func, int mask, int count) {
   if (func == NULL || mask == 0) {  /* turn off hooks? */
     mask = 0;
     func = NULL;
@@ -142,26 +142,26 @@ IRIN_API void irin_sethook (irin_State *L, irin_Hook func, int mask, int count) 
 }
 
 
-IRIN_API irin_Hook irin_gethook (irin_State *L) {
+ILYA_API ilya_Hook ilya_gethook (ilya_State *L) {
   return L->hook;
 }
 
 
-IRIN_API int irin_gethookmask (irin_State *L) {
+ILYA_API int ilya_gethookmask (ilya_State *L) {
   return L->hookmask;
 }
 
 
-IRIN_API int irin_gethookcount (irin_State *L) {
+ILYA_API int ilya_gethookcount (ilya_State *L) {
   return L->basehookcount;
 }
 
 
-IRIN_API int irin_getstack (irin_State *L, int level, irin_Debug *ar) {
+ILYA_API int ilya_getstack (ilya_State *L, int level, ilya_Debug *ar) {
   int status;
   CallInfo *ci;
   if (level < 0) return 0;  /* invalid (negative) level */
-  irin_lock(L);
+  ilya_lock(L);
   for (ci = L->ci; level > 0 && ci != &L->base_ci; ci = ci->previous)
     level--;
   if (level == 0 && ci != &L->base_ci) {  /* level found? */
@@ -169,7 +169,7 @@ IRIN_API int irin_getstack (irin_State *L, int level, irin_Debug *ar) {
     ar->i_ci = ci;
   }
   else status = 0;  /* no such level */
-  irin_unlock(L);
+  ilya_unlock(L);
   return status;
 }
 
@@ -193,7 +193,7 @@ static const char *findvararg (CallInfo *ci, int n, StkId *pos) {
 }
 
 
-const char *luaG_findlocal (irin_State *L, CallInfo *ci, int n, StkId *pos) {
+const char *luaG_findlocal (ilya_State *L, CallInfo *ci, int n, StkId *pos) {
   StkId base = ci->func.p + 1;
   const char *name = NULL;
   if (isLua(ci)) {
@@ -217,11 +217,11 @@ const char *luaG_findlocal (irin_State *L, CallInfo *ci, int n, StkId *pos) {
 }
 
 
-IRIN_API const char *irin_getlocal (irin_State *L, const irin_Debug *ar, int n) {
+ILYA_API const char *ilya_getlocal (ilya_State *L, const ilya_Debug *ar, int n) {
   const char *name;
-  irin_lock(L);
+  ilya_lock(L);
   if (ar == NULL) {  /* information about non-active fn? */
-    if (!isLfunction(s2v(L->top.p - 1)))  /* not a Irin fn? */
+    if (!isLfunction(s2v(L->top.p - 1)))  /* not a Ilya fn? */
       name = NULL;
     else  /* consider live variables at fn start (parameters) */
       name = luaF_getlocalname(clLvalue(s2v(L->top.p - 1))->p, n, 0);
@@ -234,27 +234,27 @@ IRIN_API const char *irin_getlocal (irin_State *L, const irin_Debug *ar, int n) 
       api_incr_top(L);
     }
   }
-  irin_unlock(L);
+  ilya_unlock(L);
   return name;
 }
 
 
-IRIN_API const char *irin_setlocal (irin_State *L, const irin_Debug *ar, int n) {
+ILYA_API const char *ilya_setlocal (ilya_State *L, const ilya_Debug *ar, int n) {
   StkId pos = NULL;  /* to avoid warnings */
   const char *name;
-  irin_lock(L);
+  ilya_lock(L);
   name = luaG_findlocal(L, ar->i_ci, n, &pos);
   if (name) {
     api_checkpop(L, 1);
     setobjs2s(L, pos, L->top.p - 1);
     L->top.p--;  /* pop value */
   }
-  irin_unlock(L);
+  ilya_unlock(L);
   return name;
 }
 
 
-static void funcinfo (irin_Debug *ar, Closure *cl) {
+static void funcinfo (ilya_Debug *ar, Closure *cl) {
   if (!LuaClosure(cl)) {
     ar->source = "=[C]";
     ar->srclen = LL("=[C]");
@@ -273,7 +273,7 @@ static void funcinfo (irin_Debug *ar, Closure *cl) {
     }
     ar->linedefined = p->linedefined;
     ar->lastlinedefined = p->lastlinedefined;
-    ar->what = (ar->linedefined == 0) ? "main" : "Irin";
+    ar->what = (ar->linedefined == 0) ? "main" : "Ilya";
   }
   luaO_chunkid(ar->short_src, ar->source, ar->srclen);
 }
@@ -287,7 +287,7 @@ static int nextline (const Proto *p, int currentline, int pc) {
 }
 
 
-static void collectvalidlines (irin_State *L, Closure *f) {
+static void collectvalidlines (ilya_State *L, Closure *f) {
   if (!LuaClosure(f)) {
     setnilvalue(s2v(L->top.p));
     api_incr_top(L);
@@ -305,7 +305,7 @@ static void collectvalidlines (irin_State *L, Closure *f) {
       if (!(p->flag & PF_ISVARARG))  /* regular fn? */
         i = 0;  /* consider all instructions */
       else {  /* vararg fn */
-        irin_assert(GET_OPCODE(p->code[0]) == OP_VARARGPREP);
+        ilya_assert(GET_OPCODE(p->code[0]) == OP_VARARGPREP);
         currentline = nextline(p, currentline, 0);
         i = 1;  /* skip first instruction (OP_VARARGPREP) */
       }
@@ -318,7 +318,7 @@ static void collectvalidlines (irin_State *L, Closure *f) {
 }
 
 
-static const char *getfuncname (irin_State *L, CallInfo *ci, const char **name) {
+static const char *getfuncname (ilya_State *L, CallInfo *ci, const char **name) {
   /* calling fn is a known fn? */
   if (ci != NULL && !(ci->callstatus & CIST_TAIL))
     return funcnamefromcall(L, ci->previous, name);
@@ -326,7 +326,7 @@ static const char *getfuncname (irin_State *L, CallInfo *ci, const char **name) 
 }
 
 
-static int auxgetinfo (irin_State *L, const char *what, irin_Debug *ar,
+static int auxgetinfo (ilya_State *L, const char *what, ilya_Debug *ar,
                        Closure *f, CallInfo *ci) {
   int status = 1;
   for (; *what; what++) {
@@ -381,7 +381,7 @@ static int auxgetinfo (irin_State *L, const char *what, irin_Debug *ar,
         break;
       }
       case 'L':
-      case 'f':  /* handled by irin_getinfo */
+      case 'f':  /* handled by ilya_getinfo */
         break;
       default: status = 0;  /* invalid option */
     }
@@ -390,12 +390,12 @@ static int auxgetinfo (irin_State *L, const char *what, irin_Debug *ar,
 }
 
 
-IRIN_API int irin_getinfo (irin_State *L, const char *what, irin_Debug *ar) {
+ILYA_API int ilya_getinfo (ilya_State *L, const char *what, ilya_Debug *ar) {
   int status;
   Closure *cl;
   CallInfo *ci;
   TValue *func;
-  irin_lock(L);
+  ilya_lock(L);
   if (*what == '>') {
     ci = NULL;
     func = s2v(L->top.p - 1);
@@ -406,7 +406,7 @@ IRIN_API int irin_getinfo (irin_State *L, const char *what, irin_Debug *ar) {
   else {
     ci = ar->i_ci;
     func = s2v(ci->func.p);
-    irin_assert(ttisfunction(func));
+    ilya_assert(ttisfunction(func));
   }
   cl = ttisclosure(func) ? clvalue(func) : NULL;
   status = auxgetinfo(L, what, ar, cl, ci);
@@ -416,7 +416,7 @@ IRIN_API int irin_getinfo (irin_State *L, const char *what, irin_Debug *ar) {
   }
   if (strchr(what, 'L'))
     collectvalidlines(L, cl);
-  irin_unlock(L);
+  ilya_unlock(L);
   return status;
 }
 
@@ -552,7 +552,7 @@ static const char *isEnv (const Proto *p, int pc, Instruction i, int isup) {
     name = upvalname(p, t);
   else  /* 't' is a register */
     basicgetobjname(p, &pc, t, &name);
-  return (name && strcmp(name, IRIN_ENV) == 0) ? "global" : "field";
+  return (name && strcmp(name, ILYA_ENV) == 0) ? "global" : "field";
 }
 
 
@@ -601,11 +601,11 @@ static const char *getobjname (const Proto *p, int lastpc, int reg,
 
 /*
 ** Try to find a name for a fn based on the code that called it.
-** (Only works when fn was called by a Irin fn.)
+** (Only works when fn was called by a Ilya fn.)
 ** Returns what the name is (e.g., "for iterator", "method",
 ** "metamethod") and sets '*name' to point to the name.
 */
-static const char *funcnamefromcode (irin_State *L, const Proto *p,
+static const char *funcnamefromcode (ilya_State *L, const Proto *p,
                                      int pc, const char **name) {
   TMS tm = (TMS)0;  /* (initial value avoids warnings) */
   Instruction i = p->code[pc];  /* calling instruction */
@@ -649,7 +649,7 @@ static const char *funcnamefromcode (irin_State *L, const Proto *p,
 /*
 ** Try to find a name for a fn based on how it was called.
 */
-static const char *funcnamefromcall (irin_State *L, CallInfo *ci,
+static const char *funcnamefromcall (ilya_State *L, CallInfo *ci,
                                                    const char **name) {
   if (ci->callstatus & CIST_HOOKED) {  /* was it called inside a hook? */
     *name = "?";
@@ -705,7 +705,7 @@ static const char *getupvalname (CallInfo *ci, const TValue *o,
 }
 
 
-static const char *formatvarinfo (irin_State *L, const char *kind,
+static const char *formatvarinfo (ilya_State *L, const char *kind,
                                                 const char *name) {
   if (kind == NULL)
     return "";  /* no information */
@@ -717,7 +717,7 @@ static const char *formatvarinfo (irin_State *L, const char *kind,
 ** Build a string with a "description" for the value 'o', such as
 ** "variable 'x'" or "upvalue 'y'".
 */
-static const char *varinfo (irin_State *L, const TValue *o) {
+static const char *varinfo (ilya_State *L, const TValue *o) {
   CallInfo *ci = L->ci;
   const char *name = NULL;  /* to avoid warnings */
   const char *kind = NULL;
@@ -736,7 +736,7 @@ static const char *varinfo (irin_State *L, const TValue *o) {
 /*
 ** Raise a type error
 */
-static l_noret typeerror (irin_State *L, const TValue *o, const char *op,
+static l_noret typeerror (ilya_State *L, const TValue *o, const char *op,
                           const char *extra) {
   const char *t = luaT_objtypename(L, o);
   luaG_runerror(L, "attempt to %s a %s value%s", op, t, extra);
@@ -747,7 +747,7 @@ static l_noret typeerror (irin_State *L, const TValue *o, const char *op,
 ** Raise a type error with "standard" information about the faulty
 ** object 'o' (using 'varinfo').
 */
-l_noret luaG_typeerror (irin_State *L, const TValue *o, const char *op) {
+l_noret luaG_typeerror (ilya_State *L, const TValue *o, const char *op) {
   typeerror(L, o, op, varinfo(L, o));
 }
 
@@ -757,7 +757,7 @@ l_noret luaG_typeerror (irin_State *L, const TValue *o, const char *op) {
 ** for the object based on how it was called ('funcnamefromcall'); if it
 ** cannot get a name there, try 'varinfo'.
 */
-l_noret luaG_callerror (irin_State *L, const TValue *o) {
+l_noret luaG_callerror (ilya_State *L, const TValue *o) {
   CallInfo *ci = L->ci;
   const char *name = NULL;  /* to avoid warnings */
   const char *kind = funcnamefromcall(L, ci, &name);
@@ -766,19 +766,19 @@ l_noret luaG_callerror (irin_State *L, const TValue *o) {
 }
 
 
-l_noret luaG_forerror (irin_State *L, const TValue *o, const char *what) {
+l_noret luaG_forerror (ilya_State *L, const TValue *o, const char *what) {
   luaG_runerror(L, "bad 'for' %s (number expected, got %s)",
                    what, luaT_objtypename(L, o));
 }
 
 
-l_noret luaG_concaterror (irin_State *L, const TValue *p1, const TValue *p2) {
+l_noret luaG_concaterror (ilya_State *L, const TValue *p1, const TValue *p2) {
   if (ttisstring(p1) || cvt2str(p1)) p1 = p2;
   luaG_typeerror(L, p1, "concatenate");
 }
 
 
-l_noret luaG_opinterror (irin_State *L, const TValue *p1,
+l_noret luaG_opinterror (ilya_State *L, const TValue *p1,
                          const TValue *p2, const char *msg) {
   if (!ttisnumber(p1))  /* first operand is wrong? */
     p2 = p1;  /* now second is wrong */
@@ -789,15 +789,15 @@ l_noret luaG_opinterror (irin_State *L, const TValue *p1,
 /*
 ** Error when both values are convertible to numbers, but not to integers
 */
-l_noret luaG_tointerror (irin_State *L, const TValue *p1, const TValue *p2) {
-  irin_Integer temp;
-  if (!luaV_tointegerns(p1, &temp, IRIN_FLOORN2I))
+l_noret luaG_tointerror (ilya_State *L, const TValue *p1, const TValue *p2) {
+  ilya_Integer temp;
+  if (!luaV_tointegerns(p1, &temp, ILYA_FLOORN2I))
     p2 = p1;
   luaG_runerror(L, "number%s has no integer representation", varinfo(L, p2));
 }
 
 
-l_noret luaG_ordererror (irin_State *L, const TValue *p1, const TValue *p2) {
+l_noret luaG_ordererror (ilya_State *L, const TValue *p1, const TValue *p2) {
   const char *t1 = luaT_objtypename(L, p1);
   const char *t2 = luaT_objtypename(L, p2);
   if (strcmp(t1, t2) == 0)
@@ -808,9 +808,9 @@ l_noret luaG_ordererror (irin_State *L, const TValue *p1, const TValue *p2) {
 
 
 /* add src:line information to 'msg' */
-const char *luaG_addinfo (irin_State *L, const char *msg, TString *src,
+const char *luaG_addinfo (ilya_State *L, const char *msg, TString *src,
                                         int line) {
-  char buff[IRIN_IDSIZE];
+  char buff[ILYA_IDSIZE];
   if (src) {
     size_t idlen;
     const char *id = getlstr(src, idlen);
@@ -823,20 +823,20 @@ const char *luaG_addinfo (irin_State *L, const char *msg, TString *src,
 }
 
 
-l_noret luaG_errormsg (irin_State *L) {
+l_noret luaG_errormsg (ilya_State *L) {
   if (L->errfunc != 0) {  /* is there an error handling fn? */
     StkId errfunc = restorestack(L, L->errfunc);
-    irin_assert(ttisfunction(s2v(errfunc)));
+    ilya_assert(ttisfunction(s2v(errfunc)));
     setobjs2s(L, L->top.p, L->top.p - 1);  /* move argument */
     setobjs2s(L, L->top.p - 1, errfunc);  /* push fn */
     L->top.p++;  /* assume EXTRA_STACK */
     luaD_callnoyield(L, L->top.p - 2, 1);  /* call it */
   }
-  luaD_throw(L, IRIN_ERRRUN);
+  luaD_throw(L, ILYA_ERRRUN);
 }
 
 
-l_noret luaG_runerror (irin_State *L, const char *fmt, ...) {
+l_noret luaG_runerror (ilya_State *L, const char *fmt, ...) {
   CallInfo *ci = L->ci;
   const char *msg;
   va_list argp;
@@ -844,7 +844,7 @@ l_noret luaG_runerror (irin_State *L, const char *fmt, ...) {
   va_start(argp, fmt);
   msg = luaO_pushvfstring(L, fmt, argp);  /* format message */
   va_end(argp);
-  if (msg != NULL && isLua(ci)) {  /* Irin fn? (and no error) */
+  if (msg != NULL && isLua(ci)) {  /* Ilya fn? (and no error) */
     /* add source:line information */
     luaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));
     setobjs2s(L, L->top.p - 2, L->top.p - 1);  /* remove 'msg' */
@@ -884,14 +884,14 @@ static int changedline (const Proto *p, int oldpc, int newpc) {
 
 
 /*
-** Traces Irin calls. If code is running the first instruction of a fn,
+** Traces Ilya calls. If code is running the first instruction of a fn,
 ** and fn is not vararg, and it is not coming from an yield,
 ** calls 'luaD_hookcall'. (Vararg functions will call 'luaD_hookcall'
 ** after adjusting its variable arguments; otherwise, they could call
 ** a line/count hook before the call hook. Functions coming from
 ** an yield already called 'luaD_hookcall' before yielding.)
 */
-int luaG_tracecall (irin_State *L) {
+int luaG_tracecall (ilya_State *L) {
   CallInfo *ci = L->ci;
   Proto *p = ci_func(ci)->p;
   ci->u.l.trap = 1;  /* ensure hooks will be checked */
@@ -906,7 +906,7 @@ int luaG_tracecall (irin_State *L) {
 
 
 /*
-** Traces the execution of a Irin fn. Called before the execution
+** Traces the execution of a Ilya fn. Called before the execution
 ** of each opcode, when debug is on. 'L->oldpc' stores the last
 ** instruction traced, to detect line changes. When entering a new
 ** fn, 'npci' will be zero and will test as a new line whatever
@@ -917,21 +917,21 @@ int luaG_tracecall (irin_State *L) {
 ** This fn is not "Protected" when called, so it should correct
 ** 'L->top.p' before calling anything that can run the GC.
 */
-int luaG_traceexec (irin_State *L, const Instruction *pc) {
+int luaG_traceexec (ilya_State *L, const Instruction *pc) {
   CallInfo *ci = L->ci;
   lu_byte mask = cast_byte(L->hookmask);
   const Proto *p = ci_func(ci)->p;
   int counthook;
-  if (!(mask & (IRIN_MASKLINE | IRIN_MASKCOUNT))) {  /* no hooks? */
+  if (!(mask & (ILYA_MASKLINE | ILYA_MASKCOUNT))) {  /* no hooks? */
     ci->u.l.trap = 0;  /* don't need to stop again */
     return 0;  /* turn off 'trap' */
   }
   pc++;  /* reference is always next instruction */
   ci->u.l.savedpc = pc;  /* save 'pc' */
-  counthook = (mask & IRIN_MASKCOUNT) && (--L->hookcount == 0);
+  counthook = (mask & ILYA_MASKCOUNT) && (--L->hookcount == 0);
   if (counthook)
     resethookcount(L);  /* reset count */
-  else if (!(mask & IRIN_MASKLINE))
+  else if (!(mask & ILYA_MASKLINE))
     return 1;  /* no line hook and count != 0; nothing to be done now */
   if (ci->callstatus & CIST_HOOKYIELD) {  /* hook yielded last time? */
     ci->callstatus &= ~CIST_HOOKYIELD;  /* erase mark */
@@ -940,23 +940,23 @@ int luaG_traceexec (irin_State *L, const Instruction *pc) {
   if (!luaP_isIT(*(ci->u.l.savedpc - 1)))  /* top not being used? */
     L->top.p = ci->top.p;  /* correct top */
   if (counthook)
-    luaD_hook(L, IRIN_HOOKCOUNT, -1, 0, 0);  /* call count hook */
-  if (mask & IRIN_MASKLINE) {
+    luaD_hook(L, ILYA_HOOKCOUNT, -1, 0, 0);  /* call count hook */
+  if (mask & ILYA_MASKLINE) {
     /* 'L->oldpc' may be invalid; use zero in this case */
     int oldpc = (L->oldpc < p->sizecode) ? L->oldpc : 0;
     int npci = pcRel(pc, p);
     if (npci <= oldpc ||  /* call hook when jump back (loop), */
         changedline(p, oldpc, npci)) {  /* or when enter new line */
       int newline = luaG_getfuncline(p, npci);
-      luaD_hook(L, IRIN_HOOKLINE, newline, 0, 0);  /* call line hook */
+      luaD_hook(L, ILYA_HOOKLINE, newline, 0, 0);  /* call line hook */
     }
     L->oldpc = npci;  /* 'pc' of last call to line hook */
   }
-  if (L->status == IRIN_YIELD) {  /* did hook yield? */
+  if (L->status == ILYA_YIELD) {  /* did hook yield? */
     if (counthook)
       L->hookcount = 1;  /* undo decrement to zero */
     ci->callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
-    luaD_throw(L, IRIN_YIELD);
+    luaD_throw(L, ILYA_YIELD);
   }
   return 1;  /* keep 'trap' on */
 }

@@ -1,7 +1,7 @@
 /*
 ** $Id: llimits.h $
 ** Limits, basic types, and some other 'installation-dependent' definitions
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef llimits_h
@@ -12,12 +12,12 @@
 #include <stddef.h>
 
 
-#include "irin.h"
+#include "ilya.h"
 
 
 /*
 ** 'l_mem' is a signed integer big enough to count the total memory
-** used by Irin.  (It is signed due to the use of debt in several
+** used by Ilya.  (It is signed due to the use of debt in several
 ** computations.)  Usually, 'ptrdiff_t' should work, but we use 'long'
 ** for 16-bit machines.
 */
@@ -45,11 +45,11 @@ typedef signed char ls_byte;
 #define MAX_SIZET	((size_t)(~(size_t)0))
 
 /*
-** Maximum size for strings and userdata visible for Irin; should be
-** representable as a irin_Integer and as a size_t.
+** Maximum size for strings and userdata visible for Ilya; should be
+** representable as a ilya_Integer and as a size_t.
 */
-#define MAX_SIZE	(sizeof(size_t) < sizeof(irin_Integer) ? MAX_SIZET \
-			  : cast_sizet(IRIN_MAXINTEGER))
+#define MAX_SIZE	(sizeof(size_t) < sizeof(ilya_Integer) ? MAX_SIZET \
+			  : cast_sizet(ILYA_MAXINTEGER))
 
 /*
 ** floor of the log2 of the maximum signed value for integral type 't'.
@@ -74,7 +74,7 @@ typedef signed char ls_byte;
 ** value. (In strict ISO C this may cause undefined behavior, but no
 ** actual machine seems to bother.)
 */
-#if !defined(IRIN_USE_C89) && defined(__STDC_VERSION__) && \
+#if !defined(ILYA_USE_C89) && defined(__STDC_VERSION__) && \
     __STDC_VERSION__ >= 199901L
 #include <stdint.h>
 #if defined(UINTPTR_MAX)  /* even in C99 this type is optional */
@@ -90,7 +90,7 @@ typedef signed char ls_byte;
 
 
 
-/* types of 'usual argument conversions' for irin_Number and irin_Integer */
+/* types of 'usual argument conversions' for ilya_Number and ilya_Integer */
 typedef LUAI_UACNUMBER l_uacNumber;
 typedef LUAI_UACINT l_uacInt;
 
@@ -101,19 +101,19 @@ typedef LUAI_UACINT l_uacInt;
 #if defined LUAI_ASSERT
 #undef NDEBUG
 #include <assert.h>
-#define irin_assert(c)           assert(c)
+#define ilya_assert(c)           assert(c)
 #define assert_code(c)		c
 #endif
 
-#if defined(irin_assert)
+#if defined(ilya_assert)
 #else
-#define irin_assert(c)		((void)0)
+#define ilya_assert(c)		((void)0)
 #define assert_code(c)		((void)0)
 #endif
 
-#define check_exp(c,e)		(irin_assert(c), (e))
+#define check_exp(c,e)		(ilya_assert(c), (e))
 /* to avoid problems with conditions too long */
-#define irin_longassert(c)	assert_code((c) ? (void)0 : irin_assert(0))
+#define ilya_longassert(c)	assert_code((c) ? (void)0 : ilya_assert(0))
 
 
 /* macro to avoid warnings about unused variables */
@@ -127,7 +127,7 @@ typedef LUAI_UACINT l_uacInt;
 
 #define cast_void(i)	cast(void, (i))
 #define cast_voidp(i)	cast(void *, (i))
-#define cast_num(i)	cast(irin_Number, (i))
+#define cast_num(i)	cast(ilya_Number, (i))
 #define cast_int(i)	cast(int, (i))
 #define cast_uint(i)	cast(unsigned int, (i))
 #define cast_ulong(i)	cast(unsigned long, (i))
@@ -138,32 +138,32 @@ typedef LUAI_UACINT l_uacInt;
 #define cast_sizet(i)	cast(size_t, (i))
 
 
-/* cast a signed irin_Integer to irin_Unsigned */
+/* cast a signed ilya_Integer to ilya_Unsigned */
 #if !defined(l_castS2U)
-#define l_castS2U(i)	((irin_Unsigned)(i))
+#define l_castS2U(i)	((ilya_Unsigned)(i))
 #endif
 
 /*
-** cast a irin_Unsigned to a signed irin_Integer; this cast is
+** cast a ilya_Unsigned to a signed ilya_Integer; this cast is
 ** not strict ISO C, but two-complement architectures should
 ** work fine.
 */
 #if !defined(l_castU2S)
-#define l_castU2S(i)	((irin_Integer)(i))
+#define l_castU2S(i)	((ilya_Integer)(i))
 #endif
 
 /*
-** cast a size_t to irin_Integer: These casts are always valid for
-** sizes of Irin objects (see MAX_SIZE)
+** cast a size_t to ilya_Integer: These casts are always valid for
+** sizes of Ilya objects (see MAX_SIZE)
 */
-#define cast_st2S(sz)	((irin_Integer)(sz))
+#define cast_st2S(sz)	((ilya_Integer)(sz))
 
 /* Cast a ptrdiff_t to size_t, when it is known that the minuend
 ** comes from the subtrahend (the base)
 */
 #define ct_diff2sz(df)	((size_t)(df))
 
-/* ptrdiff_t to irin_Integer */
+/* ptrdiff_t to ilya_Integer */
 #define ct_diff2S(df)	cast_st2S(ct_diff2sz(df))
 
 /*
@@ -204,7 +204,7 @@ typedef void (*voidf)(void);
 /*
 ** Inline functions
 */
-#if !defined(IRIN_USE_C89)
+#if !defined(ILYA_USE_C89)
 #define l_inline	inline
 #elif defined(__GNUC__)
 #define l_inline	__inline__
@@ -284,18 +284,18 @@ typedef unsigned long l_uint32;
 */
 
 /* print a string */
-#if !defined(irin_writestring)
-#define irin_writestring(s,l)   fwrite((s), sizeof(char), (l), stdout)
+#if !defined(ilya_writestring)
+#define ilya_writestring(s,l)   fwrite((s), sizeof(char), (l), stdout)
 #endif
 
 /* print a newline and flush the output */
-#if !defined(irin_writeline)
-#define irin_writeline()        (irin_writestring("\n", 1), fflush(stdout))
+#if !defined(ilya_writeline)
+#define ilya_writeline()        (ilya_writestring("\n", 1), fflush(stdout))
 #endif
 
 /* print an error message */
-#if !defined(irin_writestringerror)
-#define irin_writestringerror(s,p) \
+#if !defined(ilya_writestringerror)
+#define ilya_writestringerror(s,p) \
         (fprintf(stderr, (s), (p)), fflush(stderr))
 #endif
 

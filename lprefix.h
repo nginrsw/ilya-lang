@@ -1,7 +1,7 @@
 /*
 ** $Id: lprefix.h $
-** Definitions for Irin code that must come before any other header file
-** See Copyright Notice in irin.h
+** Definitions for Ilya code that must come before any other header file
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lprefix_h
@@ -11,7 +11,7 @@
 /*
 ** Allows POSIX/XSI stuff
 */
-#if !defined(IRIN_USE_C89)	/* { */
+#if !defined(ILYA_USE_C89)	/* { */
 
 #if !defined(_XOPEN_SOURCE)
 #define _XOPEN_SOURCE           600
@@ -22,7 +22,7 @@
 /*
 ** Allows manipulation of large files in gcc and some other compilers
 */
-#if !defined(IRIN_32BITS) && !defined(_FILE_OFFSET_BITS)
+#if !defined(ILYA_32BITS) && !defined(_FILE_OFFSET_BITS)
 #define _LARGEFILE_SOURCE       1
 #define _FILE_OFFSET_BITS       64
 #endif

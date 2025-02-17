@@ -1,7 +1,7 @@
 /*
 ** $Id: lgc.h $
 ** Garbage Collector
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lgc_h
@@ -201,8 +201,8 @@
 #define LUAI_GCSTEPSIZE	(200 * sizeof(Table))
 
 
-#define setgcparam(g,p,v)  (g->gcparams[IRIN_GCP##p] = luaO_codeparam(v))
-#define applygcparam(g,p,x)  luaO_applyparam(g->gcparams[IRIN_GCP##p], x)
+#define setgcparam(g,p,v)  (g->gcparams[ILYA_GCP##p] = luaO_codeparam(v))
+#define applygcparam(g,p,x)  luaO_applyparam(g->gcparams[ILYA_GCP##p], x)
 
 /* }====================================================== */
 
@@ -212,7 +212,7 @@
 */
 #define GCSTPUSR	1  /* bit true when GC stopped by user */
 #define GCSTPGC		2  /* bit true when GC stopped by itself */
-#define GCSTPCLS	4  /* bit true when closing Irin state */
+#define GCSTPCLS	4  /* bit true when closing Ilya state */
 #define gcrunning(g)	((g)->gcstp == 0)
 
 
@@ -251,18 +251,18 @@
 #define luaC_barrierback(L,p,v) (  \
 	iscollectable(v) ? luaC_objbarrierback(L, p, gcvalue(v)) : cast_void(0))
 
-LUAI_FUNC void luaC_fix (irin_State *L, GCObject *o);
-LUAI_FUNC void luaC_freeallobjects (irin_State *L);
-LUAI_FUNC void luaC_step (irin_State *L);
-LUAI_FUNC void luaC_runtilstate (irin_State *L, int state, int fast);
-LUAI_FUNC void luaC_fullgc (irin_State *L, int isemergency);
-LUAI_FUNC GCObject *luaC_newobj (irin_State *L, lu_byte tt, size_t sz);
-LUAI_FUNC GCObject *luaC_newobjdt (irin_State *L, lu_byte tt, size_t sz,
+LUAI_FUNC void luaC_fix (ilya_State *L, GCObject *o);
+LUAI_FUNC void luaC_freeallobjects (ilya_State *L);
+LUAI_FUNC void luaC_step (ilya_State *L);
+LUAI_FUNC void luaC_runtilstate (ilya_State *L, int state, int fast);
+LUAI_FUNC void luaC_fullgc (ilya_State *L, int isemergency);
+LUAI_FUNC GCObject *luaC_newobj (ilya_State *L, lu_byte tt, size_t sz);
+LUAI_FUNC GCObject *luaC_newobjdt (ilya_State *L, lu_byte tt, size_t sz,
                                                  size_t offset);
-LUAI_FUNC void luaC_barrier_ (irin_State *L, GCObject *o, GCObject *v);
-LUAI_FUNC void luaC_barrierback_ (irin_State *L, GCObject *o);
-LUAI_FUNC void luaC_checkfinalizer (irin_State *L, GCObject *o, Table *mt);
-LUAI_FUNC void luaC_changemode (irin_State *L, int newmode);
+LUAI_FUNC void luaC_barrier_ (ilya_State *L, GCObject *o, GCObject *v);
+LUAI_FUNC void luaC_barrierback_ (ilya_State *L, GCObject *o);
+LUAI_FUNC void luaC_checkfinalizer (ilya_State *L, GCObject *o, Table *mt);
+LUAI_FUNC void luaC_changemode (ilya_State *L, int newmode);
 
 
 #endif

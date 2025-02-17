@@ -1,7 +1,7 @@
 /*
 ** $Id: lopcodes.h $
-** Opcodes for Irin virtual machine
-** See Copyright Notice in irin.h
+** Opcodes for Ilya virtual machine
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lopcodes_h
@@ -204,7 +204,7 @@ enum OpMode {iABC, ivABC, iABx, iAsBx, iAx, isJ};
 
 
 /*
-** Maximum size for the stack of a Irin fn. It must fit in 8 bits.
+** Maximum size for the stack of a Ilya fn. It must fit in 8 bits.
 ** The highest valid register is one less than this value.
 */
 #define MAX_FSTACK	MAXARG_A
@@ -234,7 +234,7 @@ typedef enum {
 ------------------------------------------------------------------------*/
 OP_MOVE,/*	A B	R[A] := R[B]					*/
 OP_LOADI,/*	A sBx	R[A] := sBx					*/
-OP_LOADF,/*	A sBx	R[A] := (irin_Number)sBx				*/
+OP_LOADF,/*	A sBx	R[A] := (ilya_Number)sBx				*/
 OP_LOADK,/*	A Bx	R[A] := K[Bx]					*/
 OP_LOADKX,/*	A	R[A] := K[extra arg]				*/
 OP_LOADFALSE,/*	A	R[A] := false					*/

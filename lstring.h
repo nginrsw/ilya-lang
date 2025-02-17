@@ -1,7 +1,7 @@
 /*
 ** $Id: lstring.h $
-** String table (keep all strings handled by Irin)
-** See Copyright Notice in irin.h
+** String table (keep all strings handled by Ilya)
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lstring_h
@@ -51,23 +51,23 @@
 /*
 ** equality for short strings, which are always internalized
 */
-#define eqshrstr(a,b)	check_exp((a)->tt == IRIN_VSHRSTR, (a) == (b))
+#define eqshrstr(a,b)	check_exp((a)->tt == ILYA_VSHRSTR, (a) == (b))
 
 
 LUAI_FUNC unsigned luaS_hash (const char *str, size_t l, unsigned seed);
 LUAI_FUNC unsigned luaS_hashlongstr (TString *ts);
 LUAI_FUNC int luaS_eqlngstr (TString *a, TString *b);
-LUAI_FUNC void luaS_resize (irin_State *L, int newsize);
+LUAI_FUNC void luaS_resize (ilya_State *L, int newsize);
 LUAI_FUNC void luaS_clearcache (global_State *g);
-LUAI_FUNC void luaS_init (irin_State *L);
-LUAI_FUNC void luaS_remove (irin_State *L, TString *ts);
-LUAI_FUNC Udata *luaS_newudata (irin_State *L, size_t s,
+LUAI_FUNC void luaS_init (ilya_State *L);
+LUAI_FUNC void luaS_remove (ilya_State *L, TString *ts);
+LUAI_FUNC Udata *luaS_newudata (ilya_State *L, size_t s,
                                               unsigned short nuvalue);
-LUAI_FUNC TString *luaS_newlstr (irin_State *L, const char *str, size_t l);
-LUAI_FUNC TString *luaS_new (irin_State *L, const char *str);
-LUAI_FUNC TString *luaS_createlngstrobj (irin_State *L, size_t l);
-LUAI_FUNC TString *luaS_newextlstr (irin_State *L,
-		const char *s, size_t len, irin_Alloc falloc, void *ud);
+LUAI_FUNC TString *luaS_newlstr (ilya_State *L, const char *str, size_t l);
+LUAI_FUNC TString *luaS_new (ilya_State *L, const char *str);
+LUAI_FUNC TString *luaS_createlngstrobj (ilya_State *L, size_t l);
+LUAI_FUNC TString *luaS_newextlstr (ilya_State *L,
+		const char *s, size_t len, ilya_Alloc falloc, void *ud);
 LUAI_FUNC size_t luaS_sizelngstr (size_t len, int kind);
 
 #endif

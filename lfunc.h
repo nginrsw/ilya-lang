@@ -1,7 +1,7 @@
 /*
 ** $Id: lfunc.h $
 ** Auxiliary functions to manipulate prototypes and closures
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lfunc_h
@@ -23,7 +23,7 @@
 
 
 /*
-** maximum number of upvalues in a closure (both C and Irin). (Value
+** maximum number of upvalues in a closure (both C and Ilya). (Value
 ** must fit in a VM register.)
 */
 #define MAXUPVAL	255
@@ -47,17 +47,17 @@
 #define CLOSEKTOP	(-1)
 
 
-LUAI_FUNC Proto *luaF_newproto (irin_State *L);
-LUAI_FUNC CClosure *luaF_newCclosure (irin_State *L, int nupvals);
-LUAI_FUNC LClosure *luaF_newLclosure (irin_State *L, int nupvals);
-LUAI_FUNC void luaF_initupvals (irin_State *L, LClosure *cl);
-LUAI_FUNC UpVal *luaF_findupval (irin_State *L, StkId level);
-LUAI_FUNC void luaF_newtbcupval (irin_State *L, StkId level);
-LUAI_FUNC void luaF_closeupval (irin_State *L, StkId level);
-LUAI_FUNC StkId luaF_close (irin_State *L, StkId level, int status, int yy);
+LUAI_FUNC Proto *luaF_newproto (ilya_State *L);
+LUAI_FUNC CClosure *luaF_newCclosure (ilya_State *L, int nupvals);
+LUAI_FUNC LClosure *luaF_newLclosure (ilya_State *L, int nupvals);
+LUAI_FUNC void luaF_initupvals (ilya_State *L, LClosure *cl);
+LUAI_FUNC UpVal *luaF_findupval (ilya_State *L, StkId level);
+LUAI_FUNC void luaF_newtbcupval (ilya_State *L, StkId level);
+LUAI_FUNC void luaF_closeupval (ilya_State *L, StkId level);
+LUAI_FUNC StkId luaF_close (ilya_State *L, StkId level, int status, int yy);
 LUAI_FUNC void luaF_unlinkupval (UpVal *uv);
 LUAI_FUNC lu_mem luaF_protosize (Proto *p);
-LUAI_FUNC void luaF_freeproto (irin_State *L, Proto *f);
+LUAI_FUNC void luaF_freeproto (ilya_State *L, Proto *f);
 LUAI_FUNC const char *luaF_getlocalname (const Proto *func, int local_number,
                                          int pc);
 

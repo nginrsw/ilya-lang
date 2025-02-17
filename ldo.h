@@ -1,7 +1,7 @@
 /*
 ** $Id: ldo.h $
-** Stack and Call structure of Irin
-** See Copyright Notice in irin.h
+** Stack and Call structure of Ilya
+** See Copyright Notice in ilya.h
 */
 
 #ifndef ldo_h
@@ -65,30 +65,30 @@
 
 
 /* type of protected functions, to be ran by 'runprotected' */
-typedef void (*Pfunc) (irin_State *L, void *ud);
+typedef void (*Pfunc) (ilya_State *L, void *ud);
 
-LUAI_FUNC void luaD_seterrorobj (irin_State *L, int errcode, StkId oldtop);
-LUAI_FUNC int luaD_protectedparser (irin_State *L, ZIO *z, const char *name,
+LUAI_FUNC void luaD_seterrorobj (ilya_State *L, int errcode, StkId oldtop);
+LUAI_FUNC int luaD_protectedparser (ilya_State *L, ZIO *z, const char *name,
                                                   const char *mode);
-LUAI_FUNC void luaD_hook (irin_State *L, int event, int line,
+LUAI_FUNC void luaD_hook (ilya_State *L, int event, int line,
                                         int fTransfer, int nTransfer);
-LUAI_FUNC void luaD_hookcall (irin_State *L, CallInfo *ci);
-LUAI_FUNC int luaD_pretailcall (irin_State *L, CallInfo *ci, StkId func,
+LUAI_FUNC void luaD_hookcall (ilya_State *L, CallInfo *ci);
+LUAI_FUNC int luaD_pretailcall (ilya_State *L, CallInfo *ci, StkId func,
                                               int narg1, int delta);
-LUAI_FUNC CallInfo *luaD_precall (irin_State *L, StkId func, int nResults);
-LUAI_FUNC void luaD_call (irin_State *L, StkId func, int nResults);
-LUAI_FUNC void luaD_callnoyield (irin_State *L, StkId func, int nResults);
-LUAI_FUNC int luaD_closeprotected (irin_State *L, ptrdiff_t level, int status);
-LUAI_FUNC int luaD_pcall (irin_State *L, Pfunc func, void *u,
+LUAI_FUNC CallInfo *luaD_precall (ilya_State *L, StkId func, int nResults);
+LUAI_FUNC void luaD_call (ilya_State *L, StkId func, int nResults);
+LUAI_FUNC void luaD_callnoyield (ilya_State *L, StkId func, int nResults);
+LUAI_FUNC int luaD_closeprotected (ilya_State *L, ptrdiff_t level, int status);
+LUAI_FUNC int luaD_pcall (ilya_State *L, Pfunc func, void *u,
                                         ptrdiff_t oldtop, ptrdiff_t ef);
-LUAI_FUNC void luaD_poscall (irin_State *L, CallInfo *ci, int nres);
-LUAI_FUNC int luaD_reallocstack (irin_State *L, int newsize, int raiseerror);
-LUAI_FUNC int luaD_growstack (irin_State *L, int n, int raiseerror);
-LUAI_FUNC void luaD_shrinkstack (irin_State *L);
-LUAI_FUNC void luaD_inctop (irin_State *L);
+LUAI_FUNC void luaD_poscall (ilya_State *L, CallInfo *ci, int nres);
+LUAI_FUNC int luaD_reallocstack (ilya_State *L, int newsize, int raiseerror);
+LUAI_FUNC int luaD_growstack (ilya_State *L, int n, int raiseerror);
+LUAI_FUNC void luaD_shrinkstack (ilya_State *L);
+LUAI_FUNC void luaD_inctop (ilya_State *L);
 
-LUAI_FUNC l_noret luaD_throw (irin_State *L, int errcode);
-LUAI_FUNC int luaD_rawrunprotected (irin_State *L, Pfunc f, void *ud);
+LUAI_FUNC l_noret luaD_throw (ilya_State *L, int errcode);
+LUAI_FUNC int luaD_rawrunprotected (ilya_State *L, Pfunc f, void *ud);
 
 #endif
 

@@ -1,18 +1,18 @@
 /*
 ** $Id: lgc.c $
 ** Garbage Collector
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lgc_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 #include <string.h>
 
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "ldebug.h"
 #include "ldo.h"
@@ -93,8 +93,8 @@
 
 
 static void reallymarkobject (global_State *g, GCObject *o);
-static void atomic (irin_State *L);
-static void entersweep (irin_State *L);
+static void atomic (ilya_State *L);
+static void entersweep (ilya_State *L);
 
 
 /*
@@ -113,49 +113,49 @@ static void entersweep (irin_State *L);
 static l_mem objsize (GCObject *o) {
   lu_mem res;
   switch (o->tt) {
-    case IRIN_VTABLE: {
+    case ILYA_VTABLE: {
       res = luaH_size(gco2t(o));
       break;
     }
-    case IRIN_VLCL: {
+    case ILYA_VLCL: {
       LClosure *cl = gco2lcl(o);
       res = sizeLclosure(cl->nupvalues);
       break;
     }
-    case IRIN_VCCL: {
+    case ILYA_VCCL: {
       CClosure *cl = gco2ccl(o);
       res = sizeCclosure(cl->nupvalues);
       break;
       break;
     }
-    case IRIN_VUSERDATA: {
+    case ILYA_VUSERDATA: {
       Udata *u = gco2u(o);
       res = sizeudata(u->nuvalue, u->len);
       break;
     }
-    case IRIN_VPROTO: {
+    case ILYA_VPROTO: {
       res = luaF_protosize(gco2p(o));
       break;
     }
-    case IRIN_VTHREAD: {
+    case ILYA_VTHREAD: {
       res = luaE_threadsize(gco2th(o));
       break;
     }
-    case IRIN_VSHRSTR: {
+    case ILYA_VSHRSTR: {
       TString *ts = gco2ts(o);
       res = sizestrshr(cast_uint(ts->shrlen));
       break;
     }
-    case IRIN_VLNGSTR: {
+    case ILYA_VLNGSTR: {
       TString *ts = gco2ts(o);
       res = luaS_sizelngstr(ts->u.lnglen, ts->shrlen);
       break;
     }
-    case IRIN_VUPVAL: {
+    case ILYA_VUPVAL: {
       res = sizeof(UpVal);
       break;
     }
-    default: res = 0; irin_assert(0);
+    default: res = 0; ilya_assert(0);
   }
   return cast(l_mem, res);
 }
@@ -163,17 +163,17 @@ static l_mem objsize (GCObject *o) {
 
 static GCObject **getgclist (GCObject *o) {
   switch (o->tt) {
-    case IRIN_VTABLE: return &gco2t(o)->gclist;
-    case IRIN_VLCL: return &gco2lcl(o)->gclist;
-    case IRIN_VCCL: return &gco2ccl(o)->gclist;
-    case IRIN_VTHREAD: return &gco2th(o)->gclist;
-    case IRIN_VPROTO: return &gco2p(o)->gclist;
-    case IRIN_VUSERDATA: {
+    case ILYA_VTABLE: return &gco2t(o)->gclist;
+    case ILYA_VLCL: return &gco2lcl(o)->gclist;
+    case ILYA_VCCL: return &gco2ccl(o)->gclist;
+    case ILYA_VTHREAD: return &gco2th(o)->gclist;
+    case ILYA_VPROTO: return &gco2p(o)->gclist;
+    case ILYA_VUSERDATA: {
       Udata *u = gco2u(o);
-      irin_assert(u->nuvalue > 0);
+      ilya_assert(u->nuvalue > 0);
       return &u->gclist;
     }
-    default: irin_assert(0); return 0;
+    default: ilya_assert(0); return 0;
   }
 }
 
@@ -185,7 +185,7 @@ static GCObject **getgclist (GCObject *o) {
 #define linkgclist(o,p)	linkgclist_(obj2gco(o), &(o)->gclist, &(p))
 
 static void linkgclist_ (GCObject *o, GCObject **pnext, GCObject **list) {
-  irin_assert(!isgray(o));  /* cannot be in a gray list */
+  ilya_assert(!isgray(o));  /* cannot be in a gray list */
   *pnext = *list;
   *list = o;
   set2gray(o);  /* now it is */
@@ -208,7 +208,7 @@ static void linkgclist_ (GCObject *o, GCObject **pnext, GCObject **list) {
 ** logically empty.
 */
 static void clearkey (Node *n) {
-  irin_assert(isempty(gval(n)));
+  ilya_assert(isempty(gval(n)));
   if (keyiscollectable(n))
     setdeadkey(n);  /* unused key; remove it */
 }
@@ -223,7 +223,7 @@ static void clearkey (Node *n) {
 */
 static int iscleared (global_State *g, const GCObject *o) {
   if (o == NULL) return 0;  /* non-collectable value */
-  else if (novariant(o->tt) == IRIN_TSTRING) {
+  else if (novariant(o->tt) == ILYA_TSTRING) {
     markobject(g, o);  /* strings are 'values', so are never weak */
     return 0;
   }
@@ -244,18 +244,18 @@ static int iscleared (global_State *g, const GCObject *o) {
 ** be done is generational mode, as its sweep does not distinguish
 ** white from dead.)
 */
-void luaC_barrier_ (irin_State *L, GCObject *o, GCObject *v) {
+void luaC_barrier_ (ilya_State *L, GCObject *o, GCObject *v) {
   global_State *g = G(L);
-  irin_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
+  ilya_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
   if (keepinvariant(g)) {  /* must keep invariant? */
     reallymarkobject(g, v);  /* restore invariant */
     if (isold(o)) {
-      irin_assert(!isold(v));  /* white object could not be old */
+      ilya_assert(!isold(v));  /* white object could not be old */
       setage(v, G_OLD0);  /* restore generational invariant */
     }
   }
   else {  /* sweep phase */
-    irin_assert(issweepphase(g));
+    ilya_assert(issweepphase(g));
     if (g->gckind != KGC_GENMINOR)  /* incremental mode? */
       makewhite(g, o);  /* mark 'o' as white to avoid other barriers */
   }
@@ -266,10 +266,10 @@ void luaC_barrier_ (irin_State *L, GCObject *o, GCObject *v) {
 ** barrier that moves collector backward, that is, mark the black object
 ** pointing to a white object as gray again.
 */
-void luaC_barrierback_ (irin_State *L, GCObject *o) {
+void luaC_barrierback_ (ilya_State *L, GCObject *o) {
   global_State *g = G(L);
-  irin_assert(isblack(o) && !isdead(g, o));
-  irin_assert((g->gckind != KGC_GENMINOR)
+  ilya_assert(isblack(o) && !isdead(g, o));
+  ilya_assert((g->gckind != KGC_GENMINOR)
           || (isold(o) && getage(o) != G_TOUCHED1));
   if (getage(o) == G_TOUCHED2)  /* already in gray list? */
     set2gray(o);  /* make it gray to become touched1 */
@@ -280,9 +280,9 @@ void luaC_barrierback_ (irin_State *L, GCObject *o) {
 }
 
 
-void luaC_fix (irin_State *L, GCObject *o) {
+void luaC_fix (ilya_State *L, GCObject *o) {
   global_State *g = G(L);
-  irin_assert(g->allgc == o);  /* object must be 1st in 'allgc' list! */
+  ilya_assert(g->allgc == o);  /* object must be 1st in 'allgc' list! */
   set2gray(o);  /* they will be gray forever */
   setage(o, G_OLD);  /* and old forever */
   g->allgc = o->next;  /* remove object from 'allgc' list */
@@ -295,7 +295,7 @@ void luaC_fix (irin_State *L, GCObject *o) {
 ** create a new collectable object (with given type, size, and offset)
 ** and link it to 'allgc' list.
 */
-GCObject *luaC_newobjdt (irin_State *L, lu_byte tt, size_t sz, size_t offset) {
+GCObject *luaC_newobjdt (ilya_State *L, lu_byte tt, size_t sz, size_t offset) {
   global_State *g = G(L);
   char *p = cast_charp(luaM_newobject(L, novariant(tt), sz));
   GCObject *o = cast(GCObject *, p + offset);
@@ -310,7 +310,7 @@ GCObject *luaC_newobjdt (irin_State *L, lu_byte tt, size_t sz, size_t offset) {
 /*
 ** create a new collectable object with no offset.
 */
-GCObject *luaC_newobj (irin_State *L, lu_byte tt, size_t sz) {
+GCObject *luaC_newobj (ilya_State *L, lu_byte tt, size_t sz) {
   return luaC_newobjdt(L, tt, sz, 0);
 }
 
@@ -340,12 +340,12 @@ GCObject *luaC_newobj (irin_State *L, lu_byte tt, size_t sz) {
 static void reallymarkobject (global_State *g, GCObject *o) {
   g->GCmarked += objsize(o);
   switch (o->tt) {
-    case IRIN_VSHRSTR:
-    case IRIN_VLNGSTR: {
+    case ILYA_VSHRSTR:
+    case ILYA_VLNGSTR: {
       set2black(o);  /* nothing to visit */
       break;
     }
-    case IRIN_VUPVAL: {
+    case ILYA_VUPVAL: {
       UpVal *uv = gco2upv(o);
       if (upisopen(uv))
         set2gray(uv);  /* open upvalues are kept gray */
@@ -354,7 +354,7 @@ static void reallymarkobject (global_State *g, GCObject *o) {
       markvalue(g, uv->v.p);  /* mark its content */
       break;
     }
-    case IRIN_VUSERDATA: {
+    case ILYA_VUSERDATA: {
       Udata *u = gco2u(o);
       if (u->nuvalue == 0) {  /* no user values? */
         markobjectN(g, u->metatable);  /* mark its metatable */
@@ -363,12 +363,12 @@ static void reallymarkobject (global_State *g, GCObject *o) {
       }
       /* else... */
     }  /* FALLTHROUGH */
-    case IRIN_VLCL: case IRIN_VCCL: case IRIN_VTABLE:
-    case IRIN_VTHREAD: case IRIN_VPROTO: {
+    case ILYA_VLCL: case ILYA_VCCL: case ILYA_VTABLE:
+    case ILYA_VTHREAD: case ILYA_VPROTO: {
       linkobjgclist(o, g->gray);  /* to be visited later */
       break;
     }
-    default: irin_assert(0); break;
+    default: ilya_assert(0); break;
   }
 }
 
@@ -378,7 +378,7 @@ static void reallymarkobject (global_State *g, GCObject *o) {
 */
 static void markmt (global_State *g) {
   int i;
-  for (i=0; i < IRIN_NUMTYPES; i++)
+  for (i=0; i < ILYA_NUMTYPES; i++)
     markobjectN(g, g->mt[i]);
 }
 
@@ -405,20 +405,20 @@ static void markbeingfnz (global_State *g) {
 ** upvalue later, it will be linked in the list again.)
 */
 static void remarkupvals (global_State *g) {
-  irin_State *thread;
-  irin_State **p = &g->twups;
+  ilya_State *thread;
+  ilya_State **p = &g->twups;
   while ((thread = *p) != NULL) {
     if (!iswhite(thread) && thread->openupval != NULL)
       p = &thread->twups;  /* keep marked thread with upvalues in the list */
     else {  /* thread is not marked or without upvalues */
       UpVal *uv;
-      irin_assert(!isold(thread) || thread->openupval == NULL);
+      ilya_assert(!isold(thread) || thread->openupval == NULL);
       *p = thread->twups;  /* remove thread from the list */
       thread->twups = thread;  /* mark that it is out of list */
       for (uv = thread->openupval; uv != NULL; uv = uv->u.open.next) {
-        irin_assert(getage(uv) <= getage(thread));
+        ilya_assert(getage(uv) <= getage(thread));
         if (!iswhite(uv)) {  /* upvalue already visited? */
-          irin_assert(upisopen(uv) && isgray(uv));
+          ilya_assert(upisopen(uv) && isgray(uv));
           markvalue(g, uv->v.p);  /* mark its value */
         }
       }
@@ -467,7 +467,7 @@ static void restartcollection (global_State *g) {
 ** 'correctgraylist' does when it finds a TOUCHED2 object.)
 */
 static void genlink (global_State *g, GCObject *o) {
-  irin_assert(isblack(o));
+  ilya_assert(isblack(o));
   if (getage(o) == G_TOUCHED1) {  /* touched in this cycle? */
     linkobjgclist(o, g->grayagain);  /* link it back in 'grayagain' */
   }  /* everything else do not need to be linked back */
@@ -491,7 +491,7 @@ static void traverseweakvalue (global_State *g, Table *h) {
     if (isempty(gval(n)))  /* entry is empty? */
       clearkey(n);  /* clear its key */
     else {
-      irin_assert(!keyisnil(n));
+      ilya_assert(!keyisnil(n));
       markkey(g, n);
       if (!hasclears && iscleared(g, gcvalueN(gval(n))))  /* a white value? */
         hasclears = 1;  /* table will have to be cleared */
@@ -576,7 +576,7 @@ static void traversestrongtable (global_State *g, Table *h) {
     if (isempty(gval(n)))  /* entry is empty? */
       clearkey(n);  /* clear its key */
     else {
-      irin_assert(!keyisnil(n));
+      ilya_assert(!keyisnil(n));
       markkey(g, n);
       markvalue(g, gval(n));
     }
@@ -646,7 +646,7 @@ static l_mem traverseCclosure (global_State *g, CClosure *cl) {
 }
 
 /*
-** Traverse a Irin closure, marking its prototype and its upvalues.
+** Traverse a Ilya closure, marking its prototype and its upvalues.
 ** (Both can be NULL while closure is being created.)
 */
 static l_mem traverseLclosure (global_State *g, LClosure *cl) {
@@ -672,14 +672,14 @@ static l_mem traverseLclosure (global_State *g, LClosure *cl) {
 ** (which can only happen in generational mode) or if the traverse is in
 ** the propagate phase (which can only happen in incremental mode).
 */
-static l_mem traversethread (global_State *g, irin_State *th) {
+static l_mem traversethread (global_State *g, ilya_State *th) {
   UpVal *uv;
   StkId o = th->stack.p;
   if (isold(th) || g->gcstate == GCSpropagate)
     linkgclist(th, g->grayagain);  /* insert into 'grayagain' list */
   if (o == NULL)
     return 0;  /* stack not completely built yet */
-  irin_assert(g->gcstate == GCSatomic ||
+  ilya_assert(g->gcstate == GCSatomic ||
              th->openupval == NULL || isintwups(th));
   for (; o < th->top.p; o++)  /* mark live elements in the stack */
     markvalue(g, s2v(o));
@@ -709,13 +709,13 @@ static l_mem propagatemark (global_State *g) {
   nw2black(o);
   g->gray = *getgclist(o);  /* remove from 'gray' list */
   switch (o->tt) {
-    case IRIN_VTABLE: return traversetable(g, gco2t(o));
-    case IRIN_VUSERDATA: return traverseudata(g, gco2u(o));
-    case IRIN_VLCL: return traverseLclosure(g, gco2lcl(o));
-    case IRIN_VCCL: return traverseCclosure(g, gco2ccl(o));
-    case IRIN_VPROTO: return traverseproto(g, gco2p(o));
-    case IRIN_VTHREAD: return traversethread(g, gco2th(o));
-    default: irin_assert(0); return 0;
+    case ILYA_VTABLE: return traversetable(g, gco2t(o));
+    case ILYA_VUSERDATA: return traverseudata(g, gco2u(o));
+    case ILYA_VLCL: return traverseLclosure(g, gco2lcl(o));
+    case ILYA_VCCL: return traverseCclosure(g, gco2ccl(o));
+    case ILYA_VPROTO: return traverseproto(g, gco2p(o));
+    case ILYA_VTHREAD: return traversethread(g, gco2th(o));
+    default: ilya_assert(0); return 0;
   }
 }
 
@@ -794,7 +794,7 @@ static void clearbyvalues (global_State *g, GCObject *l, GCObject *f) {
     for (i = 0; i < asize; i++) {
       GCObject *o = gcvalarr(h, i);
       if (iscleared(g, o))  /* value was collected? */
-        *getArrTag(h, i) = IRIN_VEMPTY;  /* remove entry */
+        *getArrTag(h, i) = ILYA_VEMPTY;  /* remove entry */
     }
     for (n = gnode(h, 0); n < limit; n++) {
       if (iscleared(g, gcvalueN(gval(n))))  /* unmarked value? */
@@ -806,59 +806,59 @@ static void clearbyvalues (global_State *g, GCObject *l, GCObject *f) {
 }
 
 
-static void freeupval (irin_State *L, UpVal *uv) {
+static void freeupval (ilya_State *L, UpVal *uv) {
   if (upisopen(uv))
     luaF_unlinkupval(uv);
   luaM_free(L, uv);
 }
 
 
-static void freeobj (irin_State *L, GCObject *o) {
+static void freeobj (ilya_State *L, GCObject *o) {
   assert_code(l_mem newmem = gettotalbytes(G(L)) - objsize(o));
   switch (o->tt) {
-    case IRIN_VPROTO:
+    case ILYA_VPROTO:
       luaF_freeproto(L, gco2p(o));
       break;
-    case IRIN_VUPVAL:
+    case ILYA_VUPVAL:
       freeupval(L, gco2upv(o));
       break;
-    case IRIN_VLCL: {
+    case ILYA_VLCL: {
       LClosure *cl = gco2lcl(o);
       luaM_freemem(L, cl, sizeLclosure(cl->nupvalues));
       break;
     }
-    case IRIN_VCCL: {
+    case ILYA_VCCL: {
       CClosure *cl = gco2ccl(o);
       luaM_freemem(L, cl, sizeCclosure(cl->nupvalues));
       break;
     }
-    case IRIN_VTABLE:
+    case ILYA_VTABLE:
       luaH_free(L, gco2t(o));
       break;
-    case IRIN_VTHREAD:
+    case ILYA_VTHREAD:
       luaE_freethread(L, gco2th(o));
       break;
-    case IRIN_VUSERDATA: {
+    case ILYA_VUSERDATA: {
       Udata *u = gco2u(o);
       luaM_freemem(L, o, sizeudata(u->nuvalue, u->len));
       break;
     }
-    case IRIN_VSHRSTR: {
+    case ILYA_VSHRSTR: {
       TString *ts = gco2ts(o);
       luaS_remove(L, ts);  /* remove it from hash table */
       luaM_freemem(L, ts, sizestrshr(cast_uint(ts->shrlen)));
       break;
     }
-    case IRIN_VLNGSTR: {
+    case ILYA_VLNGSTR: {
       TString *ts = gco2ts(o);
       if (ts->shrlen == LSTRMEM)  /* must free external string? */
         (*ts->falloc)(ts->ud, ts->contents, ts->u.lnglen + 1, 0);
       luaM_freemem(L, ts, luaS_sizelngstr(ts->u.lnglen, ts->shrlen));
       break;
     }
-    default: irin_assert(0);
+    default: ilya_assert(0);
   }
-  irin_assert(gettotalbytes(G(L)) == newmem);
+  ilya_assert(gettotalbytes(G(L)) == newmem);
 }
 
 
@@ -869,7 +869,7 @@ static void freeobj (irin_State *L, GCObject *o) {
 ** for next collection cycle. Return where to continue the traversal or
 ** NULL if list is finished.
 */
-static GCObject **sweeplist (irin_State *L, GCObject **p, l_mem countin) {
+static GCObject **sweeplist (ilya_State *L, GCObject **p, l_mem countin) {
   global_State *g = G(L);
   int ow = otherwhite(g);
   int white = luaC_white(g);  /* current white */
@@ -892,7 +892,7 @@ static GCObject **sweeplist (irin_State *L, GCObject **p, l_mem countin) {
 /*
 ** sweep a list until a live object (or end of list)
 */
-static GCObject **sweeptolive (irin_State *L, GCObject **p) {
+static GCObject **sweeptolive (ilya_State *L, GCObject **p) {
   GCObject **old = p;
   do {
     p = sweeplist(L, p, 1);
@@ -912,7 +912,7 @@ static GCObject **sweeptolive (irin_State *L, GCObject **p) {
 /*
 ** If possible, shrink string table.
 */
-static void checkSizes (irin_State *L, global_State *g) {
+static void checkSizes (ilya_State *L, global_State *g) {
   if (!g->gcemergency) {
     if (g->strt.nuse < g->strt.size / 4)  /* string table too big? */
       luaS_resize(L, g->strt.size / 2);
@@ -926,7 +926,7 @@ static void checkSizes (irin_State *L, global_State *g) {
 */
 static GCObject *udata2finalize (global_State *g) {
   GCObject *o = g->tobefnz;  /* get first element */
-  irin_assert(tofinalize(o));
+  ilya_assert(tofinalize(o));
   g->tobefnz = o->next;  /* remove it from 'tobefnz' list */
   o->next = g->allgc;  /* return it to 'allgc' list */
   g->allgc = o;
@@ -939,17 +939,17 @@ static GCObject *udata2finalize (global_State *g) {
 }
 
 
-static void dothecall (irin_State *L, void *ud) {
+static void dothecall (ilya_State *L, void *ud) {
   UNUSED(ud);
   luaD_callnoyield(L, L->top.p - 2, 0);
 }
 
 
-static void GCTM (irin_State *L) {
+static void GCTM (ilya_State *L) {
   global_State *g = G(L);
   const TValue *tm;
   TValue v;
-  irin_assert(!g->gcemergency);
+  ilya_assert(!g->gcemergency);
   setgcovalue(L, &v, udata2finalize(g));
   tm = luaT_gettmbyobj(L, &v, TM_GC);
   if (!notm(tm)) {  /* is there a finalizer? */
@@ -965,7 +965,7 @@ static void GCTM (irin_State *L) {
     L->ci->callstatus &= ~CIST_FIN;  /* not running a finalizer anymore */
     L->allowhook = oldah;  /* restore hooks */
     g->gcstp = oldgcstp;  /* restore state */
-    if (l_unlikely(status != IRIN_OK)) {  /* error while running __gc? */
+    if (l_unlikely(status != ILYA_OK)) {  /* error while running __gc? */
       luaE_warnerror(L, "__gc");
       L->top.p--;  /* pops error object */
     }
@@ -976,7 +976,7 @@ static void GCTM (irin_State *L) {
 /*
 ** call all pending finalizers
 */
-static void callallpendingfinalizers (irin_State *L) {
+static void callallpendingfinalizers (ilya_State *L) {
   global_State *g = G(L);
   while (g->tobefnz)
     GCTM(L);
@@ -1005,7 +1005,7 @@ static void separatetobefnz (global_State *g, int all) {
   GCObject **p = &g->finobj;
   GCObject **lastnext = findlast(&g->tobefnz);
   while ((curr = *p) != g->finobjold1) {  /* traverse all finalizable objects */
-    irin_assert(tofinalize(curr));
+    ilya_assert(tofinalize(curr));
     if (!(iswhite(curr) || all))  /* not being collected? */
       p = &curr->next;  /* don't bother with it */
     else {
@@ -1045,7 +1045,7 @@ static void correctpointers (global_State *g, GCObject *o) {
 ** if object 'o' has a finalizer, remove it from 'allgc' list (must
 ** search the list to find it) and link it in 'finobj' list.
 */
-void luaC_checkfinalizer (irin_State *L, GCObject *o, Table *mt) {
+void luaC_checkfinalizer (ilya_State *L, GCObject *o, Table *mt) {
   global_State *g = G(L);
   if (tofinalize(o) ||                 /* obj. is already marked... */
       gfasttm(g, mt, TM_GC) == NULL ||    /* or has no finalizer... */
@@ -1113,22 +1113,22 @@ static void setpause (global_State *g) {
 ** are now old---must be in a gray list. Everything else is not in a
 ** gray list. Open upvalues are also kept gray.
 */
-static void sweep2old (irin_State *L, GCObject **p) {
+static void sweep2old (ilya_State *L, GCObject **p) {
   GCObject *curr;
   global_State *g = G(L);
   while ((curr = *p) != NULL) {
     if (iswhite(curr)) {  /* is 'curr' dead? */
-      irin_assert(isdead(g, curr));
+      ilya_assert(isdead(g, curr));
       *p = curr->next;  /* remove 'curr' from list */
       freeobj(L, curr);  /* erase 'curr' */
     }
     else {  /* all surviving objects become old */
       setage(curr, G_OLD);
-      if (curr->tt == IRIN_VTHREAD) {  /* threads must be watched */
-        irin_State *th = gco2th(curr);
+      if (curr->tt == ILYA_VTHREAD) {  /* threads must be watched */
+        ilya_State *th = gco2th(curr);
         linkgclist(th, g->grayagain);  /* insert into 'grayagain' list */
       }
-      else if (curr->tt == IRIN_VUPVAL && upisopen(gco2upv(curr)))
+      else if (curr->tt == ILYA_VUPVAL && upisopen(gco2upv(curr)))
         set2gray(curr);  /* open upvalues are always gray */
       else  /* everything else is black */
         nw2black(curr);
@@ -1149,7 +1149,7 @@ static void sweep2old (irin_State *L, GCObject **p) {
 ** here.  They will all be advanced in 'correctgraylist'. That fn
 ** will also remove objects turned white here from any gray list.
 */
-static GCObject **sweepgen (irin_State *L, global_State *g, GCObject **p,
+static GCObject **sweepgen (ilya_State *L, global_State *g, GCObject **p,
                             GCObject *limit, GCObject **pfirstold1,
                             l_mem *paddedold) {
   static const lu_byte nextage[] = {
@@ -1166,7 +1166,7 @@ static GCObject **sweepgen (irin_State *L, global_State *g, GCObject **p,
   GCObject *curr;
   while ((curr = *p) != limit) {
     if (iswhite(curr)) {  /* is 'curr' dead? */
-      irin_assert(!isold(curr) && isdead(g, curr));
+      ilya_assert(!isold(curr) && isdead(g, curr));
       *p = curr->next;  /* remove 'curr' from list */
       freeobj(L, curr);  /* erase 'curr' */
     }
@@ -1177,7 +1177,7 @@ static GCObject **sweepgen (irin_State *L, global_State *g, GCObject **p,
         curr->marked = cast_byte(marked | G_SURVIVAL | white);
       }
       else {  /* all other objects will be old, and so keep their color */
-        irin_assert(age != G_OLD1);  /* advanced in 'markold' */
+        ilya_assert(age != G_OLD1);  /* advanced in 'markold' */
         setage(curr, nextage[age]);
         if (getage(curr) == G_OLD1) {
           addedold += objsize(curr);  /* bytes becoming old */
@@ -1211,17 +1211,17 @@ static GCObject **correctgraylist (GCObject **p) {
     if (iswhite(curr))
       goto remove;  /* remove all white objects */
     else if (getage(curr) == G_TOUCHED1) {  /* touched in this cycle? */
-      irin_assert(isgray(curr));
+      ilya_assert(isgray(curr));
       nw2black(curr);  /* make it black, for next barrier */
       setage(curr, G_TOUCHED2);
       goto remain;  /* keep it in the list and go to next element */
     }
-    else if (curr->tt == IRIN_VTHREAD) {
-      irin_assert(isgray(curr));
+    else if (curr->tt == ILYA_VTHREAD) {
+      ilya_assert(isgray(curr));
       goto remain;  /* keep non-white threads on the list */
     }
     else {  /* everything else is removed */
-      irin_assert(isold(curr));  /* young objects should be white here */
+      ilya_assert(isold(curr));  /* young objects should be white here */
       if (getage(curr) == G_TOUCHED2)  /* advance from TOUCHED2... */
         setage(curr, G_OLD);  /* ... to OLD */
       nw2black(curr);  /* make object black (to be removed) */
@@ -1257,7 +1257,7 @@ static void markold (global_State *g, GCObject *from, GCObject *to) {
   GCObject *p;
   for (p = from; p != to; p = p->next) {
     if (getage(p) == G_OLD1) {
-      irin_assert(!iswhite(p));
+      ilya_assert(!iswhite(p));
       setage(p, G_OLD);  /* now they are old */
       if (isblack(p))
         reallymarkobject(g, p);
@@ -1269,7 +1269,7 @@ static void markold (global_State *g, GCObject *from, GCObject *to) {
 /*
 ** Finish a young-generation collection.
 */
-static void finishgencycle (irin_State *L, global_State *g) {
+static void finishgencycle (ilya_State *L, global_State *g) {
   correctgraylists(g);
   checkSizes(L, g);
   g->gcstate = GCSpropagate;  /* skip restart */
@@ -1283,7 +1283,7 @@ static void finishgencycle (irin_State *L, global_State *g) {
 ** the "sweep all" state to clear all objects, which are mostly black
 ** in generational mode.
 */
-static void minor2inc (irin_State *L, global_State *g, lu_byte kind) {
+static void minor2inc (ilya_State *L, global_State *g, lu_byte kind) {
   g->GCmajorminor = g->GCmarked;  /* number of live bytes */
   g->gckind = kind;
   g->reallyold = g->old1 = g->survival = NULL;
@@ -1312,12 +1312,12 @@ static int checkminormajor (global_State *g) {
 ** atomic step. Then, check whether to continue in minor mode. If so,
 ** sweep all lists and advance pointers. Finally, finish the collection.
 */
-static void youngcollection (irin_State *L, global_State *g) {
+static void youngcollection (ilya_State *L, global_State *g) {
   l_mem addedold1 = 0;
   l_mem marked = g->GCmarked;  /* preserve 'g->GCmarked' */
   GCObject **psurvival;  /* to point to first non-dead survival object */
   GCObject *dummy;  /* dummy out parameter to 'sweepgen' */
-  irin_assert(g->gcstate == GCSpropagate);
+  ilya_assert(g->gcstate == GCSpropagate);
   if (g->firstold1) {  /* are there regular OLD1 objects? */
     markold(g, g->firstold1, g->reallyold);  /* mark them */
     g->firstold1 = NULL;  /* no more OLD1 objects (for now) */
@@ -1366,7 +1366,7 @@ static void youngcollection (irin_State *L, global_State *g) {
 ** surviving objects to old. Threads go back to 'grayagain'; everything
 ** else is turned black (not in any gray list).
 */
-static void atomic2gen (irin_State *L, global_State *g) {
+static void atomic2gen (ilya_State *L, global_State *g) {
   cleargraylists(g);
   /* sweep all elements making them old */
   g->gcstate = GCSswpallgc;
@@ -1405,7 +1405,7 @@ static void setminordebt (global_State *g) {
 ** are cleared. Then, turn all objects into old and finishes the
 ** collection.
 */
-static void entergen (irin_State *L, global_State *g) {
+static void entergen (ilya_State *L, global_State *g) {
   luaC_runtilstate(L, GCSpause, 1);  /* prepare to start a new cycle */
   luaC_runtilstate(L, GCSpropagate, 1);  /* start new cycle */
   atomic(L);  /* propagates all and then do the atomic stuff */
@@ -1417,7 +1417,7 @@ static void entergen (irin_State *L, global_State *g) {
 /*
 ** Change collector mode to 'newmode'.
 */
-void luaC_changemode (irin_State *L, int newmode) {
+void luaC_changemode (ilya_State *L, int newmode) {
   global_State *g = G(L);
   if (g->gckind == KGC_GENMAJOR)  /* doing major collections? */
     g->gckind = KGC_INC;  /* already incremental but in name */
@@ -1425,7 +1425,7 @@ void luaC_changemode (irin_State *L, int newmode) {
     if (newmode == KGC_INC)  /* entering incremental mode? */
       minor2inc(L, g, KGC_INC);  /* entering incremental mode */
     else {
-      irin_assert(newmode == KGC_GENMINOR);
+      ilya_assert(newmode == KGC_GENMINOR);
       entergen(L, g);
     }
   }
@@ -1435,7 +1435,7 @@ void luaC_changemode (irin_State *L, int newmode) {
 /*
 ** Does a full collection in generational mode.
 */
-static void fullgen (irin_State *L, global_State *g) {
+static void fullgen (ilya_State *L, global_State *g) {
   minor2inc(L, g, KGC_INC);
   entergen(L, g);
 }
@@ -1448,7 +1448,7 @@ static void fullgen (irin_State *L, global_State *g) {
 ** is greater than 'majorminor'% of the number of bytes added
 ** since the last collection ('addedbytes').
 */
-static int checkmajorminor (irin_State *L, global_State *g) {
+static int checkmajorminor (ilya_State *L, global_State *g) {
   if (g->gckind == KGC_GENMAJOR) {  /* generational mode? */
     l_mem numbytes = gettotalbytes(g);
     l_mem addedbytes = numbytes - g->GCmajorminor;
@@ -1481,10 +1481,10 @@ static int checkmajorminor (irin_State *L, global_State *g) {
 ** not need to skip objects created between "now" and the start of the
 ** real sweep.
 */
-static void entersweep (irin_State *L) {
+static void entersweep (ilya_State *L) {
   global_State *g = G(L);
   g->gcstate = GCSswpallgc;
-  irin_assert(g->sweepgc == NULL);
+  ilya_assert(g->sweepgc == NULL);
   g->sweepgc = sweeptolive(L, &g->allgc);
 }
 
@@ -1493,7 +1493,7 @@ static void entersweep (irin_State *L) {
 ** Delete all objects in list 'p' until (but not including) object
 ** 'limit'.
 */
-static void deletelist (irin_State *L, GCObject *p, GCObject *limit) {
+static void deletelist (ilya_State *L, GCObject *p, GCObject *limit) {
   while (p != limit) {
     GCObject *next = p->next;
     freeobj(L, p);
@@ -1503,30 +1503,30 @@ static void deletelist (irin_State *L, GCObject *p, GCObject *limit) {
 
 
 /*
-** Call all finalizers of the objects in the given Irin state, and
+** Call all finalizers of the objects in the given Ilya state, and
 ** then free all objects, except for the main thread.
 */
-void luaC_freeallobjects (irin_State *L) {
+void luaC_freeallobjects (ilya_State *L) {
   global_State *g = G(L);
   g->gcstp = GCSTPCLS;  /* no extra finalizers after here */
   luaC_changemode(L, KGC_INC);
   separatetobefnz(g, 1);  /* separate all objects with finalizers */
-  irin_assert(g->finobj == NULL);
+  ilya_assert(g->finobj == NULL);
   callallpendingfinalizers(L);
   deletelist(L, g->allgc, obj2gco(g->mainthread));
-  irin_assert(g->finobj == NULL);  /* no new finalizers */
+  ilya_assert(g->finobj == NULL);  /* no new finalizers */
   deletelist(L, g->fixedgc, NULL);  /* collect fixed objects */
-  irin_assert(g->strt.nuse == 0);
+  ilya_assert(g->strt.nuse == 0);
 }
 
 
-static void atomic (irin_State *L) {
+static void atomic (ilya_State *L) {
   global_State *g = G(L);
   GCObject *origweak, *origall;
   GCObject *grayagain = g->grayagain;  /* save original list */
   g->grayagain = NULL;
-  irin_assert(g->ephemeron == NULL && g->weak == NULL);
-  irin_assert(!iswhite(g->mainthread));
+  ilya_assert(g->ephemeron == NULL && g->weak == NULL);
+  ilya_assert(!iswhite(g->mainthread));
   g->gcstate = GCSatomic;
   markobject(g, L);  /* mark running thread */
   /* registry and global metatables may be changed by API */
@@ -1557,7 +1557,7 @@ static void atomic (irin_State *L) {
   clearbyvalues(g, g->allweak, origall);
   luaS_clearcache(g);
   g->currentwhite = cast_byte(otherwhite(g));  /* flip current white */
-  irin_assert(g->gray == NULL);
+  ilya_assert(g->gray == NULL);
 }
 
 
@@ -1565,7 +1565,7 @@ static void atomic (irin_State *L) {
 ** Do a sweep step. The normal case (not fast) sweeps at most GCSWEEPMAX
 ** elements. The fast case sweeps the whole list.
 */
-static void sweepstep (irin_State *L, global_State *g,
+static void sweepstep (ilya_State *L, global_State *g,
                        lu_byte nextstate, GCObject **nextlist, int fast) {
   if (g->sweepgc)
     g->sweepgc = sweeplist(L, g->sweepgc, fast ? MAX_LMEM : GCSWEEPMAX);
@@ -1594,10 +1594,10 @@ static void sweepstep (irin_State *L, global_State *g,
 #define step2minor	-1  /* moved to minor collections */
 
 
-static l_mem singlestep (irin_State *L, int fast) {
+static l_mem singlestep (ilya_State *L, int fast) {
   global_State *g = G(L);
   l_mem stepresult;
-  irin_assert(!g->gcstopem);  /* collector is not reentrant */
+  ilya_assert(!g->gcstopem);  /* collector is not reentrant */
   g->gcstopem = 1;  /* no emergency collections while collecting */
   switch (g->gcstate) {
     case GCSpause: {
@@ -1658,7 +1658,7 @@ static l_mem singlestep (irin_State *L, int fast) {
       }
       break;
     }
-    default: irin_assert(0); return 0;
+    default: ilya_assert(0); return 0;
   }
   g->gcstopem = 0;
   return stepresult;
@@ -1670,9 +1670,9 @@ static l_mem singlestep (irin_State *L, int fast) {
 ** (The option 'fast' is only for testing; in normal code, 'fast'
 ** here is always true.)
 */
-void luaC_runtilstate (irin_State *L, int state, int fast) {
+void luaC_runtilstate (ilya_State *L, int state, int fast) {
   global_State *g = G(L);
-  irin_assert(g->gckind == KGC_INC);
+  ilya_assert(g->gckind == KGC_INC);
   while (state != g->gcstate)
     singlestep(L, fast);
 }
@@ -1686,7 +1686,7 @@ void luaC_runtilstate (irin_State *L, int state, int fast) {
 ** finishing a cycle (pause state). Finally, it sets the debt that
 ** controls when next step will be performed.
 */
-static void incstep (irin_State *L, global_State *g) {
+static void incstep (ilya_State *L, global_State *g) {
   l_mem stepsize = applygcparam(g, STEPSIZE, 100);
   l_mem work2do = applygcparam(g, STEPMUL, stepsize / cast_int(sizeof(void*)));
   l_mem stres;
@@ -1716,9 +1716,9 @@ static void incstep (irin_State *L, global_State *g) {
 ** stopped by the user, set a reasonable debt to avoid it being called
 ** at every single check.)
 */
-void luaC_step (irin_State *L) {
+void luaC_step (ilya_State *L) {
   global_State *g = G(L);
-  irin_assert(!g->gcemergency);
+  ilya_assert(!g->gcemergency);
   if (!gcrunning(g)) {  /* not running? */
     if (g->gcstp & GCSTPUSR)  /* stopped by the user? */
       luaE_setdebt(g, 20000);
@@ -1746,7 +1746,7 @@ void luaC_step (irin_State *L) {
 ** to sweep all objects to turn them back to white (as white has not
 ** changed, nothing will be collected).
 */
-static void fullinc (irin_State *L, global_State *g) {
+static void fullinc (ilya_State *L, global_State *g) {
   if (keepinvariant(g))  /* black objects? */
     entersweep(L); /* sweep everything to turn them back to white */
   /* finish any pending sweep phase to start a new cycle */
@@ -1762,9 +1762,9 @@ static void fullinc (irin_State *L, global_State *g) {
 ** some operations which could change the interpreter state in some
 ** unexpected ways (running finalizers and shrinking some structures).
 */
-void luaC_fullgc (irin_State *L, int isemergency) {
+void luaC_fullgc (ilya_State *L, int isemergency) {
   global_State *g = G(L);
-  irin_assert(!g->gcemergency);
+  ilya_assert(!g->gcemergency);
   g->gcemergency = cast_byte(isemergency);  /* set flag */
   switch (g->gckind) {
     case KGC_GENMINOR: fullgen(L, g); break;

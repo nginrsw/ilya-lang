@@ -1,11 +1,11 @@
 /*
 ** $Id: lundump.c $
-** load precompiled Irin chunks
-** See Copyright Notice in irin.h
+** load precompiled Ilya chunks
+** See Copyright Notice in ilya.h
 */
 
 #define lundump_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "ldebug.h"
 #include "ldo.h"
@@ -32,19 +32,19 @@
 
 
 typedef struct {
-  irin_State *L;
+  ilya_State *L;
   ZIO *Z;
   const char *name;
   Table *h;  /* list for string reuse */
   size_t offset;  /* current position relative to beginning of dump */
-  irin_Integer nstr;  /* number of strings in the list */
+  ilya_Integer nstr;  /* number of strings in the list */
   lu_byte fixed;  /* dump is fixed in memory */
 } LoadState;
 
 
 static l_noret error (LoadState *S, const char *why) {
   luaO_pushfstring(S->L, "%s: bad binary format (%s)", S->name, why);
-  luaD_throw(S->L, IRIN_ERRSYNTAX);
+  luaD_throw(S->L, ILYA_ERRSYNTAX);
 }
 
 
@@ -64,9 +64,9 @@ static void loadBlock (LoadState *S, void *b, size_t size) {
 static void loadAlign (LoadState *S, unsigned align) {
   unsigned padding = align - cast_uint(S->offset % align);
   if (padding < align) {  /* (padding == align) means no padding */
-    irin_Integer paddingContent;
+    ilya_Integer paddingContent;
     loadBlock(S, &paddingContent, padding);
-    irin_assert(S->offset % align == 0);
+    ilya_assert(S->offset % align == 0);
   }
 }
 
@@ -126,15 +126,15 @@ static int loadInt (LoadState *S) {
 
 
 
-static irin_Number loadNumber (LoadState *S) {
-  irin_Number x;
+static ilya_Number loadNumber (LoadState *S) {
+  ilya_Number x;
   loadVar(S, x);
   return x;
 }
 
 
-static irin_Integer loadInteger (LoadState *S) {
-  irin_Integer x;
+static ilya_Integer loadInteger (LoadState *S) {
+  ilya_Integer x;
   loadVar(S, x);
   return x;
 }
@@ -147,16 +147,16 @@ static irin_Integer loadInteger (LoadState *S) {
 ** 'luaH_setint' can call the GC.)
 */
 static void loadString (LoadState *S, Proto *p, TString **sl) {
-  irin_State *L = S->L;
+  ilya_State *L = S->L;
   TString *ts;
   TValue sv;
   size_t size = loadSize(S);
   if (size == 0) {  /* no string? */
-    irin_assert(*sl == NULL);  /* must be prefilled */
+    ilya_assert(*sl == NULL);  /* must be prefilled */
     return;
   }
   else if (size == 1) {  /* previously saved string? */
-    irin_Integer idx = cast(irin_Integer, loadSize(S));  /* get its index */
+    ilya_Integer idx = cast(ilya_Integer, loadSize(S));  /* get its index */
     TValue stv;
     luaH_getint(S->h, idx, &stv);  /* get its value */
     *sl = ts = tsvalue(&stv);
@@ -216,24 +216,24 @@ static void loadConstants (LoadState *S, Proto *f) {
     TValue *o = &f->k[i];
     int t = loadByte(S);
     switch (t) {
-      case IRIN_VNIL:
+      case ILYA_VNIL:
         setnilvalue(o);
         break;
-      case IRIN_VFALSE:
+      case ILYA_VFALSE:
         setbfvalue(o);
         break;
-      case IRIN_VTRUE:
+      case ILYA_VTRUE:
         setbtvalue(o);
         break;
-      case IRIN_VNUMFLT:
+      case ILYA_VNUMFLT:
         setfltvalue(o, loadNumber(S));
         break;
-      case IRIN_VNUMINT:
+      case ILYA_VNUMINT:
         setivalue(o, loadInteger(S));
         break;
-      case IRIN_VSHRSTR:
-      case IRIN_VLNGSTR: {
-        irin_assert(f->source == NULL);
+      case ILYA_VSHRSTR:
+      case ILYA_VLNGSTR: {
+        ilya_assert(f->source == NULL);
         loadString(S, f, &f->source);  /* use 'source' to anchor string */
         if (f->source == NULL)
           error(S, "bad format for constant string");
@@ -241,7 +241,7 @@ static void loadConstants (LoadState *S, Proto *f) {
         f->source = NULL;
         break;
       }
-      default: irin_assert(0);
+      default: ilya_assert(0);
     }
   }
 }
@@ -344,7 +344,7 @@ static void loadFunction (LoadState *S, Proto *f) {
 
 
 static void checkliteral (LoadState *S, const char *s, const char *msg) {
-  char buff[sizeof(IRIN_SIGNATURE) + sizeof(LUAC_DATA)]; /* larger than both */
+  char buff[sizeof(ILYA_SIGNATURE) + sizeof(LUAC_DATA)]; /* larger than both */
   size_t len = strlen(s);
   loadVector(S, buff, len);
   if (memcmp(s, buff, len) != 0)
@@ -362,15 +362,15 @@ static void fchecksize (LoadState *S, size_t size, const char *tname) {
 
 static void checkHeader (LoadState *S) {
   /* skip 1st char (already read and checked) */
-  checkliteral(S, &IRIN_SIGNATURE[1], "not a binary chunk");
+  checkliteral(S, &ILYA_SIGNATURE[1], "not a binary chunk");
   if (loadByte(S) != LUAC_VERSION)
     error(S, "version mismatch");
   if (loadByte(S) != LUAC_FORMAT)
     error(S, "format mismatch");
   checkliteral(S, LUAC_DATA, "corrupted chunk");
   checksize(S, Instruction);
-  checksize(S, irin_Integer);
-  checksize(S, irin_Number);
+  checksize(S, ilya_Integer);
+  checksize(S, ilya_Number);
   if (loadInteger(S) != LUAC_INT)
     error(S, "integer format mismatch");
   if (loadNumber(S) != LUAC_NUM)
@@ -381,12 +381,12 @@ static void checkHeader (LoadState *S) {
 /*
 ** Load precompiled chunk.
 */
-LClosure *luaU_undump (irin_State *L, ZIO *Z, const char *name, int fixed) {
+LClosure *luaU_undump (ilya_State *L, ZIO *Z, const char *name, int fixed) {
   LoadState S;
   LClosure *cl;
   if (*name == '@' || *name == '=')
     S.name = name + 1;
-  else if (*name == IRIN_SIGNATURE[0])
+  else if (*name == ILYA_SIGNATURE[0])
     S.name = "binary string";
   else
     S.name = name;
@@ -405,7 +405,7 @@ LClosure *luaU_undump (irin_State *L, ZIO *Z, const char *name, int fixed) {
   cl->p = luaF_newproto(L);
   luaC_objbarrier(L, cl, cl->p);
   loadFunction(&S, cl->p);
-  irin_assert(cl->nupvalues == cl->p->sizeupvalues);
+  ilya_assert(cl->nupvalues == cl->p->sizeupvalues);
   luai_verifycode(L, cl->p);
   L->top.p--;  /* pop table */
   return cl;

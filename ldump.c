@@ -1,11 +1,11 @@
 /*
 ** $Id: ldump.c $
-** save precompiled Irin chunks
-** See Copyright Notice in irin.h
+** save precompiled Ilya chunks
+** See Copyright Notice in ilya.h
 */
 
 #define ldump_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -13,7 +13,7 @@
 #include <limits.h>
 #include <stddef.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "lgc.h"
@@ -24,14 +24,14 @@
 
 
 typedef struct {
-  irin_State *L;
-  irin_Writer writer;
+  ilya_State *L;
+  ilya_Writer writer;
   void *data;
   size_t offset;  /* current position relative to beginning of dump */
   int strip;
   int status;
   Table *h;  /* table to track saved strings */
-  irin_Integer nstr;  /* counter for counting saved strings */
+  ilya_Integer nstr;  /* counter for counting saved strings */
 } DumpState;
 
 
@@ -51,9 +51,9 @@ typedef struct {
 */
 static void dumpBlock (DumpState *D, const void *b, size_t size) {
   if (D->status == 0) {  /* do not write anything after an error */
-    irin_unlock(D->L);
+    ilya_unlock(D->L);
     D->status = (*D->writer)(D->L, b, size, D->data);
-    irin_lock(D->L);
+    ilya_lock(D->L);
     D->offset += size;
   }
 }
@@ -66,11 +66,11 @@ static void dumpBlock (DumpState *D, const void *b, size_t size) {
 static void dumpAlign (DumpState *D, unsigned align) {
   unsigned padding = align - cast_uint(D->offset % align);
   if (padding < align) {  /* padding == align means no padding */
-    static irin_Integer paddingContent = 0;
-    irin_assert(align <= sizeof(irin_Integer));
+    static ilya_Integer paddingContent = 0;
+    ilya_assert(align <= sizeof(ilya_Integer));
     dumpBlock(D, &paddingContent, padding);
   }
-  irin_assert(D->offset % align == 0);
+  ilya_assert(D->offset % align == 0);
 }
 
 
@@ -107,17 +107,17 @@ static void dumpSize (DumpState *D, size_t sz) {
 }
 
 static void dumpInt (DumpState *D, int x) {
-  irin_assert(x >= 0);
+  ilya_assert(x >= 0);
   dumpVarint(D, cast(size_t, x));
 }
 
 
-static void dumpNumber (DumpState *D, irin_Number x) {
+static void dumpNumber (DumpState *D, ilya_Number x) {
   dumpVar(D, x);
 }
 
 
-static void dumpInteger (DumpState *D, irin_Integer x) {
+static void dumpInteger (DumpState *D, ilya_Integer x) {
   dumpVar(D, x);
 }
 
@@ -158,7 +158,7 @@ static void dumpString (DumpState *D, TString *ts) {
 static void dumpCode (DumpState *D, const Proto *f) {
   dumpInt(D, f->sizecode);
   dumpAlign(D, sizeof(f->code[0]));
-  irin_assert(f->code != NULL);
+  ilya_assert(f->code != NULL);
   dumpVector(D, f->code, cast_uint(f->sizecode));
 }
 
@@ -174,18 +174,18 @@ static void dumpConstants (DumpState *D, const Proto *f) {
     int tt = ttypetag(o);
     dumpByte(D, tt);
     switch (tt) {
-      case IRIN_VNUMFLT:
+      case ILYA_VNUMFLT:
         dumpNumber(D, fltvalue(o));
         break;
-      case IRIN_VNUMINT:
+      case ILYA_VNUMINT:
         dumpInteger(D, ivalue(o));
         break;
-      case IRIN_VSHRSTR:
-      case IRIN_VLNGSTR:
+      case ILYA_VSHRSTR:
+      case ILYA_VLNGSTR:
         dumpString(D, tsvalue(o));
         break;
       default:
-        irin_assert(tt == IRIN_VNIL || tt == IRIN_VFALSE || tt == IRIN_VTRUE);
+        ilya_assert(tt == ILYA_VNIL || tt == ILYA_VFALSE || tt == ILYA_VTRUE);
     }
   }
 }
@@ -254,22 +254,22 @@ static void dumpFunction (DumpState *D, const Proto *f) {
 
 
 static void dumpHeader (DumpState *D) {
-  dumpLiteral(D, IRIN_SIGNATURE);
+  dumpLiteral(D, ILYA_SIGNATURE);
   dumpByte(D, LUAC_VERSION);
   dumpByte(D, LUAC_FORMAT);
   dumpLiteral(D, LUAC_DATA);
   dumpByte(D, sizeof(Instruction));
-  dumpByte(D, sizeof(irin_Integer));
-  dumpByte(D, sizeof(irin_Number));
+  dumpByte(D, sizeof(ilya_Integer));
+  dumpByte(D, sizeof(ilya_Number));
   dumpInteger(D, LUAC_INT);
   dumpNumber(D, LUAC_NUM);
 }
 
 
 /*
-** dump Irin fn as precompiled chunk
+** dump Ilya fn as precompiled chunk
 */
-int luaU_dump (irin_State *L, const Proto *f, irin_Writer w, void *data,
+int luaU_dump (ilya_State *L, const Proto *f, ilya_Writer w, void *data,
                int strip) {
   DumpState D;
   D.h = luaH_new(L);  /* aux. table to keep strings already dumped */

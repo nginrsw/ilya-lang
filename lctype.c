@@ -1,23 +1,23 @@
 /*
 ** $Id: lctype.c $
-** 'ctype' functions for Irin
-** See Copyright Notice in irin.h
+** 'ctype' functions for Ilya
+** See Copyright Notice in ilya.h
 */
 
 #define lctype_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 
 #include "lctype.h"
 
-#if !IRIN_USE_CTYPE	/* { */
+#if !ILYA_USE_CTYPE	/* { */
 
 #include <limits.h>
 
 
-#if defined (IRIN_UCID)		/* accept UniCode IDentifiers? */
+#if defined (ILYA_UCID)		/* accept UniCode IDentifiers? */
 /* consider all non-ascii codepoints to be alphabetic */
 #define NONA		0x01
 #else

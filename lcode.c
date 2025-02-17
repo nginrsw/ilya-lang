@@ -1,11 +1,11 @@
 /*
 ** $Id: lcode.c $
-** Code generator for Irin
-** See Copyright Notice in irin.h
+** Code generator for Ilya
+** See Copyright Notice in ilya.h
 */
 
 #define lcode_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -15,7 +15,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lcode.h"
 #include "ldebug.h"
@@ -69,7 +69,7 @@ static int tonumeral (const expdesc *e, TValue *v) {
 ** Get the constant value from a constant expression
 */
 static TValue *const2val (FuncState *fs, const expdesc *e) {
-  irin_assert(e->k == VCONST);
+  ilya_assert(e->k == VCONST);
   return &fs->ls->dyd->actvar.arr[e->u.info].k;
 }
 
@@ -159,15 +159,15 @@ static int getjump (FuncState *fs, int pc) {
 
 /*
 ** Fix jump instruction at position 'pc' to jump to 'dest'.
-** (Jump addresses are relative in Irin)
+** (Jump addresses are relative in Ilya)
 */
 static void fixjump (FuncState *fs, int pc, int dest) {
   Instruction *jmp = &fs->f->code[pc];
   int offset = dest - (pc + 1);
-  irin_assert(dest != NO_JUMP);
+  ilya_assert(dest != NO_JUMP);
   if (!(-OFFSET_sJ <= offset && offset <= MAXARG_sJ - OFFSET_sJ))
     luaX_syntaxerror(fs->ls, "control structure too long");
-  irin_assert(GET_OPCODE(*jmp) == OP_JMP);
+  ilya_assert(GET_OPCODE(*jmp) == OP_JMP);
   SETARG_sJ(*jmp, offset);
 }
 
@@ -302,7 +302,7 @@ static void patchlistaux (FuncState *fs, int list, int vtarget, int reg,
 ** because we only know addresses once code is generated.)
 */
 void luaK_patchlist (FuncState *fs, int list, int target) {
-  irin_assert(target <= fs->pc);
+  ilya_assert(target <= fs->pc);
   patchlistaux(fs, list, target, NO_REG, target);
 }
 
@@ -356,7 +356,7 @@ static void removelastlineinfo (FuncState *fs) {
     fs->iwthabs--;  /* undo previous increment */
   }
   else {  /* absolute line information */
-    irin_assert(f->abslineinfo[fs->nabslineinfo - 1].pc == pc);
+    ilya_assert(f->abslineinfo[fs->nabslineinfo - 1].pc == pc);
     fs->nabslineinfo--;  /* remove it */
     fs->iwthabs = MAXIWTHABS + 1;  /* force next line info to be absolute */
   }
@@ -393,16 +393,16 @@ int luaK_code (FuncState *fs, Instruction i) {
 ** of parameters versus opcode.)
 */
 int luaK_codeABCk (FuncState *fs, OpCode o, int A, int B, int C, int k) {
-  irin_assert(getOpMode(o) == iABC);
-  irin_assert(A <= MAXARG_A && B <= MAXARG_B &&
+  ilya_assert(getOpMode(o) == iABC);
+  ilya_assert(A <= MAXARG_A && B <= MAXARG_B &&
              C <= MAXARG_C && (k & ~1) == 0);
   return luaK_code(fs, CREATE_ABCk(o, A, B, C, k));
 }
 
 
 int luaK_codevABCk (FuncState *fs, OpCode o, int A, int B, int C, int k) {
-  irin_assert(getOpMode(o) == ivABC);
-  irin_assert(A <= MAXARG_A && B <= MAXARG_vB &&
+  ilya_assert(getOpMode(o) == ivABC);
+  ilya_assert(A <= MAXARG_A && B <= MAXARG_vB &&
              C <= MAXARG_vC && (k & ~1) == 0);
   return luaK_code(fs, CREATE_vABCk(o, A, B, C, k));
 }
@@ -412,8 +412,8 @@ int luaK_codevABCk (FuncState *fs, OpCode o, int A, int B, int C, int k) {
 ** Format and emit an 'iABx' instruction.
 */
 int luaK_codeABx (FuncState *fs, OpCode o, int A, int Bc) {
-  irin_assert(getOpMode(o) == iABx);
-  irin_assert(A <= MAXARG_A && Bc <= MAXARG_Bx);
+  ilya_assert(getOpMode(o) == iABx);
+  ilya_assert(A <= MAXARG_A && Bc <= MAXARG_Bx);
   return luaK_code(fs, CREATE_ABx(o, A, Bc));
 }
 
@@ -423,8 +423,8 @@ int luaK_codeABx (FuncState *fs, OpCode o, int A, int Bc) {
 */
 static int codeAsBx (FuncState *fs, OpCode o, int A, int Bc) {
   int b = Bc + OFFSET_sBx;
-  irin_assert(getOpMode(o) == iAsBx);
-  irin_assert(A <= MAXARG_A && b <= MAXARG_Bx);
+  ilya_assert(getOpMode(o) == iAsBx);
+  ilya_assert(A <= MAXARG_A && b <= MAXARG_Bx);
   return luaK_code(fs, CREATE_ABx(o, A, b));
 }
 
@@ -434,8 +434,8 @@ static int codeAsBx (FuncState *fs, OpCode o, int A, int Bc) {
 */
 static int codesJ (FuncState *fs, OpCode o, int sj, int k) {
   int j = sj + OFFSET_sJ;
-  irin_assert(getOpMode(o) == isJ);
-  irin_assert(j <= MAXARG_sJ && (k & ~1) == 0);
+  ilya_assert(getOpMode(o) == isJ);
+  ilya_assert(j <= MAXARG_sJ && (k & ~1) == 0);
   return luaK_code(fs, CREATE_sJ(o, j, k));
 }
 
@@ -444,7 +444,7 @@ static int codesJ (FuncState *fs, OpCode o, int sj, int k) {
 ** Emit an "extra argument" instruction (format 'iAx')
 */
 static int codeextraarg (FuncState *fs, int A) {
-  irin_assert(A <= MAXARG_Ax);
+  ilya_assert(A <= MAXARG_Ax);
   return luaK_code(fs, CREATE_Ax(OP_EXTRAARG, A));
 }
 
@@ -495,7 +495,7 @@ void luaK_reserveregs (FuncState *fs, int n) {
 static void freereg (FuncState *fs, int reg) {
   if (reg >= luaY_nvarstack(fs)) {
     fs->freereg--;
-    irin_assert(reg == fs->freereg);
+    ilya_assert(reg == fs->freereg);
   }
 }
 
@@ -539,7 +539,7 @@ static void freeexps (FuncState *fs, expdesc *e1, expdesc *e2) {
 ** Add constant 'v' to prototype's list of constants (field 'k').
 */
 static int addk (FuncState *fs, Proto *f, TValue *v) {
-  irin_State *L = fs->ls->L;
+  ilya_State *L = fs->ls->L;
   int oldsize = f->sizek;
   int k = fs->nk;
   luaM_growvector(L, f->k, k, f->sizek, TValue, MAXARG_Ax, "constants");
@@ -566,7 +566,7 @@ static int k2proto (FuncState *fs, TValue *key, TValue *v) {
   if (!tagisempty(tag)) {  /* is there an index there? */
     k = cast_int(ivalue(&val));
     /* collisions can happen only for float keys */
-    irin_assert(ttisfloat(key) || luaV_rawequalobj(&f->k[k], v));
+    ilya_assert(ttisfloat(key) || luaV_rawequalobj(&f->k[k], v));
     return k;  /* reuse index */
   }
   /* constant not found; create a new entry */
@@ -592,7 +592,7 @@ static int stringK (FuncState *fs, TString *s) {
 /*
 ** Add an integer to list of constants and return its index.
 */
-static int luaK_intK (FuncState *fs, irin_Integer n) {
+static int luaK_intK (FuncState *fs, ilya_Integer n) {
   TValue o;
   setivalue(&o, n);
   return k2proto(fs, &o, &o);  /* use integer itself as key */
@@ -609,7 +609,7 @@ static int luaK_intK (FuncState *fs, irin_Integer n) {
 ** floats larger than 2^53 the result is still an integer. At worst,
 ** this only wastes an entry with a duplicate.
 */
-static int luaK_numberK (FuncState *fs, irin_Number r) {
+static int luaK_numberK (FuncState *fs, ilya_Number r) {
   TValue o, kv;
   setfltvalue(&o, r);  /* value as a TValue */
   if (r == 0) {  /* handle zero as a special case */
@@ -618,9 +618,9 @@ static int luaK_numberK (FuncState *fs, irin_Number r) {
   }
   else {
     const int nbm = l_floatatt(MANT_DIG);
-    const irin_Number q = l_mathop(ldexp)(l_mathop(1.0), -nbm + 1);
-    const irin_Number k =  r * (1 + q);  /* key */
-    irin_Integer ik;
+    const ilya_Number q = l_mathop(ldexp)(l_mathop(1.0), -nbm + 1);
+    const ilya_Number k =  r * (1 + q);  /* key */
+    ilya_Integer ik;
     setfltvalue(&kv, k);  /* key as a TValue */
     if (!luaV_flttointeger(k, &ik, F2Ieq)) {  /* not an integral value? */
       int n = k2proto(fs, &kv, &o);  /* use key */
@@ -671,7 +671,7 @@ static int nilK (FuncState *fs) {
 ** (0 <= int2sC(i) && int2sC(i) <= MAXARG_C) but without risk of
 ** overflows in the hidden addition inside 'int2sC'.
 */
-static int fitsC (irin_Integer i) {
+static int fitsC (ilya_Integer i) {
   return (l_castS2U(i) + OFFSET_sC <= cast_uint(MAXARG_C));
 }
 
@@ -679,12 +679,12 @@ static int fitsC (irin_Integer i) {
 /*
 ** Check whether 'i' can be stored in an 'sBx' operand.
 */
-static int fitsBx (irin_Integer i) {
+static int fitsBx (ilya_Integer i) {
   return (-OFFSET_sBx <= i && i <= MAXARG_Bx - OFFSET_sBx);
 }
 
 
-void luaK_int (FuncState *fs, int reg, irin_Integer i) {
+void luaK_int (FuncState *fs, int reg, ilya_Integer i) {
   if (fitsBx(i))
     codeAsBx(fs, OP_LOADI, reg, cast_int(i));
   else
@@ -692,8 +692,8 @@ void luaK_int (FuncState *fs, int reg, irin_Integer i) {
 }
 
 
-static void luaK_float (FuncState *fs, int reg, irin_Number f) {
-  irin_Integer fi;
+static void luaK_float (FuncState *fs, int reg, ilya_Number f) {
+  ilya_Integer fi;
   if (luaV_flttointeger(f, &fi, F2Ieq) && fitsBx(fi))
     codeAsBx(fs, OP_LOADF, reg, cast_int(fi));
   else
@@ -706,25 +706,25 @@ static void luaK_float (FuncState *fs, int reg, irin_Number f) {
 */
 static void const2exp (TValue *v, expdesc *e) {
   switch (ttypetag(v)) {
-    case IRIN_VNUMINT:
+    case ILYA_VNUMINT:
       e->k = VKINT; e->u.ival = ivalue(v);
       break;
-    case IRIN_VNUMFLT:
+    case ILYA_VNUMFLT:
       e->k = VKFLT; e->u.nval = fltvalue(v);
       break;
-    case IRIN_VFALSE:
+    case ILYA_VFALSE:
       e->k = VFALSE;
       break;
-    case IRIN_VTRUE:
+    case ILYA_VTRUE:
       e->k = VTRUE;
       break;
-    case IRIN_VNIL:
+    case ILYA_VNIL:
       e->k = VNIL;
       break;
-    case IRIN_VSHRSTR:  case IRIN_VLNGSTR:
+    case ILYA_VSHRSTR:  case ILYA_VLNGSTR:
       e->k = VKSTR; e->u.strval = tsvalue(v);
       break;
-    default: irin_assert(0);
+    default: ilya_assert(0);
   }
 }
 
@@ -739,7 +739,7 @@ void luaK_setreturns (FuncState *fs, expdesc *e, int nresults) {
   if (e->k == VCALL)  /* expression is an open fn call? */
     SETARG_C(*pc, nresults + 1);
   else {
-    irin_assert(e->k == VVARARG);
+    ilya_assert(e->k == VVARARG);
     SETARG_C(*pc, nresults + 1);
     SETARG_A(*pc, fs->freereg);
     luaK_reserveregs(fs, 1);
@@ -751,7 +751,7 @@ void luaK_setreturns (FuncState *fs, expdesc *e, int nresults) {
 ** Convert a VKSTR to a VK
 */
 static void str2K (FuncState *fs, expdesc *e) {
-  irin_assert(e->k == VKSTR);
+  ilya_assert(e->k == VKSTR);
   e->u.info = stringK(fs, e->u.strval);
   e->k = VK;
 }
@@ -770,7 +770,7 @@ static void str2K (FuncState *fs, expdesc *e) {
 void luaK_setoneret (FuncState *fs, expdesc *e) {
   if (e->k == VCALL) {  /* expression is an open fn call? */
     /* already returns 1 value */
-    irin_assert(GETARG_C(getinstruction(fs, e)) == 2);
+    ilya_assert(GETARG_C(getinstruction(fs, e)) == 2);
     e->k = VNONRELOC;  /* result has fixed position */
     e->u.info = GETARG_A(getinstruction(fs, e));
   }
@@ -880,7 +880,7 @@ static void discharge2reg (FuncState *fs, expdesc *e, int reg) {
       break;
     }
     default: {
-      irin_assert(e->k == VJMP);
+      ilya_assert(e->k == VJMP);
       return;  /* nothing to do... */
     }
   }
@@ -1090,7 +1090,7 @@ void luaK_storevar (FuncState *fs, expdesc *var, expdesc *ex) {
       codeABRK(fs, OP_SETTABLE, var->u.ind.t, var->u.ind.idx, ex);
       break;
     }
-    default: irin_assert(0);  /* invalid var kind to store */
+    default: ilya_assert(0);  /* invalid var kind to store */
   }
   freeexp(fs, ex);
 }
@@ -1101,7 +1101,7 @@ void luaK_storevar (FuncState *fs, expdesc *var, expdesc *ex) {
 */
 static void negatecondition (FuncState *fs, expdesc *e) {
   Instruction *pc = getjumpcontrol(fs, e->u.info);
-  irin_assert(testTMode(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
+  ilya_assert(testTMode(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
                                            GET_OPCODE(*pc) != OP_TEST);
   SETARG_k(*pc, (GETARG_k(*pc) ^ 1));
 }
@@ -1206,7 +1206,7 @@ static void codenot (FuncState *fs, expdesc *e) {
       e->k = VRELOC;
       break;
     }
-    default: irin_assert(0);  /* cannot happen */
+    default: ilya_assert(0);  /* cannot happen */
   }
   /* interchange true and false lists */
   { int temp = e->f; e->f = e->t; e->t = temp; }
@@ -1254,7 +1254,7 @@ static int isSCint (expdesc *e) {
 ** proper range to fit in a register (sB or sC).
 */
 static int isSCnumber (expdesc *e, int *pi, int *isfloat) {
-  irin_Integer i;
+  ilya_Integer i;
   if (e->k == VKINT)
     i = e->u.ival;
   else if (e->k == VKFLT && luaV_flttointeger(e->u.nval, &i, F2Ieq))
@@ -1282,7 +1282,7 @@ void luaK_self (FuncState *fs, expdesc *e, expdesc *key) {
   base = e->u.info = fs->freereg;  /* base register for op_self */
   e->k = VNONRELOC;  /* self expression has a fixed register */
   luaK_reserveregs(fs, 2);  /* method and 'self' produced by op_self */
-  irin_assert(key->k == VKSTR);
+  ilya_assert(key->k == VKSTR);
   /* is method name a short string in a valid K index? */
   if (strisshr(key->u.strval) && luaK_exp2K(fs, key)) {
     /* can use 'self' opcode */
@@ -1306,13 +1306,13 @@ void luaK_self (FuncState *fs, expdesc *e, expdesc *key) {
 void luaK_indexed (FuncState *fs, expdesc *t, expdesc *k) {
   if (k->k == VKSTR)
     str2K(fs, k);
-  irin_assert(!hasjumps(t) &&
+  ilya_assert(!hasjumps(t) &&
              (t->k == VLOCAL || t->k == VNONRELOC || t->k == VUPVAL));
   if (t->k == VUPVAL && !isKstr(fs, k))  /* upvalue indexed by non 'Kstr'? */
     luaK_exp2anyreg(fs, t);  /* put it in a register */
   if (t->k == VUPVAL) {
     lu_byte temp = cast_byte(t->u.info);  /* upvalue index */
-    irin_assert(isKstr(fs, k));
+    ilya_assert(isKstr(fs, k));
     t->u.ind.t = temp;  /* (can't do a direct assignment; values overlap) */
     t->u.ind.idx = cast(short, k->u.info);  /* literal short string */
     t->k = VINDEXUP;
@@ -1343,13 +1343,13 @@ void luaK_indexed (FuncState *fs, expdesc *t, expdesc *k) {
 */
 static int validop (int op, TValue *v1, TValue *v2) {
   switch (op) {
-    case IRIN_OPBAND: case IRIN_OPBOR: case IRIN_OPBXOR:
-    case IRIN_OPSHL: case IRIN_OPSHR: case IRIN_OPBNOT: {  /* conversion errors */
-      irin_Integer i;
-      return (luaV_tointegerns(v1, &i, IRIN_FLOORN2I) &&
-              luaV_tointegerns(v2, &i, IRIN_FLOORN2I));
+    case ILYA_OPBAND: case ILYA_OPBOR: case ILYA_OPBXOR:
+    case ILYA_OPSHL: case ILYA_OPSHR: case ILYA_OPBNOT: {  /* conversion errors */
+      ilya_Integer i;
+      return (luaV_tointegerns(v1, &i, ILYA_FLOORN2I) &&
+              luaV_tointegerns(v2, &i, ILYA_FLOORN2I));
     }
-    case IRIN_OPDIV: case IRIN_OPIDIV: case IRIN_OPMOD:  /* division by 0 */
+    case ILYA_OPDIV: case ILYA_OPIDIV: case ILYA_OPMOD:  /* division by 0 */
       return (nvalue(v2) != 0);
     default: return 1;  /* everything else is valid */
   }
@@ -1371,7 +1371,7 @@ static int constfolding (FuncState *fs, int op, expdesc *e1,
     e1->u.ival = ivalue(&res);
   }
   else {  /* folds neither NaN nor 0.0 (to avoid problems with -0.0) */
-    irin_Number n = fltvalue(&res);
+    ilya_Number n = fltvalue(&res);
     if (luai_numisnan(n) || n == 0)
       return 0;
     e1->k = VKFLT;
@@ -1385,7 +1385,7 @@ static int constfolding (FuncState *fs, int op, expdesc *e1,
 ** Convert a BinOpr to an OpCode  (ORDER OPR - ORDER OP)
 */
 l_sinline OpCode binopr2op (BinOpr opr, BinOpr baser, OpCode base) {
-  irin_assert(baser <= opr &&
+  ilya_assert(baser <= opr &&
             ((baser == OPR_ADD && opr <= OPR_SHR) ||
              (baser == OPR_LT && opr <= OPR_LE)));
   return cast(OpCode, (cast_int(opr) - cast_int(baser)) + cast_int(base));
@@ -1405,7 +1405,7 @@ l_sinline OpCode unopr2op (UnOpr opr) {
 ** Convert a BinOpr to a tag method  (ORDER OPR - ORDER TM)
 */
 l_sinline TMS binopr2TM (BinOpr opr) {
-  irin_assert(OPR_ADD <= opr && opr <= OPR_SHR);
+  ilya_assert(OPR_ADD <= opr && opr <= OPR_SHR);
   return cast(TMS, (cast_int(opr) - cast_int(OPR_ADD)) + cast_int(TM_ADD));
 }
 
@@ -1453,9 +1453,9 @@ static void codebinexpval (FuncState *fs, BinOpr opr,
   OpCode op = binopr2op(opr, OPR_ADD, OP_ADD);
   int v2 = luaK_exp2anyreg(fs, e2);  /* make sure 'e2' is in a register */
   /* 'e1' must be already in a register or it is a constant */
-  irin_assert((VNIL <= e1->k && e1->k <= VKSTR) ||
+  ilya_assert((VNIL <= e1->k && e1->k <= VKSTR) ||
              e1->k == VNONRELOC || e1->k == VRELOC);
-  irin_assert(OP_ADD <= op && op <= OP_SHR);
+  ilya_assert(OP_ADD <= op && op <= OP_SHR);
   finishbinexpval(fs, e1, e2, op, v2, 0, line, OP_MMBIN, binopr2TM(opr));
 }
 
@@ -1467,7 +1467,7 @@ static void codebini (FuncState *fs, OpCode op,
                        expdesc *e1, expdesc *e2, int flip, int line,
                        TMS event) {
   int v2 = int2sC(cast_int(e2->u.ival));  /* immediate operand */
-  irin_assert(e2->k == VKINT);
+  ilya_assert(e2->k == VKINT);
   finishbinexpval(fs, e1, e2, op, v2, flip, line, OP_MMBINI, event);
 }
 
@@ -1492,7 +1492,7 @@ static int finishbinexpneg (FuncState *fs, expdesc *e1, expdesc *e2,
   if (!isKint(e2))
     return 0;  /* not an integer constant */
   else {
-    irin_Integer i2 = e2->u.ival;
+    ilya_Integer i2 = e2->u.ival;
     if (!(fitsC(i2) && fitsC(-i2)))
       return 0;  /* not in the proper range */
     else {  /* operating a small integer constant */
@@ -1614,7 +1614,7 @@ static void codeeq (FuncState *fs, BinOpr opr, expdesc *e1, expdesc *e2) {
   int isfloat = 0;  /* not needed here, but kept for symmetry */
   OpCode op;
   if (e1->k != VNONRELOC) {
-    irin_assert(e1->k == VK || e1->k == VKINT || e1->k == VKFLT);
+    ilya_assert(e1->k == VK || e1->k == VKINT || e1->k == VKFLT);
     swapexps(e1, e2);
   }
   r1 = luaK_exp2anyreg(fs, e1);  /* 1st expression must be in register */
@@ -1644,14 +1644,14 @@ void luaK_prefix (FuncState *fs, UnOpr opr, expdesc *e, int line) {
   luaK_dischargevars(fs, e);
   switch (opr) {
     case OPR_MINUS: case OPR_BNOT:  /* use 'ef' as fake 2nd operand */
-      if (constfolding(fs, cast_int(opr + IRIN_OPUNM), e, &ef))
+      if (constfolding(fs, cast_int(opr + ILYA_OPUNM), e, &ef))
         break;
       /* else */ /* FALLTHROUGH */
     case OPR_LEN:
       codeunexpval(fs, unopr2op(opr), e, line);
       break;
     case OPR_NOT: codenot(fs, e); break;
-    default: irin_assert(0);
+    default: ilya_assert(0);
   }
 }
 
@@ -1700,7 +1700,7 @@ void luaK_infix (FuncState *fs, BinOpr op, expdesc *v) {
       /* else keep numeral, which may be an immediate operand */
       break;
     }
-    default: irin_assert(0);
+    default: ilya_assert(0);
   }
 }
 
@@ -1713,7 +1713,7 @@ static void codeconcat (FuncState *fs, expdesc *e1, expdesc *e2, int line) {
   Instruction *ie2 = previousinstruction(fs);
   if (GET_OPCODE(*ie2) == OP_CONCAT) {  /* is 'e2' a concatenation? */
     int n = GETARG_B(*ie2);  /* # of elements concatenated in 'e2' */
-    irin_assert(e1->u.info + 1 == GETARG_A(*ie2));
+    ilya_assert(e1->u.info + 1 == GETARG_A(*ie2));
     freeexp(fs, e2);
     SETARG_A(*ie2, e1->u.info);  /* correct first element ('e1') */
     SETARG_B(*ie2, n + 1);  /* will concatenate one more element */
@@ -1732,17 +1732,17 @@ static void codeconcat (FuncState *fs, expdesc *e1, expdesc *e2, int line) {
 void luaK_posfix (FuncState *fs, BinOpr opr,
                   expdesc *e1, expdesc *e2, int line) {
   luaK_dischargevars(fs, e2);
-  if (foldbinop(opr) && constfolding(fs, cast_int(opr + IRIN_OPADD), e1, e2))
+  if (foldbinop(opr) && constfolding(fs, cast_int(opr + ILYA_OPADD), e1, e2))
     return;  /* done by folding */
   switch (opr) {
     case OPR_AND: {
-      irin_assert(e1->t == NO_JUMP);  /* list closed by 'luaK_infix' */
+      ilya_assert(e1->t == NO_JUMP);  /* list closed by 'luaK_infix' */
       luaK_concat(fs, &e2->f, e1->f);
       *e1 = *e2;
       break;
     }
     case OPR_OR: {
-      irin_assert(e1->f == NO_JUMP);  /* list closed by 'luaK_infix' */
+      ilya_assert(e1->f == NO_JUMP);  /* list closed by 'luaK_infix' */
       luaK_concat(fs, &e2->t, e1->t);
       *e1 = *e2;
       break;
@@ -1801,7 +1801,7 @@ void luaK_posfix (FuncState *fs, BinOpr opr,
       codeorder(fs, opr, e1, e2);
       break;
     }
-    default: irin_assert(0);
+    default: ilya_assert(0);
   }
 }
 
@@ -1832,11 +1832,11 @@ void luaK_settablesize (FuncState *fs, int pc, int ra, int asize, int hsize) {
 ** 'base' is register that keeps table;
 ** 'nelems' is #table plus those to be stored now;
 ** 'tostore' is number of values (in registers 'base + 1',...) to add to
-** table (or IRIN_MULTRET to add up to stack top).
+** table (or ILYA_MULTRET to add up to stack top).
 */
 void luaK_setlist (FuncState *fs, int base, int nelems, int tostore) {
-  irin_assert(tostore != 0);
-  if (tostore == IRIN_MULTRET)
+  ilya_assert(tostore != 0);
+  if (tostore == ILYA_MULTRET)
     tostore = 0;
   if (nelems <= MAXARG_vC)
     luaK_codevABCk(fs, OP_SETLIST, base, tostore, nelems, 0);
@@ -1878,7 +1878,7 @@ void luaK_finish (FuncState *fs) {
     Instruction *pc = &p->code[i];
     /* avoid "not used" warnings when assert is off (for 'onelua.c') */
     (void)luaP_isOT; (void)luaP_isIT;
-    irin_assert(i == 0 || luaP_isOT(*(pc - 1)) == luaP_isIT(*pc));
+    ilya_assert(i == 0 || luaP_isOT(*(pc - 1)) == luaP_isIT(*pc));
     switch (GET_OPCODE(*pc)) {
       case OP_RETURN0: case OP_RETURN1: {
         if (!(fs->needclose || (p->flag & PF_ISVARARG)))

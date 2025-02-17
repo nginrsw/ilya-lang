@@ -1,7 +1,7 @@
 /*
 ** $Id: llex.h $
 ** Lexical Analyzer
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #ifndef llex_h
@@ -20,8 +20,8 @@
 #define FIRST_RESERVED	(UCHAR_MAX + 1)
 
 
-#if !defined(IRIN_ENV)
-#define IRIN_ENV		"_ENV"
+#if !defined(ILYA_ENV)
+#define ILYA_ENV		"_ENV"
 #endif
 
 
@@ -47,8 +47,8 @@ enum RESERVED {
 
 
 typedef union {
-  irin_Number r;
-  irin_Integer i;
+  ilya_Number r;
+  ilya_Integer i;
   TString *ts;
 } SemInfo;  /* semantics information */
 
@@ -68,7 +68,7 @@ typedef struct LexState {
   Token t;  /* current token */
   Token lookahead;  /* look ahead token */
   struct FuncState *fs;  /* current fn (parser) */
-  struct irin_State *L;
+  struct ilya_State *L;
   ZIO *z;  /* input stream */
   Mbuffer *buff;  /* buffer for tokens */
   Table *h;  /* to avoid collection/reuse strings */
@@ -78,8 +78,8 @@ typedef struct LexState {
 } LexState;
 
 
-LUAI_FUNC void luaX_init (irin_State *L);
-LUAI_FUNC void luaX_setinput (irin_State *L, LexState *ls, ZIO *z,
+LUAI_FUNC void luaX_init (ilya_State *L);
+LUAI_FUNC void luaX_setinput (ilya_State *L, LexState *ls, ZIO *z,
                               TString *source, int firstchar);
 LUAI_FUNC TString *luaX_newstring (LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next (LexState *ls);

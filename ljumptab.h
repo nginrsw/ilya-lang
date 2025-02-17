@@ -1,7 +1,7 @@
 /*
 ** $Id: ljumptab.h $
-** Jump Table for the Irin interpreter
-** See Copyright Notice in irin.h
+** Jump Table for the Ilya interpreter
+** See Copyright Notice in ilya.h
 */
 
 

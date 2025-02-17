@@ -1,11 +1,11 @@
 /*
 ** $Id: llex.c $
 ** Lexical Analyzer
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define llex_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -13,7 +13,7 @@
 #include <locale.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lctype.h"
 #include "ldebug.h"
@@ -33,8 +33,8 @@
 
 
 /* minimum size for string buffer */
-#if !defined(IRIN_MINBUFFER)
-#define IRIN_MINBUFFER   32
+#if !defined(ILYA_MINBUFFER)
+#define ILYA_MINBUFFER   32
 #endif
 
 
@@ -72,9 +72,9 @@ static void save (LexState *ls, int c) {
 }
 
 
-void luaX_init (irin_State *L) {
+void luaX_init (ilya_State *L) {
   int i;
-  TString *e = luaS_newliteral(L, IRIN_ENV);  /* create env name */
+  TString *e = luaS_newliteral(L, ILYA_ENV);  /* create env name */
   luaC_fix(L, obj2gco(e));  /* never collect this name */
   for (i=0; i<NUM_RESERVED; i++) {
     TString *ts = luaS_new(L, luaX_tokens[i]);
@@ -117,7 +117,7 @@ static l_noret lexerror (LexState *ls, const char *msg, int token) {
   msg = luaG_addinfo(ls->L, msg, ls->source, ls->linenumber);
   if (token)
     luaO_pushfstring(ls->L, "%s near %s", msg, txtToken(ls, token));
-  luaD_throw(ls->L, IRIN_ERRSYNTAX);
+  luaD_throw(ls->L, ILYA_ERRSYNTAX);
 }
 
 
@@ -133,7 +133,7 @@ l_noret luaX_syntaxerror (LexState *ls, const char *msg) {
 ** one copy of each unique string.
 */
 static TString *anchorstr (LexState *ls, TString *ts) {
-  irin_State *L = ls->L;
+  ilya_State *L = ls->L;
   TValue oldts;
   int tag = luaH_getstr(ls->h, ts, &oldts);
   if (!tagisempty(tag))  /* string already present? */
@@ -164,7 +164,7 @@ TString *luaX_newstring (LexState *ls, const char *str, size_t l) {
 */
 static void inclinenumber (LexState *ls) {
   int old = ls->current;
-  irin_assert(currIsNewline(ls));
+  ilya_assert(currIsNewline(ls));
   next(ls);  /* skip '\n' or '\r' */
   if (currIsNewline(ls) && ls->current != old)
     next(ls);  /* skip '\n\r' or '\r\n' */
@@ -173,7 +173,7 @@ static void inclinenumber (LexState *ls) {
 }
 
 
-void luaX_setinput (irin_State *L, LexState *ls, ZIO *z, TString *source,
+void luaX_setinput (ilya_State *L, LexState *ls, ZIO *z, TString *source,
                     int firstchar) {
   ls->t.token = 0;
   ls->L = L;
@@ -184,8 +184,8 @@ void luaX_setinput (irin_State *L, LexState *ls, ZIO *z, TString *source,
   ls->linenumber = 1;
   ls->lastline = 1;
   ls->source = source;
-  ls->envn = luaS_newliteral(L, IRIN_ENV);  /* get env name */
-  luaZ_resizebuffer(ls->L, ls->buff, IRIN_MINBUFFER);  /* initialize buffer */
+  ls->envn = luaS_newliteral(L, ILYA_ENV);  /* get env name */
+  luaZ_resizebuffer(ls->L, ls->buff, ILYA_MINBUFFER);  /* initialize buffer */
 }
 
 
@@ -211,7 +211,7 @@ static int check_next1 (LexState *ls, int c) {
 ** saves it
 */
 static int check_next2 (LexState *ls, const char *set) {
-  irin_assert(set[2] == '\0');
+  ilya_assert(set[2] == '\0');
   if (ls->current == set[0] || ls->current == set[1]) {
     save_and_next(ls);
     return 1;
@@ -220,7 +220,7 @@ static int check_next2 (LexState *ls, const char *set) {
 }
 
 
-/* IRIN_NUMBER */
+/* ILYA_NUMBER */
 /*
 ** This fn is quite liberal in what it accepts, as 'luaO_str2num'
 ** will reject ill-formed numerals. Roughly, it accepts the following
@@ -237,7 +237,7 @@ static int read_numeral (LexState *ls, SemInfo *seminfo) {
   TValue obj;
   const char *expo = "Ee";
   int first = ls->current;
-  irin_assert(lisdigit(ls->current));
+  ilya_assert(lisdigit(ls->current));
   save_and_next(ls);
   if (first == '0' && check_next2(ls, "xX"))  /* hexadecimal? */
     expo = "Pp";
@@ -258,7 +258,7 @@ static int read_numeral (LexState *ls, SemInfo *seminfo) {
     return TK_INT;
   }
   else {
-    irin_assert(ttisfloat(&obj));
+    ilya_assert(ttisfloat(&obj));
     seminfo->r = fltvalue(&obj);
     return TK_FLT;
   }
@@ -274,7 +274,7 @@ static int read_numeral (LexState *ls, SemInfo *seminfo) {
 static size_t skip_sep (LexState *ls) {
   size_t count = 0;
   int s = ls->current;
-  irin_assert(s == '[' || s == ']');
+  ilya_assert(s == '[' || s == ']');
   save_and_next(ls);
   while (ls->current == '=') {
     save_and_next(ls);
@@ -589,7 +589,7 @@ void luaX_next (LexState *ls) {
 
 
 int luaX_lookahead (LexState *ls) {
-  irin_assert(ls->lookahead.token == TK_EOS);
+  ilya_assert(ls->lookahead.token == TK_EOS);
   ls->lookahead.token = llex(ls, &ls->lookahead.seminfo);
   return ls->lookahead.token;
 }

@@ -1,11 +1,11 @@
 /*
 ** $Id: lstate.c $
 ** Global State
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define lstate_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "lapi.h"
 #include "ldebug.h"
@@ -33,8 +33,8 @@
 ** thread state + extra space
 */
 typedef struct LX {
-  lu_byte extra_[IRIN_EXTRASPACE];
-  irin_State l;
+  lu_byte extra_[ILYA_EXTRASPACE];
+  ilya_State l;
 } LX;
 
 
@@ -79,7 +79,7 @@ typedef struct LG {
 */
 void luaE_setdebt (global_State *g, l_mem debt) {
   l_mem tb = gettotalbytes(g);
-  irin_assert(tb > 0);
+  ilya_assert(tb > 0);
   if (debt > MAX_LMEM - tb)
     debt = MAX_LMEM - tb;  /* will make GCtotalbytes == MAX_LMEM */
   g->GCtotalbytes = tb + debt;
@@ -87,11 +87,11 @@ void luaE_setdebt (global_State *g, l_mem debt) {
 }
 
 
-CallInfo *luaE_extendCI (irin_State *L) {
+CallInfo *luaE_extendCI (ilya_State *L) {
   CallInfo *ci;
-  irin_assert(L->ci->next == NULL);
+  ilya_assert(L->ci->next == NULL);
   ci = luaM_new(L, CallInfo);
-  irin_assert(L->ci->next == NULL);
+  ilya_assert(L->ci->next == NULL);
   L->ci->next = ci;
   ci->previous = L->ci;
   ci->next = NULL;
@@ -104,7 +104,7 @@ CallInfo *luaE_extendCI (irin_State *L) {
 /*
 ** free all CallInfo structures not in use by a thread
 */
-static void freeCI (irin_State *L) {
+static void freeCI (ilya_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next = ci->next;
   ci->next = NULL;
@@ -120,7 +120,7 @@ static void freeCI (irin_State *L) {
 ** free half of the CallInfo structures not in use by a thread,
 ** keeping the first one.
 */
-void luaE_shrinkCI (irin_State *L) {
+void luaE_shrinkCI (ilya_State *L) {
   CallInfo *ci = L->ci->next;  /* first free CallInfo */
   CallInfo *next;
   if (ci == NULL)
@@ -147,22 +147,22 @@ void luaE_shrinkCI (irin_State *L) {
 ** not much larger, does not report an error (to allow overflow
 ** handling to work).
 */
-void luaE_checkcstack (irin_State *L) {
+void luaE_checkcstack (ilya_State *L) {
   if (getCcalls(L) == LUAI_MAXCCALLS)
     luaG_runerror(L, "C stack overflow");
   else if (getCcalls(L) >= (LUAI_MAXCCALLS / 10 * 11))
-    luaD_throw(L, IRIN_ERRERR);  /* error while handling stack error */
+    luaD_throw(L, ILYA_ERRERR);  /* error while handling stack error */
 }
 
 
-LUAI_FUNC void luaE_incCstack (irin_State *L) {
+LUAI_FUNC void luaE_incCstack (ilya_State *L) {
   L->nCcalls++;
   if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS))
     luaE_checkcstack(L);
 }
 
 
-static void stack_init (irin_State *L1, irin_State *L) {
+static void stack_init (ilya_State *L1, ilya_State *L) {
   int i; CallInfo *ci;
   /* initialize stack array */
   L1->stack.p = luaM_newvector(L, BASIC_STACK_SIZE + EXTRA_STACK, StackValue);
@@ -179,17 +179,17 @@ static void stack_init (irin_State *L1, irin_State *L) {
   ci->u.c.k = NULL;
   setnilvalue(s2v(L1->top.p));  /* 'fn' entry for this 'ci' */
   L1->top.p++;
-  ci->top.p = L1->top.p + IRIN_MINSTACK;
+  ci->top.p = L1->top.p + ILYA_MINSTACK;
   L1->ci = ci;
 }
 
 
-static void freestack (irin_State *L) {
+static void freestack (ilya_State *L) {
   if (L->stack.p == NULL)
     return;  /* stack not completely built yet */
   L->ci = &L->base_ci;  /* free the entire 'ci' list */
   freeCI(L);
-  irin_assert(L->nci == 0);
+  ilya_assert(L->nci == 0);
   /* free stack */
   luaM_freearray(L, L->stack.p, cast_sizet(stacksize(L) + EXTRA_STACK));
 }
@@ -198,28 +198,28 @@ static void freestack (irin_State *L) {
 /*
 ** Create registry table and its predefined values
 */
-static void init_registry (irin_State *L, global_State *g) {
+static void init_registry (ilya_State *L, global_State *g) {
   /* create registry */
   TValue aux;
   Table *registry = luaH_new(L);
   sethvalue(L, &g->l_registry, registry);
-  luaH_resize(L, registry, IRIN_RIDX_LAST, 0);
+  luaH_resize(L, registry, ILYA_RIDX_LAST, 0);
   /* registry[1] = false */
   setbfvalue(&aux);
   luaH_setint(L, registry, 1, &aux);
-  /* registry[IRIN_RIDX_MAINTHREAD] = L */
+  /* registry[ILYA_RIDX_MAINTHREAD] = L */
   setthvalue(L, &aux, L);
-  luaH_setint(L, registry, IRIN_RIDX_MAINTHREAD, &aux);
-  /* registry[IRIN_RIDX_GLOBALS] = new table (table of globals) */
+  luaH_setint(L, registry, ILYA_RIDX_MAINTHREAD, &aux);
+  /* registry[ILYA_RIDX_GLOBALS] = new table (table of globals) */
   sethvalue(L, &aux, luaH_new(L));
-  luaH_setint(L, registry, IRIN_RIDX_GLOBALS, &aux);
+  luaH_setint(L, registry, ILYA_RIDX_GLOBALS, &aux);
 }
 
 
 /*
 ** open parts of the state that may cause memory-allocation errors.
 */
-static void f_luaopen (irin_State *L, void *ud) {
+static void f_luaopen (ilya_State *L, void *ud) {
   global_State *g = G(L);
   UNUSED(ud);
   stack_init(L, L);  /* init stack */
@@ -237,7 +237,7 @@ static void f_luaopen (irin_State *L, void *ud) {
 ** preinitialize a thread with consistent values without allocating
 ** any memory (to avoid errors)
 */
-static void preinit_thread (irin_State *L, global_State *g) {
+static void preinit_thread (ilya_State *L, global_State *g) {
   G(L) = g;
   L->stack.p = NULL;
   L->ci = NULL;
@@ -251,13 +251,13 @@ static void preinit_thread (irin_State *L, global_State *g) {
   L->allowhook = 1;
   resethookcount(L);
   L->openupval = NULL;
-  L->status = IRIN_OK;
+  L->status = ILYA_OK;
   L->errfunc = 0;
   L->oldpc = 0;
 }
 
 
-lu_mem luaE_threadsize (irin_State *L) {
+lu_mem luaE_threadsize (ilya_State *L) {
   lu_mem sz = cast(lu_mem, sizeof(LX))
             + cast_uint(L->nci) * sizeof(CallInfo);
   if (L->stack.p != NULL)
@@ -266,31 +266,31 @@ lu_mem luaE_threadsize (irin_State *L) {
 }
 
 
-static void close_state (irin_State *L) {
+static void close_state (ilya_State *L) {
   global_State *g = G(L);
   if (!completestate(g))  /* closing a partially built state? */
     luaC_freeallobjects(L);  /* just collect its objects */
   else {  /* closing a fully built state */
     L->ci = &L->base_ci;  /* unwind CallInfo list */
-    luaD_closeprotected(L, 1, IRIN_OK);  /* close all upvalues */
+    luaD_closeprotected(L, 1, ILYA_OK);  /* close all upvalues */
     luaC_freeallobjects(L);  /* collect all objects */
     luai_userstateclose(L);
   }
   luaM_freearray(L, G(L)->strt.hash, cast_sizet(G(L)->strt.size));
   freestack(L);
-  irin_assert(gettotalbytes(g) == sizeof(LG));
+  ilya_assert(gettotalbytes(g) == sizeof(LG));
   (*g->frealloc)(g->ud, fromstate(L), sizeof(LG), 0);  /* free main block */
 }
 
 
-IRIN_API irin_State *irin_newthread (irin_State *L) {
+ILYA_API ilya_State *ilya_newthread (ilya_State *L) {
   global_State *g = G(L);
   GCObject *o;
-  irin_State *L1;
-  irin_lock(L);
+  ilya_State *L1;
+  ilya_lock(L);
   luaC_checkGC(L);
   /* create new thread */
-  o = luaC_newobjdt(L, IRIN_TTHREAD, sizeof(LX), offsetof(LX, l));
+  o = luaC_newobjdt(L, ILYA_TTHREAD, sizeof(LX), offsetof(LX, l));
   L1 = gco2th(o);
   /* anchor it on L stack */
   setthvalue2s(L, L->top.p, L1);
@@ -301,63 +301,63 @@ IRIN_API irin_State *irin_newthread (irin_State *L) {
   L1->hook = L->hook;
   resethookcount(L1);
   /* initialize L1 extra space */
-  memcpy(irin_getextraspace(L1), irin_getextraspace(g->mainthread),
-         IRIN_EXTRASPACE);
+  memcpy(ilya_getextraspace(L1), ilya_getextraspace(g->mainthread),
+         ILYA_EXTRASPACE);
   luai_userstatethread(L, L1);
   stack_init(L1, L);  /* init stack */
-  irin_unlock(L);
+  ilya_unlock(L);
   return L1;
 }
 
 
-void luaE_freethread (irin_State *L, irin_State *L1) {
+void luaE_freethread (ilya_State *L, ilya_State *L1) {
   LX *l = fromstate(L1);
   luaF_closeupval(L1, L1->stack.p);  /* close all upvalues */
-  irin_assert(L1->openupval == NULL);
+  ilya_assert(L1->openupval == NULL);
   luai_userstatefree(L, L1);
   freestack(L1);
   luaM_free(L, l);
 }
 
 
-int luaE_resetthread (irin_State *L, int status) {
+int luaE_resetthread (ilya_State *L, int status) {
   CallInfo *ci = L->ci = &L->base_ci;  /* unwind CallInfo list */
   setnilvalue(s2v(L->stack.p));  /* 'fn' entry for basic 'ci' */
   ci->func.p = L->stack.p;
   ci->callstatus = CIST_C;
-  if (status == IRIN_YIELD)
-    status = IRIN_OK;
-  L->status = IRIN_OK;  /* so it can run __close metamethods */
+  if (status == ILYA_YIELD)
+    status = ILYA_OK;
+  L->status = ILYA_OK;  /* so it can run __close metamethods */
   status = luaD_closeprotected(L, 1, status);
-  if (status != IRIN_OK)  /* errors? */
+  if (status != ILYA_OK)  /* errors? */
     luaD_seterrorobj(L, status, L->stack.p + 1);
   else
     L->top.p = L->stack.p + 1;
-  ci->top.p = L->top.p + IRIN_MINSTACK;
+  ci->top.p = L->top.p + ILYA_MINSTACK;
   luaD_reallocstack(L, cast_int(ci->top.p - L->stack.p), 0);
   return status;
 }
 
 
-IRIN_API int irin_closethread (irin_State *L, irin_State *from) {
+ILYA_API int ilya_closethread (ilya_State *L, ilya_State *from) {
   int status;
-  irin_lock(L);
+  ilya_lock(L);
   L->nCcalls = (from) ? getCcalls(from) : 0;
   status = luaE_resetthread(L, L->status);
-  irin_unlock(L);
+  ilya_unlock(L);
   return status;
 }
 
 
-IRIN_API irin_State *irin_newstate (irin_Alloc f, void *ud, unsigned seed) {
+ILYA_API ilya_State *ilya_newstate (ilya_Alloc f, void *ud, unsigned seed) {
   int i;
-  irin_State *L;
+  ilya_State *L;
   global_State *g;
-  LG *l = cast(LG *, (*f)(ud, NULL, IRIN_TTHREAD, sizeof(LG)));
+  LG *l = cast(LG *, (*f)(ud, NULL, ILYA_TTHREAD, sizeof(LG)));
   if (l == NULL) return NULL;
   L = &l->l.l;
   g = &l->g;
-  L->tt = IRIN_VTHREAD;
+  L->tt = ILYA_VTHREAD;
   g->currentwhite = bitmask(WHITE0BIT);
   L->marked = luaC_white(g);
   preinit_thread(L, g);
@@ -396,8 +396,8 @@ IRIN_API irin_State *irin_newstate (irin_Alloc f, void *ud, unsigned seed) {
   setgcparam(g, MINORMUL, LUAI_GENMINORMUL);
   setgcparam(g, MINORMAJOR, LUAI_MINORMAJOR);
   setgcparam(g, MAJORMINOR, LUAI_MAJORMINOR);
-  for (i=0; i < IRIN_NUMTYPES; i++) g->mt[i] = NULL;
-  if (luaD_rawrunprotected(L, f_luaopen, NULL) != IRIN_OK) {
+  for (i=0; i < ILYA_NUMTYPES; i++) g->mt[i] = NULL;
+  if (luaD_rawrunprotected(L, f_luaopen, NULL) != ILYA_OK) {
     /* memory allocation error: free partial state */
     close_state(L);
     L = NULL;
@@ -406,15 +406,15 @@ IRIN_API irin_State *irin_newstate (irin_Alloc f, void *ud, unsigned seed) {
 }
 
 
-IRIN_API void irin_close (irin_State *L) {
-  irin_lock(L);
+ILYA_API void ilya_close (ilya_State *L) {
+  ilya_lock(L);
   L = G(L)->mainthread;  /* only the main thread can be closed */
   close_state(L);
 }
 
 
-void luaE_warning (irin_State *L, const char *msg, int tocont) {
-  irin_WarnFunction wf = G(L)->warnf;
+void luaE_warning (ilya_State *L, const char *msg, int tocont) {
+  ilya_WarnFunction wf = G(L)->warnf;
   if (wf != NULL)
     wf(G(L)->ud_warn, msg, tocont);
 }
@@ -423,7 +423,7 @@ void luaE_warning (irin_State *L, const char *msg, int tocont) {
 /*
 ** Generate a warning from an error message
 */
-void luaE_warnerror (irin_State *L, const char *where) {
+void luaE_warnerror (ilya_State *L, const char *where) {
   TValue *errobj = s2v(L->top.p - 1);  /* error object */
   const char *msg = (ttisstring(errobj))
                   ? getstr(tsvalue(errobj))

@@ -1,7 +1,7 @@
 /*
 ** $Id: lvm.h $
-** Irin virtual machine
-** See Copyright Notice in irin.h
+** Ilya virtual machine
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lvm_h
@@ -13,14 +13,14 @@
 #include "ltm.h"
 
 
-#if !defined(IRIN_NOCVTN2S)
+#if !defined(ILYA_NOCVTN2S)
 #define cvt2str(o)	ttisnumber(o)
 #else
 #define cvt2str(o)	0	/* no conversion from numbers to strings */
 #endif
 
 
-#if !defined(IRIN_NOCVTS2N)
+#if !defined(ILYA_NOCVTS2N)
 #define cvt2num(o)	ttisstring(o)
 #else
 #define cvt2num(o)	0	/* no conversion from strings to numbers */
@@ -28,12 +28,12 @@
 
 
 /*
-** You can define IRIN_FLOORN2I if you want to convert floats to integers
+** You can define ILYA_FLOORN2I if you want to convert floats to integers
 ** by flooring them (instead of raising an error if they are not
 ** integral values)
 */
-#if !defined(IRIN_FLOORN2I)
-#define IRIN_FLOORN2I		F2Ieq
+#if !defined(ILYA_FLOORN2I)
+#define ILYA_FLOORN2I		F2Ieq
 #endif
 
 
@@ -61,13 +61,13 @@ typedef enum {
 /* convert an object to an integer (including string coercion) */
 #define tointeger(o,i) \
   (l_likely(ttisinteger(o)) ? (*(i) = ivalue(o), 1) \
-                          : luaV_tointeger(o,i,IRIN_FLOORN2I))
+                          : luaV_tointeger(o,i,ILYA_FLOORN2I))
 
 
 /* convert an object to an integer (without string coercion) */
 #define tointegerns(o,i) \
   (l_likely(ttisinteger(o)) ? (*(i) = ivalue(o), 1) \
-                          : luaV_tointegerns(o,i,IRIN_FLOORN2I))
+                          : luaV_tointegerns(o,i,ILYA_FLOORN2I))
 
 
 #define intop(op,v1,v2) l_castU2S(l_castS2U(v1) op l_castS2U(v2))
@@ -79,7 +79,7 @@ typedef enum {
 ** fast track for 'gettable'
 */
 #define luaV_fastget(t,k,res,f, tag) \
-  (tag = (!ttistable(t) ? IRIN_VNOTABLE : f(hvalue(t), k, res)))
+  (tag = (!ttistable(t) ? ILYA_VNOTABLE : f(hvalue(t), k, res)))
 
 
 /*
@@ -87,7 +87,7 @@ typedef enum {
 ** of 'luaH_getint'.
 */
 #define luaV_fastgeti(t,k,res,tag) \
-  if (!ttistable(t)) tag = IRIN_VNOTABLE; \
+  if (!ttistable(t)) tag = ILYA_VNOTABLE; \
   else { luaH_fastgeti(hvalue(t), k, res, tag); }
 
 
@@ -112,25 +112,25 @@ typedef enum {
 
 
 
-LUAI_FUNC int luaV_equalobj (irin_State *L, const TValue *t1, const TValue *t2);
-LUAI_FUNC int luaV_lessthan (irin_State *L, const TValue *l, const TValue *r);
-LUAI_FUNC int luaV_lessequal (irin_State *L, const TValue *l, const TValue *r);
-LUAI_FUNC int luaV_tonumber_ (const TValue *obj, irin_Number *n);
-LUAI_FUNC int luaV_tointeger (const TValue *obj, irin_Integer *p, F2Imod mode);
-LUAI_FUNC int luaV_tointegerns (const TValue *obj, irin_Integer *p,
+LUAI_FUNC int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2);
+LUAI_FUNC int luaV_lessthan (ilya_State *L, const TValue *l, const TValue *r);
+LUAI_FUNC int luaV_lessequal (ilya_State *L, const TValue *l, const TValue *r);
+LUAI_FUNC int luaV_tonumber_ (const TValue *obj, ilya_Number *n);
+LUAI_FUNC int luaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode);
+LUAI_FUNC int luaV_tointegerns (const TValue *obj, ilya_Integer *p,
                                 F2Imod mode);
-LUAI_FUNC int luaV_flttointeger (irin_Number n, irin_Integer *p, F2Imod mode);
-LUAI_FUNC lu_byte luaV_finishget (irin_State *L, const TValue *t, TValue *key,
+LUAI_FUNC int luaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode);
+LUAI_FUNC lu_byte luaV_finishget (ilya_State *L, const TValue *t, TValue *key,
                                                 StkId val, lu_byte tag);
-LUAI_FUNC void luaV_finishset (irin_State *L, const TValue *t, TValue *key,
+LUAI_FUNC void luaV_finishset (ilya_State *L, const TValue *t, TValue *key,
                                              TValue *val, int aux);
-LUAI_FUNC void luaV_finishOp (irin_State *L);
-LUAI_FUNC void luaV_execute (irin_State *L, CallInfo *ci);
-LUAI_FUNC void luaV_concat (irin_State *L, int total);
-LUAI_FUNC irin_Integer luaV_idiv (irin_State *L, irin_Integer x, irin_Integer y);
-LUAI_FUNC irin_Integer luaV_mod (irin_State *L, irin_Integer x, irin_Integer y);
-LUAI_FUNC irin_Number luaV_modf (irin_State *L, irin_Number x, irin_Number y);
-LUAI_FUNC irin_Integer luaV_shiftl (irin_Integer x, irin_Integer y);
-LUAI_FUNC void luaV_objlen (irin_State *L, StkId ra, const TValue *rb);
+LUAI_FUNC void luaV_finishOp (ilya_State *L);
+LUAI_FUNC void luaV_execute (ilya_State *L, CallInfo *ci);
+LUAI_FUNC void luaV_concat (ilya_State *L, int total);
+LUAI_FUNC ilya_Integer luaV_idiv (ilya_State *L, ilya_Integer x, ilya_Integer y);
+LUAI_FUNC ilya_Integer luaV_mod (ilya_State *L, ilya_Integer x, ilya_Integer y);
+LUAI_FUNC ilya_Number luaV_modf (ilya_State *L, ilya_Number x, ilya_Number y);
+LUAI_FUNC ilya_Integer luaV_shiftl (ilya_Integer x, ilya_Integer y);
+LUAI_FUNC void luaV_objlen (ilya_State *L, StkId ra, const TValue *rb);
 
 #endif

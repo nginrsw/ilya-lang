@@ -1,35 +1,35 @@
 /*
 ** $Id: lctype.h $
-** 'ctype' functions for Irin
-** See Copyright Notice in irin.h
+** 'ctype' functions for Ilya
+** See Copyright Notice in ilya.h
 */
 
 #ifndef lctype_h
 #define lctype_h
 
-#include "irin.h"
+#include "ilya.h"
 
 
 /*
 ** WARNING: the functions defined here do not necessarily correspond
 ** to the similar functions in the standard C ctype.h. They are
-** optimized for the specific needs of Irin.
+** optimized for the specific needs of Ilya.
 */
 
-#if !defined(IRIN_USE_CTYPE)
+#if !defined(ILYA_USE_CTYPE)
 
 #if 'A' == 65 && '0' == 48
 /* ASCII case: can use its own tables; faster and fixed */
-#define IRIN_USE_CTYPE	0
+#define ILYA_USE_CTYPE	0
 #else
 /* must use standard C ctype */
-#define IRIN_USE_CTYPE	1
+#define ILYA_USE_CTYPE	1
 #endif
 
 #endif
 
 
-#if !IRIN_USE_CTYPE	/* { */
+#if !ILYA_USE_CTYPE	/* { */
 
 #include <limits.h>
 
@@ -52,7 +52,7 @@
 #define testprop(c,p)	(luai_ctype_[(c)+1] & (p))
 
 /*
-** 'lalpha' (Irin alphabetic) and 'lalnum' (Irin alphanumeric) both include '_'
+** 'lalpha' (Ilya alphabetic) and 'lalnum' (Ilya alphanumeric) both include '_'
 */
 #define lislalpha(c)	testprop(c, MASK(ALPHABIT))
 #define lislalnum(c)	testprop(c, (MASK(ALPHABIT) | MASK(DIGITBIT)))
@@ -64,7 +64,7 @@
 
 /*
 ** In ASCII, this 'ltolower' is correct for alphabetic characters and
-** for '.'. That is enough for Irin needs. ('check_exp' ensures that
+** for '.'. That is enough for Ilya needs. ('check_exp' ensures that
 ** the character either is an upper-case letter or is unchanged by
 ** the transformation, which holds for lower-case letters and '.'.)
 */

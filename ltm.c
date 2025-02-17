@@ -1,18 +1,18 @@
 /*
 ** $Id: ltm.c $
 ** Tag methods
-** See Copyright Notice in irin.h
+** See Copyright Notice in ilya.h
 */
 
 #define ltm_c
-#define IRIN_CORE
+#define ILYA_CORE
 
 #include "lprefix.h"
 
 
 #include <string.h>
 
-#include "irin.h"
+#include "ilya.h"
 
 #include "ldebug.h"
 #include "ldo.h"
@@ -27,7 +27,7 @@
 
 static const char udatatypename[] = "userdata";
 
-LUAI_DDEF const char *const luaT_typenames_[IRIN_TOTALTYPES] = {
+LUAI_DDEF const char *const luaT_typenames_[ILYA_TOTALTYPES] = {
   "no value",
   "nil", "boolean", udatatypename, "number",
   "string", "table", "fn", udatatypename, "thread",
@@ -35,7 +35,7 @@ LUAI_DDEF const char *const luaT_typenames_[IRIN_TOTALTYPES] = {
 };
 
 
-void luaT_init (irin_State *L) {
+void luaT_init (ilya_State *L) {
   static const char *const luaT_eventname[] = {  /* ORDER TM */
     "__index", "__newindex",
     "__gc", "__mode", "__len", "__eq",
@@ -59,7 +59,7 @@ void luaT_init (irin_State *L) {
 */
 const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
   const TValue *tm = luaH_Hgetshortstr(events, ename);
-  irin_assert(event <= TM_EQ);
+  ilya_assert(event <= TM_EQ);
   if (notm(tm)) {  /* no tag method? */
     events->flags |= cast_byte(1u<<event);  /* cache this fact */
     return NULL;
@@ -68,13 +68,13 @@ const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
 }
 
 
-const TValue *luaT_gettmbyobj (irin_State *L, const TValue *o, TMS event) {
+const TValue *luaT_gettmbyobj (ilya_State *L, const TValue *o, TMS event) {
   Table *mt;
   switch (ttype(o)) {
-    case IRIN_TTABLE:
+    case ILYA_TTABLE:
       mt = hvalue(o)->metatable;
       break;
-    case IRIN_TUSERDATA:
+    case ILYA_TUSERDATA:
       mt = uvalue(o)->metatable;
       break;
     default:
@@ -88,7 +88,7 @@ const TValue *luaT_gettmbyobj (irin_State *L, const TValue *o, TMS event) {
 ** Return the name of the type of an object. For tables and userdata
 ** with metatable, use their '__name' metafield, if present.
 */
-const char *luaT_objtypename (irin_State *L, const TValue *o) {
+const char *luaT_objtypename (ilya_State *L, const TValue *o) {
   Table *mt;
   if ((ttistable(o) && (mt = hvalue(o)->metatable) != NULL) ||
       (ttisfulluserdata(o) && (mt = uvalue(o)->metatable) != NULL)) {
@@ -100,7 +100,7 @@ const char *luaT_objtypename (irin_State *L, const TValue *o) {
 }
 
 
-void luaT_callTM (irin_State *L, const TValue *f, const TValue *p1,
+void luaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
                   const TValue *p2, const TValue *p3) {
   StkId func = L->top.p;
   setobj2s(L, func, f);  /* push fn (assume EXTRA_STACK) */
@@ -108,7 +108,7 @@ void luaT_callTM (irin_State *L, const TValue *f, const TValue *p1,
   setobj2s(L, func + 2, p2);  /* 2nd argument */
   setobj2s(L, func + 3, p3);  /* 3rd argument */
   L->top.p = func + 4;
-  /* metamethod may yield only when called from Irin code */
+  /* metamethod may yield only when called from Ilya code */
   if (isLuacode(L->ci))
     luaD_call(L, func, 0);
   else
@@ -116,7 +116,7 @@ void luaT_callTM (irin_State *L, const TValue *f, const TValue *p1,
 }
 
 
-lu_byte luaT_callTMres (irin_State *L, const TValue *f, const TValue *p1,
+lu_byte luaT_callTMres (ilya_State *L, const TValue *f, const TValue *p1,
                         const TValue *p2, StkId res) {
   ptrdiff_t result = savestack(L, res);
   StkId func = L->top.p;
@@ -124,7 +124,7 @@ lu_byte luaT_callTMres (irin_State *L, const TValue *f, const TValue *p1,
   setobj2s(L, func + 1, p1);  /* 1st argument */
   setobj2s(L, func + 2, p2);  /* 2nd argument */
   L->top.p += 3;
-  /* metamethod may yield only when called from Irin code */
+  /* metamethod may yield only when called from Ilya code */
   if (isLuacode(L->ci))
     luaD_call(L, func, 1);
   else
@@ -135,7 +135,7 @@ lu_byte luaT_callTMres (irin_State *L, const TValue *f, const TValue *p1,
 }
 
 
-static int callbinTM (irin_State *L, const TValue *p1, const TValue *p2,
+static int callbinTM (ilya_State *L, const TValue *p1, const TValue *p2,
                       StkId res, TMS event) {
   const TValue *tm = luaT_gettmbyobj(L, p1, event);  /* try first operand */
   if (notm(tm))
@@ -147,7 +147,7 @@ static int callbinTM (irin_State *L, const TValue *p1, const TValue *p2,
 }
 
 
-void luaT_trybinTM (irin_State *L, const TValue *p1, const TValue *p2,
+void luaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
                     StkId res, TMS event) {
   if (l_unlikely(callbinTM(L, p1, p2, res, event) < 0)) {
     switch (event) {
@@ -170,14 +170,14 @@ void luaT_trybinTM (irin_State *L, const TValue *p1, const TValue *p2,
 ** The use of 'p1' after 'callbinTM' is safe because, when a tag
 ** method is not found, 'callbinTM' cannot change the stack.
 */
-void luaT_tryconcatTM (irin_State *L) {
+void luaT_tryconcatTM (ilya_State *L) {
   StkId p1 = L->top.p - 2;  /* first argument */
   if (l_unlikely(callbinTM(L, s2v(p1), s2v(p1 + 1), p1, TM_CONCAT) < 0))
     luaG_concaterror(L, s2v(p1), s2v(p1 + 1));
 }
 
 
-void luaT_trybinassocTM (irin_State *L, const TValue *p1, const TValue *p2,
+void luaT_trybinassocTM (ilya_State *L, const TValue *p1, const TValue *p2,
                                        int flip, StkId res, TMS event) {
   if (flip)
     luaT_trybinTM(L, p2, p1, res, event);
@@ -186,7 +186,7 @@ void luaT_trybinassocTM (irin_State *L, const TValue *p1, const TValue *p2,
 }
 
 
-void luaT_trybiniTM (irin_State *L, const TValue *p1, irin_Integer i2,
+void luaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
                                    int flip, StkId res, TMS event) {
   TValue aux;
   setivalue(&aux, i2);
@@ -196,19 +196,19 @@ void luaT_trybiniTM (irin_State *L, const TValue *p1, irin_Integer i2,
 
 /*
 ** Calls an order tag method.
-** For lessequal, IRIN_COMPAT_LT_LE keeps compatibility with old
+** For lessequal, ILYA_COMPAT_LT_LE keeps compatibility with old
 ** behavior: if there is no '__le', try '__lt', based on l <= r iff
 ** !(r < l) (assuming a total order). If the metamethod yields during
 ** this substitution, the continuation has to know about it (to negate
 ** the result of r<l); bit CIST_LEQ in the call status keeps that
 ** information.
 */
-int luaT_callorderTM (irin_State *L, const TValue *p1, const TValue *p2,
+int luaT_callorderTM (ilya_State *L, const TValue *p1, const TValue *p2,
                       TMS event) {
   int tag = callbinTM(L, p1, p2, L->top.p, event);  /* try original event */
   if (tag >= 0)  /* found tag method? */
     return !tagisfalse(tag);
-#if defined(IRIN_COMPAT_LT_LE)
+#if defined(ILYA_COMPAT_LT_LE)
   else if (event == TM_LE) {
     /* try '!(p2 < p1)' for '(p1 <= p2)' */
     L->ci->callstatus |= CIST_LEQ;  /* mark it is doing 'lt' for 'le' */
@@ -223,7 +223,7 @@ int luaT_callorderTM (irin_State *L, const TValue *p1, const TValue *p2,
 }
 
 
-int luaT_callorderiTM (irin_State *L, const TValue *p1, int v2,
+int luaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
                        int flip, int isfloat, TMS event) {
   TValue aux; const TValue *p2;
   if (isfloat) {
@@ -240,7 +240,7 @@ int luaT_callorderiTM (irin_State *L, const TValue *p1, int v2,
 }
 
 
-void luaT_adjustvarargs (irin_State *L, int nfixparams, CallInfo *ci,
+void luaT_adjustvarargs (ilya_State *L, int nfixparams, CallInfo *ci,
                          const Proto *p) {
   int i;
   int actual = cast_int(L->top.p - ci->func.p) - 1;  /* number of arguments */
@@ -256,11 +256,11 @@ void luaT_adjustvarargs (irin_State *L, int nfixparams, CallInfo *ci,
   }
   ci->func.p += actual + 1;
   ci->top.p += actual + 1;
-  irin_assert(L->top.p <= ci->top.p && ci->top.p <= L->stack_last.p);
+  ilya_assert(L->top.p <= ci->top.p && ci->top.p <= L->stack_last.p);
 }
 
 
-void luaT_getvarargs (irin_State *L, CallInfo *ci, StkId where, int wanted) {
+void luaT_getvarargs (ilya_State *L, CallInfo *ci, StkId where, int wanted) {
   int i;
   int nextra = ci->u.l.nextraargs;
   if (wanted < 0) {
