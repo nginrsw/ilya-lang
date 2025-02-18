@@ -1,6 +1,6 @@
-<img src="img/ilyastars.png" alt="Ilya" width="500"/>
-
 ## Ilya Programming Language
+
+<img src="img/ilyastars.png" alt="Ilya" width="150"/>
 
 Ilya is a personal fork of Lua, This modification has been made to simplify
 learning, writing, and personalizing the language for my own use.
