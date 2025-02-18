@@ -1,13 +1,19 @@
 ## Ilya Programming Language
 
-Ilya is a personal fork of Lua, inspired by the anime characters `Ilya Ilyukhin` and `Illyasviel von Einzbern`. This modification has been made to simplify learning, writing, and personalizing the language for my own use.
+Ilya is a personal fork of Lua, Ilya name itself is inspired by the anime
+characters [Ilya Ilyukhin](https://renai-flops.fandom.com/wiki/Ilya_Ilyukhin)
+and
+[Illyasviel von Einzbern](https://typemoon.fandom.com/wiki/Illyasviel_von_Einzbern_(Fate/kaleid)).
+This modification has been made to simplify learning, writing, and personalizing
+the language for my own use.
 
 For now, two main changes have been implemented:
 
 - The reserved word `local` has been replaced with `lock`.
 - The reserved word `function` has been replaced with `fn`.
 
-Other than these changes, everything remains identical to the original Lua language.
+Other than these changes, everything remains identical to the original Lua
+language.
 
 ---
 
@@ -29,11 +35,15 @@ Other than these changes, everything remains identical to the original Lua langu
    sudo ln -s /path/to/program/ilya-lang/ilya /usr/local/bin/ilya
    ```
 
-   Replace `/path/to/program` with the actual path to where the compiled program resides.
+   Replace `/path/to/program` with the actual path to where the compiled program
+   resides.
 
-Once this is done, you can run the `ilya` command from anywhere in your terminal!
+Once this is done, you can run the `ilya` command from anywhere in your
+terminal!
 
-For example, create a file named `file.ilya`, type `io.write("Hello Ilya\n")` inside it, and run it with the following command:
+For example, create a file named `file.ilya`, type `io.write("Hello Ilya\n")`
+inside it, and run it with the following command:
+
 ```bash
 ilya file.ilya
 ```
@@ -42,18 +52,20 @@ ilya file.ilya
 
 ## Transpiling Between Lua and Ilya
 
-If you wish to transpile code from Lua to Ilya or from Ilya to Lua, I’ve prepared executable files located in the `transpiler` folder. 
+If you wish to transpile code from Lua to Ilya or from Ilya to Lua, I’ve
+prepared executable files located in the `transpiler` folder.
 
 You can easily run these using the following commands:
 
-- **From Lua to Ilya**:  
+- **From Lua to Ilya**:
   ```bash
   lua2ilya <filename>.lua
   ```
 
-- **From Ilya to Lua**:  
+- **From Ilya to Lua**:
   ```bash
   ilya2lua <filename>.ilya
   ```
 
-These commands will automatically convert your code between the two languages, making it easier to switch between them.
+These commands will automatically convert your code between the two languages,
+making it easier to switch between them.
