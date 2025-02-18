@@ -62,15 +62,16 @@ prepared executable files located in the `transpiler` folder.
 
 You can easily run these using the following commands:
 
-- **From Lua to Ilya**:
+- **From Lua to Ilya**, just run `lua2ilya` inside current directory:
   ```bash
-  lua2ilya <filename>.lua
+  ./lua2ilya
   ```
 
-- **From Ilya to Lua**:
+- **From Ilya to Lua**, it's similar, run `ilya2lua` inside of ur current
+  directory:
   ```bash
-  ilya2lua <filename>.ilya
+  ./ilya2lua
   ```
 
-These commands will automatically convert your code between the two languages,
-making it easier to switch between them.
+These commands will automatically convert all of your code between the two
+languages, making it easier to switch between them.
