@@ -594,7 +594,7 @@ static void checklocal (const char *line) {
   if (strncmp(line, "lock", szloc) == 0 &&  /* "lock"? */
       strchr(space, *(line + szloc)) != NULL) {  /* followed by a space? */
     ilya_writestringerror("%s\n",
-      "warning: locals do not survive across lines in interactive mode");
+      "warning: locks do not survive across lines in interactive mode");
   }
 }
 
