@@ -35,7 +35,7 @@ static const char *const HOOKKEY = "_HOOKKEY";
 */
 static void checkstack (ilya_State *L, ilya_State *L1, int n) {
   if (l_unlikely(L != L1 && !ilya_checkstack(L1, n)))
-    luaL_error(L, "stack overflow");
+    ilyaL_error(L, "stack overflow");
 }
 
 
@@ -46,7 +46,7 @@ static int db_getregistry (ilya_State *L) {
 
 
 static int db_getmetatable (ilya_State *L) {
-  luaL_checkany(L, 1);
+  ilyaL_checkany(L, 1);
   if (!ilya_getmetatable(L, 1)) {
     ilya_pushnil(L);  /* no metatable */
   }
@@ -56,7 +56,7 @@ static int db_getmetatable (ilya_State *L) {
 
 static int db_setmetatable (ilya_State *L) {
   int t = ilya_type(L, 2);
-  luaL_argexpected(L, t == ILYA_TNIL || t == ILYA_TTABLE, 2, "nil or table");
+  ilyaL_argexpected(L, t == ILYA_TNIL || t == ILYA_TTABLE, 2, "nil or table");
   ilya_settop(L, 2);
   ilya_setmetatable(L, 1);
   return 1;  /* return 1st argument */
@@ -64,9 +64,9 @@ static int db_setmetatable (ilya_State *L) {
 
 
 static int db_getuservalue (ilya_State *L) {
-  int n = (int)luaL_optinteger(L, 2, 1);
+  int n = (int)ilyaL_optinteger(L, 2, 1);
   if (ilya_type(L, 1) != ILYA_TUSERDATA)
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
   else if (ilya_getiuservalue(L, 1, n) != ILYA_TNONE) {
     ilya_pushboolean(L, 1);
     return 2;
@@ -76,12 +76,12 @@ static int db_getuservalue (ilya_State *L) {
 
 
 static int db_setuservalue (ilya_State *L) {
-  int n = (int)luaL_optinteger(L, 3, 1);
-  luaL_checktype(L, 1, ILYA_TUSERDATA);
-  luaL_checkany(L, 2);
+  int n = (int)ilyaL_optinteger(L, 3, 1);
+  ilyaL_checktype(L, 1, ILYA_TUSERDATA);
+  ilyaL_checkany(L, 2);
   ilya_settop(L, 2);
   if (!ilya_setiuservalue(L, 1, n))
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
   return 1;
 }
 
@@ -151,22 +151,22 @@ static int db_getinfo (ilya_State *L) {
   ilya_Debug ar;
   int arg;
   ilya_State *L1 = getthread(L, &arg);
-  const char *options = luaL_optstring(L, arg+2, "flnSrtu");
+  const char *options = ilyaL_optstring(L, arg+2, "flnSrtu");
   checkstack(L, L1, 3);
-  luaL_argcheck(L, options[0] != '>', arg + 2, "invalid option '>'");
+  ilyaL_argcheck(L, options[0] != '>', arg + 2, "invalid option '>'");
   if (ilya_isfunction(L, arg + 1)) {  /* info about a fn? */
     options = ilya_pushfstring(L, ">%s", options);  /* add '>' to 'options' */
     ilya_pushvalue(L, arg + 1);  /* move fn to 'L1' stack */
     ilya_xmove(L, L1, 1);
   }
   else {  /* stack level */
-    if (!ilya_getstack(L1, (int)luaL_checkinteger(L, arg + 1), &ar)) {
-      luaL_pushfail(L);  /* level out of range */
+    if (!ilya_getstack(L1, (int)ilyaL_checkinteger(L, arg + 1), &ar)) {
+      ilyaL_pushfail(L);  /* level out of range */
       return 1;
     }
   }
   if (!ilya_getinfo(L1, options, &ar))
-    return luaL_argerror(L, arg+2, "invalid option");
+    return ilyaL_argerror(L, arg+2, "invalid option");
   ilya_newtable(L);  /* table to collect results */
   if (strchr(options, 'S')) {
     ilya_pushlstring(L, ar.source, ar.srclen);
@@ -206,7 +206,7 @@ static int db_getinfo (ilya_State *L) {
 static int db_getlocal (ilya_State *L) {
   int arg;
   ilya_State *L1 = getthread(L, &arg);
-  int nvar = (int)luaL_checkinteger(L, arg + 2);  /* lock-variable index */
+  int nvar = (int)ilyaL_checkinteger(L, arg + 2);  /* lock-variable index */
   if (ilya_isfunction(L, arg + 1)) {  /* fn argument? */
     ilya_pushvalue(L, arg + 1);  /* push fn */
     ilya_pushstring(L, ilya_getlocal(L, NULL, nvar));  /* push lock name */
@@ -215,9 +215,9 @@ static int db_getlocal (ilya_State *L) {
   else {  /* stack-level argument */
     ilya_Debug ar;
     const char *name;
-    int level = (int)luaL_checkinteger(L, arg + 1);
+    int level = (int)ilyaL_checkinteger(L, arg + 1);
     if (l_unlikely(!ilya_getstack(L1, level, &ar)))  /* out of range? */
-      return luaL_argerror(L, arg+1, "level out of range");
+      return ilyaL_argerror(L, arg+1, "level out of range");
     checkstack(L, L1, 1);
     name = ilya_getlocal(L1, &ar, nvar);
     if (name) {
@@ -227,7 +227,7 @@ static int db_getlocal (ilya_State *L) {
       return 2;
     }
     else {
-      luaL_pushfail(L);  /* no name (nor value) */
+      ilyaL_pushfail(L);  /* no name (nor value) */
       return 1;
     }
   }
@@ -239,11 +239,11 @@ static int db_setlocal (ilya_State *L) {
   const char *name;
   ilya_State *L1 = getthread(L, &arg);
   ilya_Debug ar;
-  int level = (int)luaL_checkinteger(L, arg + 1);
-  int nvar = (int)luaL_checkinteger(L, arg + 2);
+  int level = (int)ilyaL_checkinteger(L, arg + 1);
+  int nvar = (int)ilyaL_checkinteger(L, arg + 2);
   if (l_unlikely(!ilya_getstack(L1, level, &ar)))  /* out of range? */
-    return luaL_argerror(L, arg+1, "level out of range");
-  luaL_checkany(L, arg+3);
+    return ilyaL_argerror(L, arg+1, "level out of range");
+  ilyaL_checkany(L, arg+3);
   ilya_settop(L, arg+3);
   checkstack(L, L1, 1);
   ilya_xmove(L, L1, 1);
@@ -260,8 +260,8 @@ static int db_setlocal (ilya_State *L) {
 */
 static int auxupvalue (ilya_State *L, int get) {
   const char *name;
-  int n = (int)luaL_checkinteger(L, 2);  /* upvalue index */
-  luaL_checktype(L, 1, ILYA_TFUNCTION);  /* closure */
+  int n = (int)ilyaL_checkinteger(L, 2);  /* upvalue index */
+  ilyaL_checktype(L, 1, ILYA_TFUNCTION);  /* closure */
   name = get ? ilya_getupvalue(L, 1, n) : ilya_setupvalue(L, 1, n);
   if (name == NULL) return 0;
   ilya_pushstring(L, name);
@@ -276,7 +276,7 @@ static int db_getupvalue (ilya_State *L) {
 
 
 static int db_setupvalue (ilya_State *L) {
-  luaL_checkany(L, 3);
+  ilyaL_checkany(L, 3);
   return auxupvalue(L, 0);
 }
 
@@ -287,11 +287,11 @@ static int db_setupvalue (ilya_State *L) {
 */
 static void *checkupval (ilya_State *L, int argf, int argnup, int *pnup) {
   void *id;
-  int nup = (int)luaL_checkinteger(L, argnup);  /* upvalue index */
-  luaL_checktype(L, argf, ILYA_TFUNCTION);  /* closure */
+  int nup = (int)ilyaL_checkinteger(L, argnup);  /* upvalue index */
+  ilyaL_checktype(L, argf, ILYA_TFUNCTION);  /* closure */
   id = ilya_upvalueid(L, argf, nup);
   if (pnup) {
-    luaL_argcheck(L, id != NULL, argnup, "invalid upvalue index");
+    ilyaL_argcheck(L, id != NULL, argnup, "invalid upvalue index");
     *pnup = nup;
   }
   return id;
@@ -303,7 +303,7 @@ static int db_upvalueid (ilya_State *L) {
   if (id != NULL)
     ilya_pushlightuserdata(L, id);
   else
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
   return 1;
 }
 
@@ -312,8 +312,8 @@ static int db_upvaluejoin (ilya_State *L) {
   int n1, n2;
   checkupval(L, 1, 2, &n1);
   checkupval(L, 3, 4, &n2);
-  luaL_argcheck(L, !ilya_iscfunction(L, 1), 1, "Ilya fn expected");
-  luaL_argcheck(L, !ilya_iscfunction(L, 3), 3, "Ilya fn expected");
+  ilyaL_argcheck(L, !ilya_iscfunction(L, 1), 1, "Ilya fn expected");
+  ilyaL_argcheck(L, !ilya_iscfunction(L, 3), 3, "Ilya fn expected");
   ilya_upvaluejoin(L, 1, n1, 3, n2);
   return 0;
 }
@@ -374,12 +374,12 @@ static int db_sethook (ilya_State *L) {
     func = NULL; mask = 0; count = 0;  /* turn off hooks */
   }
   else {
-    const char *smask = luaL_checkstring(L, arg+2);
-    luaL_checktype(L, arg+1, ILYA_TFUNCTION);
-    count = (int)luaL_optinteger(L, arg + 3, 0);
+    const char *smask = ilyaL_checkstring(L, arg+2);
+    ilyaL_checktype(L, arg+1, ILYA_TFUNCTION);
+    count = (int)ilyaL_optinteger(L, arg + 3, 0);
     func = hookf; mask = makemask(smask, count);
   }
-  if (!luaL_getsubtable(L, ILYA_REGISTRYINDEX, HOOKKEY)) {
+  if (!ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, HOOKKEY)) {
     /* table just created; initialize it */
     ilya_pushliteral(L, "k");
     ilya_setfield(L, -2, "__mode");  /** hooktable.__mode = "k" */
@@ -402,7 +402,7 @@ static int db_gethook (ilya_State *L) {
   int mask = ilya_gethookmask(L1);
   ilya_Hook hook = ilya_gethook(L1);
   if (hook == NULL) {  /* no hook? */
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
     return 1;
   }
   else if (hook != hookf)  /* external hook? */
@@ -427,9 +427,9 @@ static int db_debug (ilya_State *L) {
     if (fgets(buffer, sizeof(buffer), stdin) == NULL ||
         strcmp(buffer, "cont\n") == 0)
       return 0;
-    if (luaL_loadbuffer(L, buffer, strlen(buffer), "=(debug command)") ||
+    if (ilyaL_loadbuffer(L, buffer, strlen(buffer), "=(debug command)") ||
         ilya_pcall(L, 0, 0, 0))
-      ilya_writestringerror("%s\n", luaL_tolstring(L, -1, NULL));
+      ilya_writestringerror("%s\n", ilyaL_tolstring(L, -1, NULL));
     ilya_settop(L, 0);  /* remove eventual returns */
   }
 }
@@ -442,14 +442,14 @@ static int db_traceback (ilya_State *L) {
   if (msg == NULL && !ilya_isnoneornil(L, arg + 1))  /* non-string 'msg'? */
     ilya_pushvalue(L, arg + 1);  /* return it untouched */
   else {
-    int level = (int)luaL_optinteger(L, arg + 2, (L == L1) ? 1 : 0);
-    luaL_traceback(L, L1, msg, level);
+    int level = (int)ilyaL_optinteger(L, arg + 2, (L == L1) ? 1 : 0);
+    ilyaL_traceback(L, L1, msg, level);
   }
   return 1;
 }
 
 
-static const luaL_Reg dblib[] = {
+static const ilyaL_Reg dblib[] = {
   {"debug", db_debug},
   {"getuservalue", db_getuservalue},
   {"gethook", db_gethook},
@@ -470,8 +470,8 @@ static const luaL_Reg dblib[] = {
 };
 
 
-LUAMOD_API int luaopen_debug (ilya_State *L) {
-  luaL_newlib(L, dblib);
+ILYAMOD_API int ilyaopen_debug (ilya_State *L) {
+  ilyaL_newlib(L, dblib);
   return 1;
 }
 

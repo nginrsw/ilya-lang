@@ -288,7 +288,7 @@ else
   assert(not f and type(err) == "string" and when == "open")
 
   -- symbols from 'lib1' must be visible to other libraries
-  f = assert(package.loadlib(DC"lib11", p.."luaopen_lib11"))
+  f = assert(package.loadlib(DC"lib11", p.."ilyaopen_lib11"))
   assert(f() == "exported")
 
   -- test C modules with prefixes in names

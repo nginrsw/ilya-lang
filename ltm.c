@@ -27,7 +27,7 @@
 
 static const char udatatypename[] = "userdata";
 
-LUAI_DDEF const char *const luaT_typenames_[ILYA_TOTALTYPES] = {
+ILYAI_DDEF const char *const ilyaT_typenames_[ILYA_TOTALTYPES] = {
   "no value",
   "nil", "boolean", udatatypename, "number",
   "string", "table", "fn", udatatypename, "thread",
@@ -35,8 +35,8 @@ LUAI_DDEF const char *const luaT_typenames_[ILYA_TOTALTYPES] = {
 };
 
 
-void luaT_init (ilya_State *L) {
-  static const char *const luaT_eventname[] = {  /* ORDER TM */
+void ilyaT_init (ilya_State *L) {
+  static const char *const ilyaT_eventname[] = {  /* ORDER TM */
     "__index", "__newindex",
     "__gc", "__mode", "__len", "__eq",
     "__add", "__sub", "__mul", "__mod", "__pow",
@@ -47,8 +47,8 @@ void luaT_init (ilya_State *L) {
   };
   int i;
   for (i=0; i<TM_N; i++) {
-    G(L)->tmname[i] = luaS_new(L, luaT_eventname[i]);
-    luaC_fix(L, obj2gco(G(L)->tmname[i]));  /* never collect these names */
+    G(L)->tmname[i] = ilyaS_new(L, ilyaT_eventname[i]);
+    ilyaC_fix(L, obj2gco(G(L)->tmname[i]));  /* never collect these names */
   }
 }
 
@@ -57,8 +57,8 @@ void luaT_init (ilya_State *L) {
 ** fn to be used with macro "fasttm": optimized for absence of
 ** tag methods
 */
-const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
-  const TValue *tm = luaH_Hgetshortstr(events, ename);
+const TValue *ilyaT_gettm (Table *events, TMS event, TString *ename) {
+  const TValue *tm = ilyaH_Hgetshortstr(events, ename);
   ilya_assert(event <= TM_EQ);
   if (notm(tm)) {  /* no tag method? */
     events->flags |= cast_byte(1u<<event);  /* cache this fact */
@@ -68,7 +68,7 @@ const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
 }
 
 
-const TValue *luaT_gettmbyobj (ilya_State *L, const TValue *o, TMS event) {
+const TValue *ilyaT_gettmbyobj (ilya_State *L, const TValue *o, TMS event) {
   Table *mt;
   switch (ttype(o)) {
     case ILYA_TTABLE:
@@ -80,7 +80,7 @@ const TValue *luaT_gettmbyobj (ilya_State *L, const TValue *o, TMS event) {
     default:
       mt = G(L)->mt[ttype(o)];
   }
-  return (mt ? luaH_Hgetshortstr(mt, G(L)->tmname[event]) : &G(L)->nilvalue);
+  return (mt ? ilyaH_Hgetshortstr(mt, G(L)->tmname[event]) : &G(L)->nilvalue);
 }
 
 
@@ -88,11 +88,11 @@ const TValue *luaT_gettmbyobj (ilya_State *L, const TValue *o, TMS event) {
 ** Return the name of the type of an object. For tables and userdata
 ** with metatable, use their '__name' metafield, if present.
 */
-const char *luaT_objtypename (ilya_State *L, const TValue *o) {
+const char *ilyaT_objtypename (ilya_State *L, const TValue *o) {
   Table *mt;
   if ((ttistable(o) && (mt = hvalue(o)->metatable) != NULL) ||
       (ttisfulluserdata(o) && (mt = uvalue(o)->metatable) != NULL)) {
-    const TValue *name = luaH_Hgetshortstr(mt, luaS_new(L, "__name"));
+    const TValue *name = ilyaH_Hgetshortstr(mt, ilyaS_new(L, "__name"));
     if (ttisstring(name))  /* is '__name' a string? */
       return getstr(tsvalue(name));  /* use it as type name */
   }
@@ -100,7 +100,7 @@ const char *luaT_objtypename (ilya_State *L, const TValue *o) {
 }
 
 
-void luaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
+void ilyaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
                   const TValue *p2, const TValue *p3) {
   StkId func = L->top.p;
   setobj2s(L, func, f);  /* push fn (assume EXTRA_STACK) */
@@ -109,14 +109,14 @@ void luaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
   setobj2s(L, func + 3, p3);  /* 3rd argument */
   L->top.p = func + 4;
   /* metamethod may yield only when called from Ilya code */
-  if (isLuacode(L->ci))
-    luaD_call(L, func, 0);
+  if (isIlyacode(L->ci))
+    ilyaD_call(L, func, 0);
   else
-    luaD_callnoyield(L, func, 0);
+    ilyaD_callnoyield(L, func, 0);
 }
 
 
-lu_byte luaT_callTMres (ilya_State *L, const TValue *f, const TValue *p1,
+lu_byte ilyaT_callTMres (ilya_State *L, const TValue *f, const TValue *p1,
                         const TValue *p2, StkId res) {
   ptrdiff_t result = savestack(L, res);
   StkId func = L->top.p;
@@ -125,10 +125,10 @@ lu_byte luaT_callTMres (ilya_State *L, const TValue *f, const TValue *p1,
   setobj2s(L, func + 2, p2);  /* 2nd argument */
   L->top.p += 3;
   /* metamethod may yield only when called from Ilya code */
-  if (isLuacode(L->ci))
-    luaD_call(L, func, 1);
+  if (isIlyacode(L->ci))
+    ilyaD_call(L, func, 1);
   else
-    luaD_callnoyield(L, func, 1);
+    ilyaD_callnoyield(L, func, 1);
   res = restorestack(L, result);
   setobjs2s(L, res, --L->top.p);  /* move result to its place */
   return ttypetag(s2v(res));  /* return tag of the result */
@@ -137,30 +137,30 @@ lu_byte luaT_callTMres (ilya_State *L, const TValue *f, const TValue *p1,
 
 static int callbinTM (ilya_State *L, const TValue *p1, const TValue *p2,
                       StkId res, TMS event) {
-  const TValue *tm = luaT_gettmbyobj(L, p1, event);  /* try first operand */
+  const TValue *tm = ilyaT_gettmbyobj(L, p1, event);  /* try first operand */
   if (notm(tm))
-    tm = luaT_gettmbyobj(L, p2, event);  /* try second operand */
+    tm = ilyaT_gettmbyobj(L, p2, event);  /* try second operand */
   if (notm(tm))
     return -1;  /* tag method not found */
   else  /* call tag method and return the tag of the result */
-    return luaT_callTMres(L, tm, p1, p2, res);
+    return ilyaT_callTMres(L, tm, p1, p2, res);
 }
 
 
-void luaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
+void ilyaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
                     StkId res, TMS event) {
   if (l_unlikely(callbinTM(L, p1, p2, res, event) < 0)) {
     switch (event) {
       case TM_BAND: case TM_BOR: case TM_BXOR:
       case TM_SHL: case TM_SHR: case TM_BNOT: {
         if (ttisnumber(p1) && ttisnumber(p2))
-          luaG_tointerror(L, p1, p2);
+          ilyaG_tointerror(L, p1, p2);
         else
-          luaG_opinterror(L, p1, p2, "perform bitwise operation on");
+          ilyaG_opinterror(L, p1, p2, "perform bitwise operation on");
       }
       /* calls never return, but to avoid warnings: *//* FALLTHROUGH */
       default:
-        luaG_opinterror(L, p1, p2, "perform arithmetic on");
+        ilyaG_opinterror(L, p1, p2, "perform arithmetic on");
     }
   }
 }
@@ -170,27 +170,27 @@ void luaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
 ** The use of 'p1' after 'callbinTM' is safe because, when a tag
 ** method is not found, 'callbinTM' cannot change the stack.
 */
-void luaT_tryconcatTM (ilya_State *L) {
+void ilyaT_tryconcatTM (ilya_State *L) {
   StkId p1 = L->top.p - 2;  /* first argument */
   if (l_unlikely(callbinTM(L, s2v(p1), s2v(p1 + 1), p1, TM_CONCAT) < 0))
-    luaG_concaterror(L, s2v(p1), s2v(p1 + 1));
+    ilyaG_concaterror(L, s2v(p1), s2v(p1 + 1));
 }
 
 
-void luaT_trybinassocTM (ilya_State *L, const TValue *p1, const TValue *p2,
+void ilyaT_trybinassocTM (ilya_State *L, const TValue *p1, const TValue *p2,
                                        int flip, StkId res, TMS event) {
   if (flip)
-    luaT_trybinTM(L, p2, p1, res, event);
+    ilyaT_trybinTM(L, p2, p1, res, event);
   else
-    luaT_trybinTM(L, p1, p2, res, event);
+    ilyaT_trybinTM(L, p1, p2, res, event);
 }
 
 
-void luaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
+void ilyaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
                                    int flip, StkId res, TMS event) {
   TValue aux;
   setivalue(&aux, i2);
-  luaT_trybinassocTM(L, p1, &aux, flip, res, event);
+  ilyaT_trybinassocTM(L, p1, &aux, flip, res, event);
 }
 
 
@@ -203,7 +203,7 @@ void luaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
 ** the result of r<l); bit CIST_LEQ in the call status keeps that
 ** information.
 */
-int luaT_callorderTM (ilya_State *L, const TValue *p1, const TValue *p2,
+int ilyaT_callorderTM (ilya_State *L, const TValue *p1, const TValue *p2,
                       TMS event) {
   int tag = callbinTM(L, p1, p2, L->top.p, event);  /* try original event */
   if (tag >= 0)  /* found tag method? */
@@ -218,12 +218,12 @@ int luaT_callorderTM (ilya_State *L, const TValue *p1, const TValue *p2,
       return tagisfalse(tag);
   }
 #endif
-  luaG_ordererror(L, p1, p2);  /* no metamethod found */
+  ilyaG_ordererror(L, p1, p2);  /* no metamethod found */
   return 0;  /* to avoid warnings */
 }
 
 
-int luaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
+int ilyaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
                        int flip, int isfloat, TMS event) {
   TValue aux; const TValue *p2;
   if (isfloat) {
@@ -236,17 +236,17 @@ int luaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
   }
   else
     p2 = &aux;
-  return luaT_callorderTM(L, p1, p2, event);
+  return ilyaT_callorderTM(L, p1, p2, event);
 }
 
 
-void luaT_adjustvarargs (ilya_State *L, int nfixparams, CallInfo *ci,
+void ilyaT_adjustvarargs (ilya_State *L, int nfixparams, CallInfo *ci,
                          const Proto *p) {
   int i;
   int actual = cast_int(L->top.p - ci->func.p) - 1;  /* number of arguments */
   int nextra = actual - nfixparams;  /* number of extra arguments */
   ci->u.l.nextraargs = nextra;
-  luaD_checkstack(L, p->maxstacksize + 1);
+  ilyaD_checkstack(L, p->maxstacksize + 1);
   /* copy fn to the top of the stack */
   setobjs2s(L, L->top.p++, ci->func.p);
   /* move fixed parameters to the top of the stack */
@@ -260,7 +260,7 @@ void luaT_adjustvarargs (ilya_State *L, int nfixparams, CallInfo *ci,
 }
 
 
-void luaT_getvarargs (ilya_State *L, CallInfo *ci, StkId where, int wanted) {
+void ilyaT_getvarargs (ilya_State *L, CallInfo *ci, StkId where, int wanted) {
   int i;
   int nextra = ci->u.l.nextraargs;
   if (wanted < 0) {

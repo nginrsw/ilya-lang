@@ -49,7 +49,7 @@ typedef enum {
 
 /* convert an object to a float (including string coercion) */
 #define tonumber(o,n) \
-	(ttisfloat(o) ? (*(n) = fltvalue(o), 1) : luaV_tonumber_(o,n))
+	(ttisfloat(o) ? (*(n) = fltvalue(o), 1) : ilyaV_tonumber_(o,n))
 
 
 /* convert an object to a float (without string coercion) */
@@ -61,76 +61,76 @@ typedef enum {
 /* convert an object to an integer (including string coercion) */
 #define tointeger(o,i) \
   (l_likely(ttisinteger(o)) ? (*(i) = ivalue(o), 1) \
-                          : luaV_tointeger(o,i,ILYA_FLOORN2I))
+                          : ilyaV_tointeger(o,i,ILYA_FLOORN2I))
 
 
 /* convert an object to an integer (without string coercion) */
 #define tointegerns(o,i) \
   (l_likely(ttisinteger(o)) ? (*(i) = ivalue(o), 1) \
-                          : luaV_tointegerns(o,i,ILYA_FLOORN2I))
+                          : ilyaV_tointegerns(o,i,ILYA_FLOORN2I))
 
 
 #define intop(op,v1,v2) l_castU2S(l_castS2U(v1) op l_castS2U(v2))
 
-#define luaV_rawequalobj(t1,t2)		luaV_equalobj(NULL,t1,t2)
+#define ilyaV_rawequalobj(t1,t2)		ilyaV_equalobj(NULL,t1,t2)
 
 
 /*
 ** fast track for 'gettable'
 */
-#define luaV_fastget(t,k,res,f, tag) \
+#define ilyaV_fastget(t,k,res,f, tag) \
   (tag = (!ttistable(t) ? ILYA_VNOTABLE : f(hvalue(t), k, res)))
 
 
 /*
-** Special case of 'luaV_fastget' for integers, inlining the fast case
-** of 'luaH_getint'.
+** Special case of 'ilyaV_fastget' for integers, inlining the fast case
+** of 'ilyaH_getint'.
 */
-#define luaV_fastgeti(t,k,res,tag) \
+#define ilyaV_fastgeti(t,k,res,tag) \
   if (!ttistable(t)) tag = ILYA_VNOTABLE; \
-  else { luaH_fastgeti(hvalue(t), k, res, tag); }
+  else { ilyaH_fastgeti(hvalue(t), k, res, tag); }
 
 
-#define luaV_fastset(t,k,val,hres,f) \
+#define ilyaV_fastset(t,k,val,hres,f) \
   (hres = (!ttistable(t) ? HNOTATABLE : f(hvalue(t), k, val)))
 
-#define luaV_fastseti(t,k,val,hres) \
+#define ilyaV_fastseti(t,k,val,hres) \
   if (!ttistable(t)) hres = HNOTATABLE; \
-  else { luaH_fastseti(hvalue(t), k, val, hres); }
+  else { ilyaH_fastseti(hvalue(t), k, val, hres); }
 
 
 /*
 ** Finish a fast set operation (when fast set succeeds).
 */
-#define luaV_finishfastset(L,t,v)	luaC_barrierback(L, gcvalue(t), v)
+#define ilyaV_finishfastset(L,t,v)	ilyaC_barrierback(L, gcvalue(t), v)
 
 
 /*
 ** Shift right is the same as shift left with a negative 'y'
 */
-#define luaV_shiftr(x,y)	luaV_shiftl(x,intop(-, 0, y))
+#define ilyaV_shiftr(x,y)	ilyaV_shiftl(x,intop(-, 0, y))
 
 
 
-LUAI_FUNC int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2);
-LUAI_FUNC int luaV_lessthan (ilya_State *L, const TValue *l, const TValue *r);
-LUAI_FUNC int luaV_lessequal (ilya_State *L, const TValue *l, const TValue *r);
-LUAI_FUNC int luaV_tonumber_ (const TValue *obj, ilya_Number *n);
-LUAI_FUNC int luaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode);
-LUAI_FUNC int luaV_tointegerns (const TValue *obj, ilya_Integer *p,
+ILYAI_FUNC int ilyaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2);
+ILYAI_FUNC int ilyaV_lessthan (ilya_State *L, const TValue *l, const TValue *r);
+ILYAI_FUNC int ilyaV_lessequal (ilya_State *L, const TValue *l, const TValue *r);
+ILYAI_FUNC int ilyaV_tonumber_ (const TValue *obj, ilya_Number *n);
+ILYAI_FUNC int ilyaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode);
+ILYAI_FUNC int ilyaV_tointegerns (const TValue *obj, ilya_Integer *p,
                                 F2Imod mode);
-LUAI_FUNC int luaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode);
-LUAI_FUNC lu_byte luaV_finishget (ilya_State *L, const TValue *t, TValue *key,
+ILYAI_FUNC int ilyaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode);
+ILYAI_FUNC lu_byte ilyaV_finishget (ilya_State *L, const TValue *t, TValue *key,
                                                 StkId val, lu_byte tag);
-LUAI_FUNC void luaV_finishset (ilya_State *L, const TValue *t, TValue *key,
+ILYAI_FUNC void ilyaV_finishset (ilya_State *L, const TValue *t, TValue *key,
                                              TValue *val, int aux);
-LUAI_FUNC void luaV_finishOp (ilya_State *L);
-LUAI_FUNC void luaV_execute (ilya_State *L, CallInfo *ci);
-LUAI_FUNC void luaV_concat (ilya_State *L, int total);
-LUAI_FUNC ilya_Integer luaV_idiv (ilya_State *L, ilya_Integer x, ilya_Integer y);
-LUAI_FUNC ilya_Integer luaV_mod (ilya_State *L, ilya_Integer x, ilya_Integer y);
-LUAI_FUNC ilya_Number luaV_modf (ilya_State *L, ilya_Number x, ilya_Number y);
-LUAI_FUNC ilya_Integer luaV_shiftl (ilya_Integer x, ilya_Integer y);
-LUAI_FUNC void luaV_objlen (ilya_State *L, StkId ra, const TValue *rb);
+ILYAI_FUNC void ilyaV_finishOp (ilya_State *L);
+ILYAI_FUNC void ilyaV_execute (ilya_State *L, CallInfo *ci);
+ILYAI_FUNC void ilyaV_concat (ilya_State *L, int total);
+ILYAI_FUNC ilya_Integer ilyaV_idiv (ilya_State *L, ilya_Integer x, ilya_Integer y);
+ILYAI_FUNC ilya_Integer ilyaV_mod (ilya_State *L, ilya_Integer x, ilya_Integer y);
+ILYAI_FUNC ilya_Number ilyaV_modf (ilya_State *L, ilya_Number x, ilya_Number y);
+ILYAI_FUNC ilya_Integer ilyaV_shiftl (ilya_Integer x, ilya_Integer y);
+ILYAI_FUNC void ilyaV_objlen (ilya_State *L, StkId ra, const TValue *rb);
 
 #endif

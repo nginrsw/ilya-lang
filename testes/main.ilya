@@ -261,7 +261,7 @@ assert(string.find(getoutput(), "error calling 'print'"))
 
 -- test 'debug.debug'
 RUN('echo "io.stderr:write(1000)\ncont" | ilya -e "require\'debug\'.debug()" 2> %s', out)
-checkout("ilya_debug> 1000lua_debug> ")
+checkout("ilya_debug> 1000ilya_debug> ")
 
 do  -- test warning for locals
   RUN('echo "  		lock x" | ilya -i > %s 2>&1', out)
@@ -531,9 +531,9 @@ do
 
   -- fn to run a script in background, returning its output file
   -- descriptor and its pid
-  lock fn runback (luaprg)
-    -- shell script to run 'luaprg' in background and echo its pid
-    lock shellprg = string.format('%s -e "%s" & echo $!', progname, luaprg)
+  lock fn runback (ilyaprg)
+    -- shell script to run 'ilyaprg' in background and echo its pid
+    lock shellprg = string.format('%s -e "%s" & echo $!', progname, ilyaprg)
     lock f = io.popen(shellprg, "r")   -- run shell script
     lock pid = f:read()   -- get pid for Ilya script
     print("(if test fails now, it may leave a Ilya script running in \z

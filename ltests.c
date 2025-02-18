@@ -122,7 +122,7 @@ static void warnf (void *ud, const char *msg, int tocont) {
   strcat(buff, msg);  /* add new message to current warning */
   if (!tocont) {  /* message finished? */
     ilya_unlock(L);
-    luaL_checkstack(L, 1, "warn stack space");
+    ilyaL_checkstack(L, 1, "warn stack space");
     ilya_getglobal(L, "_WARN");
     if (!ilya_toboolean(L, -1))
       ilya_pop(L, 1);  /* ok, no previous unexpected warning */
@@ -144,7 +144,7 @@ static void warnf (void *ud, const char *msg, int tocont) {
       }
       case 2: {  /* store */
         ilya_unlock(L);
-        luaL_checkstack(L, 1, "warn stack space");
+        ilyaL_checkstack(L, 1, "warn stack space");
         ilya_pushstring(L, buff);
         ilya_setglobal(L, "_WARN");  /* assign message to global '_WARN' */
         ilya_lock(L);
@@ -165,7 +165,7 @@ static void warnf (void *ud, const char *msg, int tocont) {
 #define MARK		0x55  /* 01010101 (a nice pattern) */
 
 typedef union Header {
-  LUAI_MAXALIGN;
+  ILYAI_MAXALIGN;
   struct {
     size_t size;
     int type;
@@ -330,7 +330,7 @@ void ilya_printvalue (TValue *v) {
   switch (ttype(v)) {
     case ILYA_TNUMBER: {
       char buff[ILYA_N2SBUFFSZ];
-      unsigned len = luaO_tostringbuff(v, buff);
+      unsigned len = ilyaO_tostringbuff(v, buff);
       buff[len] = '\0';
       printf("%s", buff);
       break;
@@ -467,7 +467,7 @@ static void checkLclosure (global_State *g, LClosure *cl) {
 
 
 static int ilya_checkpc (CallInfo *ci) {
-  if (!isLua(ci)) return 1;
+  if (!isIlya(ci)) return 1;
   else {
     StkId f = ci->func.p;
     Proto *p = clLvalue(s2v(f))->p;
@@ -721,7 +721,7 @@ static char *buildop (Proto *p, int pc, char *buff) {
   Instruction i = p->code[pc];
   OpCode o = GET_OPCODE(i);
   const char *name = opnames[o];
-  int line = luaG_getfuncline(p, pc);
+  int line = ilyaG_getfuncline(p, pc);
   int lineinfo = (p->lineinfo != NULL) ? p->lineinfo[pc] : 0;
   if (lineinfo == ABSLINEINFO)
     buff += sprintf(buff, "(__");
@@ -757,7 +757,7 @@ static char *buildop (Proto *p, int pc, char *buff) {
 
 
 #if 0
-void luaI_printcode (Proto *pt, int size) {
+void ilyaI_printcode (Proto *pt, int size) {
   int pc;
   for (pc=0; pc<size; pc++) {
     char buff[100];
@@ -767,7 +767,7 @@ void luaI_printcode (Proto *pt, int size) {
 }
 
 
-void luaI_printinst (Proto *pt, int pc) {
+void ilyaI_printinst (Proto *pt, int pc) {
   char buff[100];
   printf("%s\n", buildop(pt, pc, buff));
 }
@@ -777,7 +777,7 @@ void luaI_printinst (Proto *pt, int pc) {
 static int listcode (ilya_State *L) {
   int pc;
   Proto *p;
-  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
                  1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   ilya_newtable(L);
@@ -796,7 +796,7 @@ static int listcode (ilya_State *L) {
 static int printcode (ilya_State *L) {
   int pc;
   Proto *p;
-  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
                  1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   printf("maxstack: %d\n", p->maxstacksize);
@@ -812,7 +812,7 @@ static int printcode (ilya_State *L) {
 static int listk (ilya_State *L) {
   Proto *p;
   int i;
-  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
                  1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
   ilya_createtable(L, p->sizek, 0);
@@ -827,10 +827,10 @@ static int listk (ilya_State *L) {
 static int listabslineinfo (ilya_State *L) {
   Proto *p;
   int i;
-  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
                  1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
-  luaL_argcheck(L, p->abslineinfo != NULL, 1, "fn has no debug info");
+  ilyaL_argcheck(L, p->abslineinfo != NULL, 1, "fn has no debug info");
   ilya_createtable(L, 2 * p->sizeabslineinfo, 0);
   for (i=0; i < p->sizeabslineinfo; i++) {
     ilya_pushinteger(L, p->abslineinfo[i].pc);
@@ -844,13 +844,13 @@ static int listabslineinfo (ilya_State *L) {
 
 static int listlocals (ilya_State *L) {
   Proto *p;
-  int pc = cast_int(luaL_checkinteger(L, 2)) - 1;
+  int pc = cast_int(ilyaL_checkinteger(L, 2)) - 1;
   int i = 0;
   const char *name;
-  luaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_isfunction(L, 1) && !ilya_iscfunction(L, 1),
                  1, "Ilya fn expected");
   p = getproto(obj_at(L, 1));
-  while ((name = luaF_getlocalname(p, ++i, pc)) != NULL)
+  while ((name = ilyaF_getlocalname(p, ++i, pc)) != NULL)
     ilya_pushstring(L, name);
   return i-1;
 }
@@ -874,7 +874,7 @@ void ilya_printstack (ilya_State *L) {
 
 static int get_limits (ilya_State *L) {
   ilya_createtable(L, 0, 5);
-  setnameval(L, "IS32INT", LUAI_IS32INT);
+  setnameval(L, "IS32INT", ILYAI_IS32INT);
   setnameval(L, "MAXARG_Ax", MAXARG_Ax);
   setnameval(L, "MAXARG_Bx", MAXARG_Bx);
   setnameval(L, "OFFSET_sBx", OFFSET_sBx);
@@ -891,13 +891,13 @@ static int mem_query (ilya_State *L) {
     return 3;
   }
   else if (ilya_isnumber(L, 1)) {
-    unsigned long limit = cast(unsigned long, luaL_checkinteger(L, 1));
+    unsigned long limit = cast(unsigned long, ilyaL_checkinteger(L, 1));
     if (limit == 0) limit = ULONG_MAX;
     l_memcontrol.memlimit = limit;
     return 0;
   }
   else {
-    const char *t = luaL_checkstring(L, 1);
+    const char *t = ilyaL_checkstring(L, 1);
     int i;
     for (i = ILYA_NUMTYPES - 1; i >= 0; i--) {
       if (strcmp(t, ttypename(i)) == 0) {
@@ -905,7 +905,7 @@ static int mem_query (ilya_State *L) {
         return 1;
       }
     }
-    return luaL_error(L, "unknown type '%s'", t);
+    return ilyaL_error(L, "unknown type '%s'", t);
   }
 }
 
@@ -914,7 +914,7 @@ static int alloc_count (ilya_State *L) {
   if (ilya_isnone(L, 1))
     l_memcontrol.countlimit = cast(unsigned long, ~0L);
   else
-    l_memcontrol.countlimit = cast(unsigned long, luaL_checkinteger(L, 1));
+    l_memcontrol.countlimit = cast(unsigned long, ilyaL_checkinteger(L, 1));
   return 0;
 }
 
@@ -937,7 +937,7 @@ static int settrick (ilya_State *L) {
 
 static int gc_color (ilya_State *L) {
   TValue *o;
-  luaL_checkany(L, 1);
+  ilyaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!iscollectable(o))
     ilya_pushstring(L, "no collectable");
@@ -953,7 +953,7 @@ static int gc_color (ilya_State *L) {
 
 static int gc_age (ilya_State *L) {
   TValue *o;
-  luaL_checkany(L, 1);
+  ilyaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!iscollectable(o))
     ilya_pushstring(L, "no collectable");
@@ -969,7 +969,7 @@ static int gc_age (ilya_State *L) {
 
 static int gc_printobj (ilya_State *L) {
   TValue *o;
-  luaL_checkany(L, 1);
+  ilyaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!iscollectable(o))
     printf("no collectable\n");
@@ -990,7 +990,7 @@ static int gc_state (ilya_State *L) {
   static const int states[] = {
     GCSpropagate, GCSenteratomic, GCSatomic, GCSswpallgc, GCSswpfinobj,
     GCSswptobefnz, GCSswpend, GCScallfin, GCSpause, -1};
-  int option = states[luaL_checkoption(L, 1, "", statenames)];
+  int option = states[ilyaL_checkoption(L, 1, "", statenames)];
   global_State *g = G(L);
   if (option == -1) {
     ilya_pushstring(L, statenames[g->gcstate]);
@@ -998,12 +998,12 @@ static int gc_state (ilya_State *L) {
   }
   else {
     if (g->gckind != KGC_INC)
-      luaL_error(L, "cannot change states in generational mode");
+      ilyaL_error(L, "cannot change states in generational mode");
     ilya_lock(L);
     if (option < g->gcstate) {  /* must cross 'pause'? */
-      luaC_runtilstate(L, GCSpause, 1);  /* run until pause */
+      ilyaC_runtilstate(L, GCSpause, 1);  /* run until pause */
     }
-    luaC_runtilstate(L, option, 0);  /* do not skip propagation state */
+    ilyaC_runtilstate(L, option, 0);  /* do not skip propagation state */
     ilya_assert(g->gcstate == option);
     ilya_unlock(L);
     return 0;
@@ -1012,7 +1012,7 @@ static int gc_state (ilya_State *L) {
 
 
 static int tracinggc = 0;
-void luai_tracegctest (ilya_State *L, int first) {
+void ilyai_tracegctest (ilya_State *L, int first) {
   if (!tracinggc) return;
   else {
     global_State *g = G(L);
@@ -1041,15 +1041,15 @@ static int tracegc (ilya_State *L) {
 
 static int hash_query (ilya_State *L) {
   if (ilya_isnone(L, 2)) {
-    luaL_argcheck(L, ilya_type(L, 1) == ILYA_TSTRING, 1, "string expected");
+    ilyaL_argcheck(L, ilya_type(L, 1) == ILYA_TSTRING, 1, "string expected");
     ilya_pushinteger(L, cast_int(tsvalue(obj_at(L, 1))->hash));
   }
   else {
     TValue *o = obj_at(L, 1);
     Table *t;
-    luaL_checktype(L, 2, ILYA_TTABLE);
+    ilyaL_checktype(L, 2, ILYA_TTABLE);
     t = hvalue(obj_at(L, 2));
-    ilya_pushinteger(L, cast(ilya_Integer, luaH_mainposition(t, o) - t->node));
+    ilya_pushinteger(L, cast(ilya_Integer, ilyaH_mainposition(t, o) - t->node));
   }
   return 1;
 }
@@ -1068,9 +1068,9 @@ static int stacklevel (ilya_State *L) {
 
 static int table_query (ilya_State *L) {
   const Table *t;
-  int i = cast_int(luaL_optinteger(L, 2, -1));
+  int i = cast_int(ilyaL_optinteger(L, 2, -1));
   unsigned int asize;
-  luaL_checktype(L, 1, ILYA_TTABLE);
+  ilyaL_checktype(L, 1, ILYA_TTABLE);
   t = hvalue(obj_at(L, 1));
   asize = t->asize;
   if (i == -1) {
@@ -1123,23 +1123,23 @@ static int gc_query (ilya_State *L) {
 
 
 static int test_codeparam (ilya_State *L) {
-  ilya_Integer p = luaL_checkinteger(L, 1);
-  ilya_pushinteger(L, luaO_codeparam(cast_uint(p)));
+  ilya_Integer p = ilyaL_checkinteger(L, 1);
+  ilya_pushinteger(L, ilyaO_codeparam(cast_uint(p)));
   return 1;
 }
 
 
 static int test_applyparam (ilya_State *L) {
-  ilya_Integer p = luaL_checkinteger(L, 1);
-  ilya_Integer x = luaL_checkinteger(L, 2);
-  ilya_pushinteger(L, cast(ilya_Integer, luaO_applyparam(cast_byte(p), x)));
+  ilya_Integer p = ilyaL_checkinteger(L, 1);
+  ilya_Integer x = ilyaL_checkinteger(L, 2);
+  ilya_pushinteger(L, cast(ilya_Integer, ilyaO_applyparam(cast_byte(p), x)));
   return 1;
 }
 
 
 static int string_query (ilya_State *L) {
   stringtable *tb = &G(L)->strt;
-  int s = cast_int(luaL_optinteger(L, 1, 0)) - 1;
+  int s = cast_int(ilyaL_optinteger(L, 1, 0)) - 1;
   if (s == -1) {
     ilya_pushinteger(L ,tb->size);
     ilya_pushinteger(L ,tb->nuse);
@@ -1170,9 +1170,9 @@ static int getreftable (ilya_State *L) {
 static int tref (ilya_State *L) {
   int t = getreftable(L);
   int level = ilya_gettop(L);
-  luaL_checkany(L, 1);
+  ilyaL_checkany(L, 1);
   ilya_pushvalue(L, 1);
-  ilya_pushinteger(L, luaL_ref(L, t));
+  ilya_pushinteger(L, ilyaL_ref(L, t));
   cast_void(level);  /* to avoid warnings */
   ilya_assert(ilya_gettop(L) == level+1);  /* +1 for result */
   return 1;
@@ -1182,7 +1182,7 @@ static int tref (ilya_State *L) {
 static int getref (ilya_State *L) {
   int t = getreftable(L);
   int level = ilya_gettop(L);
-  ilya_rawgeti(L, t, luaL_checkinteger(L, 1));
+  ilya_rawgeti(L, t, ilyaL_checkinteger(L, 1));
   cast_void(level);  /* to avoid warnings */
   ilya_assert(ilya_gettop(L) == level+1);
   return 1;
@@ -1191,7 +1191,7 @@ static int getref (ilya_State *L) {
 static int unref (ilya_State *L) {
   int t = getreftable(L);
   int level = ilya_gettop(L);
-  luaL_unref(L, t, cast_int(luaL_checkinteger(L, 1)));
+  ilyaL_unref(L, t, cast_int(ilyaL_checkinteger(L, 1)));
   cast_void(level);  /* to avoid warnings */
   ilya_assert(ilya_gettop(L) == level);
   return 0;
@@ -1199,8 +1199,8 @@ static int unref (ilya_State *L) {
 
 
 static int upvalue (ilya_State *L) {
-  int n = cast_int(luaL_checkinteger(L, 2));
-  luaL_checktype(L, 1, ILYA_TFUNCTION);
+  int n = cast_int(ilyaL_checkinteger(L, 2));
+  ilyaL_checktype(L, 1, ILYA_TFUNCTION);
   if (ilya_isnone(L, 3)) {
     const char *name = ilya_getupvalue(L, 1, n);
     if (name == NULL) return 0;
@@ -1216,8 +1216,8 @@ static int upvalue (ilya_State *L) {
 
 
 static int newuserdata (ilya_State *L) {
-  size_t size = cast_sizet(luaL_optinteger(L, 1, 0));
-  int nuv = cast_int(luaL_optinteger(L, 2, 0));
+  size_t size = cast_sizet(ilyaL_optinteger(L, 1, 0));
+  int nuv = cast_int(ilyaL_optinteger(L, 2, 0));
   char *p = cast_charp(ilya_newuserdatauv(L, size, nuv));
   while (size--) *p++ = '\0';
   return 1;
@@ -1225,7 +1225,7 @@ static int newuserdata (ilya_State *L) {
 
 
 static int pushuserdata (ilya_State *L) {
-  ilya_Integer u = luaL_checkinteger(L, 1);
+  ilya_Integer u = ilyaL_checkinteger(L, 1);
   ilya_pushlightuserdata(L, cast_voidp(cast_sizet(u)));
   return 1;
 }
@@ -1240,8 +1240,8 @@ static int udataval (ilya_State *L) {
 static int doonnewstack (ilya_State *L) {
   ilya_State *L1 = ilya_newthread(L);
   size_t l;
-  const char *s = luaL_checklstring(L, 1, &l);
-  int status = luaL_loadbuffer(L1, s, l, s);
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  int status = ilyaL_loadbuffer(L1, s, l, s);
   if (status == ILYA_OK)
     status = ilya_pcall(L1, 0, 0, 0);
   ilya_pushinteger(L, status);
@@ -1250,13 +1250,13 @@ static int doonnewstack (ilya_State *L) {
 
 
 static int s2d (ilya_State *L) {
-  ilya_pushnumber(L, cast_num(*cast(const double *, luaL_checkstring(L, 1))));
+  ilya_pushnumber(L, cast_num(*cast(const double *, ilyaL_checkstring(L, 1))));
   return 1;
 }
 
 
 static int d2s (ilya_State *L) {
-  double d = cast(double, luaL_checknumber(L, 1));
+  double d = cast(double, ilyaL_checknumber(L, 1));
   ilya_pushlstring(L, cast_charp(&d), sizeof(d));
   return 1;
 }
@@ -1269,7 +1269,7 @@ static int num2int (ilya_State *L) {
 
 
 static int makeseed (ilya_State *L) {
-  ilya_pushinteger(L, cast(ilya_Integer, luaL_makeseed(L)));
+  ilya_pushinteger(L, cast(ilya_Integer, ilyaL_makeseed(L)));
   return 1;
 }
 
@@ -1290,20 +1290,20 @@ static int newstate (ilya_State *L) {
 
 static ilya_State *getstate (ilya_State *L) {
   ilya_State *L1 = cast(ilya_State *, ilya_touserdata(L, 1));
-  luaL_argcheck(L, L1 != NULL, 1, "state expected");
+  ilyaL_argcheck(L, L1 != NULL, 1, "state expected");
   return L1;
 }
 
 
 static int loadlib (ilya_State *L) {
   ilya_State *L1 = getstate(L);
-  int load = cast_int(luaL_checkinteger(L, 2));
-  int preload = cast_int(luaL_checkinteger(L, 3));
-  luaL_openselectedlibs(L1, load, preload);
-  luaL_requiref(L1, "T", luaB_opentests, 0);
+  int load = cast_int(ilyaL_checkinteger(L, 2));
+  int preload = cast_int(ilyaL_checkinteger(L, 3));
+  ilyaL_openselectedlibs(L1, load, preload);
+  ilyaL_requiref(L1, "T", ilyaB_opentests, 0);
   ilya_assert(ilya_type(L1, -1) == ILYA_TTABLE);
   /* 'requiref' should not reload module already loaded... */
-  luaL_requiref(L1, "T", NULL, 1);  /* seg. fault if it reloads */
+  ilyaL_requiref(L1, "T", NULL, 1);  /* seg. fault if it reloads */
   /* ...but should return the same module */
   ilya_assert(ilya_compare(L1, -1, -2, ILYA_OPEQ));
   return 0;
@@ -1318,10 +1318,10 @@ static int closestate (ilya_State *L) {
 static int doremote (ilya_State *L) {
   ilya_State *L1 = getstate(L);
   size_t lcode;
-  const char *code = luaL_checklstring(L, 2, &lcode);
+  const char *code = ilyaL_checklstring(L, 2, &lcode);
   int status;
   ilya_settop(L1, 0);
-  status = luaL_loadbuffer(L1, code, lcode, code);
+  status = ilyaL_loadbuffer(L1, code, lcode, code);
   if (status == ILYA_OK)
     status = ilya_pcall(L1, 0, ILYA_MULTRET, 0);
   if (status != ILYA_OK) {
@@ -1341,8 +1341,8 @@ static int doremote (ilya_State *L) {
 
 
 static int log2_aux (ilya_State *L) {
-  unsigned int x = (unsigned int)luaL_checkinteger(L, 1);
-  ilya_pushinteger(L, luaO_ceillog2(x));
+  unsigned int x = (unsigned int)ilyaL_checkinteger(L, 1);
+  ilya_pushinteger(L, ilyaO_ceillog2(x));
   return 1;
 }
 
@@ -1367,9 +1367,9 @@ static int checkpanic (ilya_State *L) {
   struct Aux b;
   void *ud;
   ilya_State *L1;
-  const char *code = luaL_checkstring(L, 1);
+  const char *code = ilyaL_checkstring(L, 1);
   ilya_Alloc f = ilya_getallocf(L, &ud);
-  b.paniccode = luaL_optstring(L, 2, "");
+  b.paniccode = ilyaL_optstring(L, 2, "");
   b.L = L;
   L1 = ilya_newstate(f, ud, 0);  /* create new state */
   if (L1 == NULL) {  /* error? */
@@ -1394,7 +1394,7 @@ static int checkpanic (ilya_State *L) {
 
 static int externKstr (ilya_State *L) {
   size_t len;
-  const char *s = luaL_checklstring(L, 1, &len);
+  const char *s = ilyaL_checklstring(L, 1, &len);
   ilya_pushexternalstring(L, s, len, NULL, NULL);
   return 1;
 }
@@ -1407,7 +1407,7 @@ static int externKstr (ilya_State *L) {
 */
 static int externstr (ilya_State *L) {
   size_t len;
-  const char *s = luaL_checklstring(L, 1, &len);
+  const char *s = ilyaL_checklstring(L, 1, &len);
   void *ud;
   ilya_Alloc allocf = ilya_getallocf(L, &ud);  /* get allocation fn */
   /* create the buffer */
@@ -1476,7 +1476,7 @@ static int getnum_aux (ilya_State *L, ilya_State *L1, const char **pc) {
     (*pc)++;
   }
   if (!lisdigit(cast_uchar(**pc)))
-    luaL_error(L, "number expected (%s)", *pc);
+    ilyaL_error(L, "number expected (%s)", *pc);
   while (lisdigit(cast_uchar(**pc))) res = res*10 + (*(*pc)++) - '0';
   return sig*res;
 }
@@ -1487,7 +1487,7 @@ static const char *getstring_aux (ilya_State *L, char *buff, const char **pc) {
   if (**pc == '"' || **pc == '\'') {  /* quoted string? */
     int quote = *(*pc)++;
     while (**pc != quote) {
-      if (**pc == '\0') luaL_error(L, "unfinished string in C script");
+      if (**pc == '\0') ilyaL_error(L, "unfinished string in C script");
       buff[i++] = *(*pc)++;
     }
     (*pc)++;
@@ -1556,7 +1556,7 @@ static const char ops[] = "+-*%^/\\&|~<>_!";
 static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
   char buff[300];
   int status = 0;
-  if (pc == NULL) return luaL_error(L, "attempt to runC null script");
+  if (pc == NULL) return ilyaL_error(L, "attempt to runC null script");
   for (;;) {
     const char *inst = getstring;
     if EQ("") return 0;
@@ -1589,8 +1589,8 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
       int sz = getnum;
       const char *msg = getstring;
       if (*msg == '\0')
-        msg = NULL;  /* to test 'luaL_checkstack' with no message */
-      luaL_checkstack(L1, sz, msg);
+        msg = NULL;  /* to test 'ilyaL_checkstack' with no message */
+      ilyaL_checkstack(L1, sz, msg);
     }
     else if EQ("rawcheckstack") {
       int sz = getnum;
@@ -1636,7 +1636,7 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
     }
     else if EQ("gsub") {
       int a = getnum; int b = getnum; int c = getnum;
-      luaL_gsub(L1, ilya_tostring(L1, a),
+      ilyaL_gsub(L1, ilya_tostring(L1, a),
                     ilya_tostring(L1, b),
                     ilya_tostring(L1, c));
     }
@@ -1674,20 +1674,20 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
       ilya_len(L1, getindex);
     }
     else if EQ("Llen") {
-      ilya_pushinteger(L1, luaL_len(L1, getindex));
+      ilya_pushinteger(L1, ilyaL_len(L1, getindex));
     }
     else if EQ("loadfile") {
-      luaL_loadfile(L1, luaL_checkstring(L1, getnum));
+      ilyaL_loadfile(L1, ilyaL_checkstring(L1, getnum));
     }
     else if EQ("loadstring") {
       size_t slen;
-      const char *s = luaL_checklstring(L1, getnum, &slen);
+      const char *s = ilyaL_checklstring(L1, getnum, &slen);
       const char *name = getstring;
       const char *mode = getstring;
-      luaL_loadbufferx(L1, s, slen, name, mode);
+      ilyaL_loadbufferx(L1, s, slen, name, mode);
     }
     else if EQ("newmetatable") {
-      ilya_pushboolean(L1, luaL_newmetatable(L1, getstring));
+      ilya_pushboolean(L1, ilyaL_newmetatable(L1, getstring));
     }
     else if EQ("newtable") {
       ilya_newtable(L1);
@@ -1815,7 +1815,7 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
     else if EQ("traceback") {
       const char *msg = getstring;
       int level = getnum;
-      luaL_traceback(L1, L1, msg, level);
+      ilyaL_traceback(L1, L1, msg, level);
     }
     else if EQ("threadstatus") {
       ilya_pushstring(L1, statcodes[ilya_status(L1)]);
@@ -1876,7 +1876,7 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
     }
     else if EQ("testudata") {
       int i = getindex;
-      ilya_pushboolean(L1, luaL_testudata(L1, i, getstring) != NULL);
+      ilya_pushboolean(L1, ilyaL_testudata(L1, i, getstring) != NULL);
     }
     else if EQ("error") {
       ilya_error(L1);
@@ -1889,7 +1889,7 @@ static int runC (ilya_State *L, ilya_State *L1, const char *pc) {
 static struct X { int x; } x;
       throw x;
 #else
-      luaL_error(L1, "C++");
+      ilyaL_error(L1, "C++");
 #endif
       break;
     }
@@ -1918,10 +1918,10 @@ static struct X { int x; } x;
       ilya_longassert((s == NULL && s1 == NULL) || strcmp(s, s1) == 0);
     }
     else if EQ("Ltolstring") {
-      luaL_tolstring(L1, getindex, NULL);
+      ilyaL_tolstring(L1, getindex, NULL);
     }
     else if EQ("type") {
-      ilya_pushstring(L1, luaL_typename(L1, getnum));
+      ilya_pushstring(L1, ilyaL_typename(L1, getnum));
     }
     else if EQ("xmove") {
       int f = getindex;
@@ -1951,9 +1951,9 @@ static struct X { int x; } x;
     }
     else if EQ("argerror") {
       int arg = getnum;
-      luaL_argerror(L1, arg, getstring);
+      ilyaL_argerror(L1, arg, getstring);
     }
-    else luaL_error(L, "unknown instruction %s", buff);
+    else ilyaL_error(L, "unknown instruction %s", buff);
   }
   return 0;
 }
@@ -1964,15 +1964,15 @@ static int testC (ilya_State *L) {
   const char *pc;
   if (ilya_isuserdata(L, 1)) {
     L1 = getstate(L);
-    pc = luaL_checkstring(L, 2);
+    pc = ilyaL_checkstring(L, 2);
   }
   else if (ilya_isthread(L, 1)) {
     L1 = ilya_tothread(L, 1);
-    pc = luaL_checkstring(L, 2);
+    pc = ilyaL_checkstring(L, 2);
   }
   else {
     L1 = L;
-    pc = luaL_checkstring(L, 1);
+    pc = ilyaL_checkstring(L, 1);
   }
   return runC(L, L1, pc);
 }
@@ -1993,7 +1993,7 @@ static int Cfunck (ilya_State *L, int status, ilya_KContext ctx) {
 
 
 static int makeCfunc (ilya_State *L) {
-  luaL_checkstring(L, 1);
+  ilyaL_checkstring(L, 1);
   ilya_pushcclosure(L, Cfunc, ilya_gettop(L));
   return 1;
 }
@@ -2051,9 +2051,9 @@ static int sethook (ilya_State *L) {
   if (ilya_isnoneornil(L, 1))
     ilya_sethook(L, NULL, 0, 0);  /* turn off hooks */
   else {
-    const char *scpt = luaL_checkstring(L, 1);
-    const char *smask = luaL_checkstring(L, 2);
-    int count = cast_int(luaL_optinteger(L, 3, 0));
+    const char *scpt = ilyaL_checkstring(L, 1);
+    const char *smask = ilyaL_checkstring(L, 2);
+    int count = cast_int(ilyaL_optinteger(L, 3, 0));
     int mask = 0;
     if (strchr(smask, 'c')) mask |= ILYA_MASKCALL;
     if (strchr(smask, 'r')) mask |= ILYA_MASKRET;
@@ -2068,7 +2068,7 @@ static int sethook (ilya_State *L) {
 static int coresume (ilya_State *L) {
   int status, nres;
   ilya_State *co = ilya_tothread(L, 1);
-  luaL_argcheck(L, co, 1, "coroutine expected");
+  ilyaL_argcheck(L, co, 1, "coroutine expected");
   status = ilya_resume(co, L, 0, &nres);
   if (status != ILYA_OK && status != ILYA_YIELD) {
     ilya_pushboolean(L, 0);
@@ -2085,7 +2085,7 @@ static int coresume (ilya_State *L) {
 
 
 
-static const struct luaL_Reg tests_funcs[] = {
+static const struct ilyaL_Reg tests_funcs[] = {
   {"checkmemory", ilya_checkmemory},
   {"closestate", closestate},
   {"d2s", d2s},
@@ -2143,7 +2143,7 @@ static void checkfinalmem (void) {
 }
 
 
-int luaB_opentests (ilya_State *L) {
+int ilyaB_opentests (ilya_State *L) {
   void *ud;
   ilya_Alloc f = ilya_getallocf(L, &ud);
   ilya_atpanic(L, &tpanic);
@@ -2154,7 +2154,7 @@ int luaB_opentests (ilya_State *L) {
   atexit(checkfinalmem);
   ilya_assert(f == debug_realloc && ud == cast_voidp(&l_memcontrol));
   ilya_setallocf(L, f, ud);  /* exercise this fn */
-  luaL_newlib(L, tests_funcs);
+  ilyaL_newlib(L, tests_funcs);
   return 1;
 }
 

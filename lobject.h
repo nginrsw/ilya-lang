@@ -479,7 +479,7 @@ typedef struct TString {
 /* Ensures that addresses after this type are always fully aligned. */
 typedef union UValue {
   TValue uv;
-  LUAI_MAXALIGN;  /* ensures maximum alignment for udata bytes */
+  ILYAI_MAXALIGN;  /* ensures maximum alignment for udata bytes */
 } UValue;
 
 
@@ -511,7 +511,7 @@ typedef struct Udata0 {
   unsigned short nuvalue;  /* number of user values */
   size_t len;  /* number of bytes */
   struct Table *metatable;
-  union {LUAI_MAXALIGN;} bindata;
+  union {ILYAI_MAXALIGN;} bindata;
 } Udata0;
 
 
@@ -819,26 +819,26 @@ typedef struct Table {
 #define sizenode(t)	(twoto((t)->lsizenode))
 
 
-/* size of buffer for 'luaO_utf8esc' fn */
+/* size of buffer for 'ilyaO_utf8esc' fn */
 #define UTF8BUFFSZ	8
 
-LUAI_FUNC int luaO_utf8esc (char *buff, unsigned long x);
-LUAI_FUNC lu_byte luaO_ceillog2 (unsigned int x);
-LUAI_FUNC lu_byte luaO_codeparam (unsigned int p);
-LUAI_FUNC l_mem luaO_applyparam (lu_byte p, l_mem x);
+ILYAI_FUNC int ilyaO_utf8esc (char *buff, unsigned long x);
+ILYAI_FUNC lu_byte ilyaO_ceillog2 (unsigned int x);
+ILYAI_FUNC lu_byte ilyaO_codeparam (unsigned int p);
+ILYAI_FUNC l_mem ilyaO_applyparam (lu_byte p, l_mem x);
 
-LUAI_FUNC int luaO_rawarith (ilya_State *L, int op, const TValue *p1,
+ILYAI_FUNC int ilyaO_rawarith (ilya_State *L, int op, const TValue *p1,
                              const TValue *p2, TValue *res);
-LUAI_FUNC void luaO_arith (ilya_State *L, int op, const TValue *p1,
+ILYAI_FUNC void ilyaO_arith (ilya_State *L, int op, const TValue *p1,
                            const TValue *p2, StkId res);
-LUAI_FUNC size_t luaO_str2num (const char *s, TValue *o);
-LUAI_FUNC unsigned luaO_tostringbuff (const TValue *obj, char *buff);
-LUAI_FUNC lu_byte luaO_hexavalue (int c);
-LUAI_FUNC void luaO_tostring (ilya_State *L, TValue *obj);
-LUAI_FUNC const char *luaO_pushvfstring (ilya_State *L, const char *fmt,
+ILYAI_FUNC size_t ilyaO_str2num (const char *s, TValue *o);
+ILYAI_FUNC unsigned ilyaO_tostringbuff (const TValue *obj, char *buff);
+ILYAI_FUNC lu_byte ilyaO_hexavalue (int c);
+ILYAI_FUNC void ilyaO_tostring (ilya_State *L, TValue *obj);
+ILYAI_FUNC const char *ilyaO_pushvfstring (ilya_State *L, const char *fmt,
                                                        va_list argp);
-LUAI_FUNC const char *luaO_pushfstring (ilya_State *L, const char *fmt, ...);
-LUAI_FUNC void luaO_chunkid (char *out, const char *source, size_t srclen);
+ILYAI_FUNC const char *ilyaO_pushfstring (ilya_State *L, const char *fmt, ...);
+ILYAI_FUNC void ilyaO_chunkid (char *out, const char *source, size_t srclen);
 
 
 #endif

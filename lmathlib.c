@@ -34,38 +34,38 @@ static int math_abs (ilya_State *L) {
     ilya_pushinteger(L, n);
   }
   else
-    ilya_pushnumber(L, l_mathop(fabs)(luaL_checknumber(L, 1)));
+    ilya_pushnumber(L, l_mathop(fabs)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_sin (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(sin)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(sin)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_cos (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(cos)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(cos)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_tan (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(tan)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(tan)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_asin (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(asin)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(asin)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_acos (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(acos)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(acos)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_atan (ilya_State *L) {
-  ilya_Number y = luaL_checknumber(L, 1);
-  ilya_Number x = luaL_optnumber(L, 2, 1);
+  ilya_Number y = ilyaL_checknumber(L, 1);
+  ilya_Number x = ilyaL_optnumber(L, 2, 1);
   ilya_pushnumber(L, l_mathop(atan2)(y, x));
   return 1;
 }
@@ -77,8 +77,8 @@ static int math_toint (ilya_State *L) {
   if (l_likely(valid))
     ilya_pushinteger(L, n);
   else {
-    luaL_checkany(L, 1);
-    luaL_pushfail(L);  /* value is not convertible to integer */
+    ilyaL_checkany(L, 1);
+    ilyaL_pushfail(L);  /* value is not convertible to integer */
   }
   return 1;
 }
@@ -97,7 +97,7 @@ static int math_floor (ilya_State *L) {
   if (ilya_isinteger(L, 1))
     ilya_settop(L, 1);  /* integer is its own floor */
   else {
-    ilya_Number d = l_mathop(floor)(luaL_checknumber(L, 1));
+    ilya_Number d = l_mathop(floor)(ilyaL_checknumber(L, 1));
     pushnumint(L, d);
   }
   return 1;
@@ -108,7 +108,7 @@ static int math_ceil (ilya_State *L) {
   if (ilya_isinteger(L, 1))
     ilya_settop(L, 1);  /* integer is its own ceiling */
   else {
-    ilya_Number d = l_mathop(ceil)(luaL_checknumber(L, 1));
+    ilya_Number d = l_mathop(ceil)(ilyaL_checknumber(L, 1));
     pushnumint(L, d);
   }
   return 1;
@@ -119,15 +119,15 @@ static int math_fmod (ilya_State *L) {
   if (ilya_isinteger(L, 1) && ilya_isinteger(L, 2)) {
     ilya_Integer d = ilya_tointeger(L, 2);
     if ((ilya_Unsigned)d + 1u <= 1u) {  /* special cases: -1 or 0 */
-      luaL_argcheck(L, d != 0, 2, "zero");
+      ilyaL_argcheck(L, d != 0, 2, "zero");
       ilya_pushinteger(L, 0);  /* avoid overflow with 0x80000... / -1 */
     }
     else
       ilya_pushinteger(L, ilya_tointeger(L, 1) % d);
   }
   else
-    ilya_pushnumber(L, l_mathop(fmod)(luaL_checknumber(L, 1),
-                                     luaL_checknumber(L, 2)));
+    ilya_pushnumber(L, l_mathop(fmod)(ilyaL_checknumber(L, 1),
+                                     ilyaL_checknumber(L, 2)));
   return 1;
 }
 
@@ -143,7 +143,7 @@ static int math_modf (ilya_State *L) {
     ilya_pushnumber(L, 0);  /* no fractional part */
   }
   else {
-    ilya_Number n = luaL_checknumber(L, 1);
+    ilya_Number n = ilyaL_checknumber(L, 1);
     /* integer part (rounds toward zero) */
     ilya_Number ip = (n < 0) ? l_mathop(ceil)(n) : l_mathop(floor)(n);
     pushnumint(L, ip);
@@ -155,25 +155,25 @@ static int math_modf (ilya_State *L) {
 
 
 static int math_sqrt (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(sqrt)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(sqrt)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 
 static int math_ult (ilya_State *L) {
-  ilya_Integer a = luaL_checkinteger(L, 1);
-  ilya_Integer b = luaL_checkinteger(L, 2);
+  ilya_Integer a = ilyaL_checkinteger(L, 1);
+  ilya_Integer b = ilyaL_checkinteger(L, 2);
   ilya_pushboolean(L, (ilya_Unsigned)a < (ilya_Unsigned)b);
   return 1;
 }
 
 static int math_log (ilya_State *L) {
-  ilya_Number x = luaL_checknumber(L, 1);
+  ilya_Number x = ilyaL_checknumber(L, 1);
   ilya_Number res;
   if (ilya_isnoneornil(L, 2))
     res = l_mathop(log)(x);
   else {
-    ilya_Number base = luaL_checknumber(L, 2);
+    ilya_Number base = ilyaL_checknumber(L, 2);
 #if !defined(ILYA_USE_C89)
     if (base == l_mathop(2.0))
       res = l_mathop(log2)(x);
@@ -189,17 +189,17 @@ static int math_log (ilya_State *L) {
 }
 
 static int math_exp (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(exp)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(exp)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_deg (ilya_State *L) {
-  ilya_pushnumber(L, luaL_checknumber(L, 1) * (l_mathop(180.0) / PI));
+  ilya_pushnumber(L, ilyaL_checknumber(L, 1) * (l_mathop(180.0) / PI));
   return 1;
 }
 
 static int math_rad (ilya_State *L) {
-  ilya_pushnumber(L, luaL_checknumber(L, 1) * (PI / l_mathop(180.0)));
+  ilya_pushnumber(L, ilyaL_checknumber(L, 1) * (PI / l_mathop(180.0)));
   return 1;
 }
 
@@ -208,7 +208,7 @@ static int math_min (ilya_State *L) {
   int n = ilya_gettop(L);  /* number of arguments */
   int imin = 1;  /* index of current minimum value */
   int i;
-  luaL_argcheck(L, n >= 1, 1, "value expected");
+  ilyaL_argcheck(L, n >= 1, 1, "value expected");
   for (i = 2; i <= n; i++) {
     if (ilya_compare(L, i, imin, ILYA_OPLT))
       imin = i;
@@ -222,7 +222,7 @@ static int math_max (ilya_State *L) {
   int n = ilya_gettop(L);  /* number of arguments */
   int imax = 1;  /* index of current maximum value */
   int i;
-  luaL_argcheck(L, n >= 1, 1, "value expected");
+  ilyaL_argcheck(L, n >= 1, 1, "value expected");
   for (i = 2; i <= n; i++) {
     if (ilya_compare(L, imax, i, ILYA_OPLT))
       imax = i;
@@ -236,8 +236,8 @@ static int math_type (ilya_State *L) {
   if (ilya_type(L, 1) == ILYA_TNUMBER)
     ilya_pushstring(L, (ilya_isinteger(L, 1)) ? "integer" : "float");
   else {
-    luaL_checkany(L, 1);
-    luaL_pushfail(L);
+    ilyaL_checkany(L, 1);
+    ilyaL_pushfail(L);
   }
   return 1;
 }
@@ -576,7 +576,7 @@ static int math_random (ilya_State *L) {
     }
     case 1: {  /* only upper limit */
       low = 1;
-      up = luaL_checkinteger(L, 1);
+      up = ilyaL_checkinteger(L, 1);
       if (up == 0) {  /* single 0 as argument? */
         ilya_pushinteger(L, l_castU2S(I2UInt(rv)));  /* full random integer */
         return 1;
@@ -584,14 +584,14 @@ static int math_random (ilya_State *L) {
       break;
     }
     case 2: {  /* lower and upper limits */
-      low = luaL_checkinteger(L, 1);
-      up = luaL_checkinteger(L, 2);
+      low = ilyaL_checkinteger(L, 1);
+      up = ilyaL_checkinteger(L, 2);
       break;
     }
-    default: return luaL_error(L, "wrong number of arguments");
+    default: return ilyaL_error(L, "wrong number of arguments");
   }
   /* random integer in the interval [low, up] */
-  luaL_argcheck(L, low <= up, 1, "interval is empty");
+  ilyaL_argcheck(L, low <= up, 1, "interval is empty");
   /* project random integer into the interval [0, up - low] */
   p = project(I2UInt(rv), (ilya_Unsigned)up - (ilya_Unsigned)low, state);
   ilya_pushinteger(L, l_castU2S(p) + low);
@@ -617,19 +617,19 @@ static int math_randomseed (ilya_State *L) {
   RanState *state = (RanState *)ilya_touserdata(L, ilya_upvalueindex(1));
   ilya_Unsigned n1, n2;
   if (ilya_isnone(L, 1)) {
-    n1 = luaL_makeseed(L);  /* "random" seed */
+    n1 = ilyaL_makeseed(L);  /* "random" seed */
     n2 = I2UInt(nextrand(state->s));  /* in case seed is not that random... */
   }
   else {
-    n1 = l_castS2U(luaL_checkinteger(L, 1));
-    n2 = l_castS2U(luaL_optinteger(L, 2, 0));
+    n1 = l_castS2U(ilyaL_checkinteger(L, 1));
+    n2 = l_castS2U(ilyaL_optinteger(L, 2, 0));
   }
   setseed(L, state->s, n1, n2);
   return 2;  /* return seeds */
 }
 
 
-static const luaL_Reg randfuncs[] = {
+static const ilyaL_Reg randfuncs[] = {
   {"random", math_random},
   {"randomseed", math_randomseed},
   {NULL, NULL}
@@ -641,9 +641,9 @@ static const luaL_Reg randfuncs[] = {
 */
 static void setrandfunc (ilya_State *L) {
   RanState *state = (RanState *)ilya_newuserdatauv(L, sizeof(RanState), 0);
-  setseed(L, state->s, luaL_makeseed(L), 0);  /* initialize with random seed */
+  setseed(L, state->s, ilyaL_makeseed(L), 0);  /* initialize with random seed */
   ilya_pop(L, 2);  /* remove pushed seeds */
-  luaL_setfuncs(L, randfuncs, 1);
+  ilyaL_setfuncs(L, randfuncs, 1);
 }
 
 /* }================================================================== */
@@ -657,43 +657,43 @@ static void setrandfunc (ilya_State *L) {
 #if defined(ILYA_COMPAT_MATHLIB)
 
 static int math_cosh (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(cosh)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(cosh)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_sinh (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(sinh)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(sinh)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_tanh (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(tanh)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(tanh)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
 static int math_pow (ilya_State *L) {
-  ilya_Number x = luaL_checknumber(L, 1);
-  ilya_Number y = luaL_checknumber(L, 2);
+  ilya_Number x = ilyaL_checknumber(L, 1);
+  ilya_Number y = ilyaL_checknumber(L, 2);
   ilya_pushnumber(L, l_mathop(pow)(x, y));
   return 1;
 }
 
 static int math_frexp (ilya_State *L) {
   int e;
-  ilya_pushnumber(L, l_mathop(frexp)(luaL_checknumber(L, 1), &e));
+  ilya_pushnumber(L, l_mathop(frexp)(ilyaL_checknumber(L, 1), &e));
   ilya_pushinteger(L, e);
   return 2;
 }
 
 static int math_ldexp (ilya_State *L) {
-  ilya_Number x = luaL_checknumber(L, 1);
-  int ep = (int)luaL_checkinteger(L, 2);
+  ilya_Number x = ilyaL_checknumber(L, 1);
+  int ep = (int)ilyaL_checkinteger(L, 2);
   ilya_pushnumber(L, l_mathop(ldexp)(x, ep));
   return 1;
 }
 
 static int math_log10 (ilya_State *L) {
-  ilya_pushnumber(L, l_mathop(log10)(luaL_checknumber(L, 1)));
+  ilya_pushnumber(L, l_mathop(log10)(ilyaL_checknumber(L, 1)));
   return 1;
 }
 
@@ -702,7 +702,7 @@ static int math_log10 (ilya_State *L) {
 
 
 
-static const luaL_Reg mathlib[] = {
+static const ilyaL_Reg mathlib[] = {
   {"abs",   math_abs},
   {"acos",  math_acos},
   {"asin",  math_asin},
@@ -748,8 +748,8 @@ static const luaL_Reg mathlib[] = {
 /*
 ** Open math library
 */
-LUAMOD_API int luaopen_math (ilya_State *L) {
-  luaL_newlib(L, mathlib);
+ILYAMOD_API int ilyaopen_math (ilya_State *L) {
+  ilyaL_newlib(L, mathlib);
   ilya_pushnumber(L, PI);
   ilya_setfield(L, -2, "pi");
   ilya_pushnumber(L, (ilya_Number)HUGE_VAL);

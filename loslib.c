@@ -58,13 +58,13 @@
 
 #define l_timet			ilya_Integer
 #define l_pushtime(L,t)		ilya_pushinteger(L,(ilya_Integer)(t))
-#define l_gettime(L,arg)	luaL_checkinteger(L, arg)
+#define l_gettime(L,arg)	ilyaL_checkinteger(L, arg)
 
 #else				/* }{ */
 
 #define l_timet			ilya_Number
 #define l_pushtime(L,t)		ilya_pushnumber(L,(ilya_Number)(t))
-#define l_gettime(L,arg)	luaL_checknumber(L, arg)
+#define l_gettime(L,arg)	ilyaL_checknumber(L, arg)
 
 #endif				/* } */
 
@@ -141,12 +141,12 @@
 
 
 static int os_execute (ilya_State *L) {
-  const char *cmd = luaL_optstring(L, 1, NULL);
+  const char *cmd = ilyaL_optstring(L, 1, NULL);
   int stat;
   errno = 0;
   stat = l_system(cmd);
   if (cmd != NULL)
-    return luaL_execresult(L, stat);
+    return ilyaL_execresult(L, stat);
   else {
     ilya_pushboolean(L, stat);  /* true if there is a shell */
     return 1;
@@ -155,17 +155,17 @@ static int os_execute (ilya_State *L) {
 
 
 static int os_remove (ilya_State *L) {
-  const char *filename = luaL_checkstring(L, 1);
+  const char *filename = ilyaL_checkstring(L, 1);
   errno = 0;
-  return luaL_fileresult(L, remove(filename) == 0, filename);
+  return ilyaL_fileresult(L, remove(filename) == 0, filename);
 }
 
 
 static int os_rename (ilya_State *L) {
-  const char *fromname = luaL_checkstring(L, 1);
-  const char *toname = luaL_checkstring(L, 2);
+  const char *fromname = ilyaL_checkstring(L, 1);
+  const char *toname = ilyaL_checkstring(L, 2);
   errno = 0;
-  return luaL_fileresult(L, rename(fromname, toname) == 0, NULL);
+  return ilyaL_fileresult(L, rename(fromname, toname) == 0, NULL);
 }
 
 
@@ -174,14 +174,14 @@ static int os_tmpname (ilya_State *L) {
   int err;
   ilya_tmpnam(buff, err);
   if (l_unlikely(err))
-    return luaL_error(L, "unable to generate a unique filename");
+    return ilyaL_error(L, "unable to generate a unique filename");
   ilya_pushstring(L, buff);
   return 1;
 }
 
 
 static int os_getenv (ilya_State *L) {
-  ilya_pushstring(L, getenv(luaL_checkstring(L, 1)));  /* if NULL push nil */
+  ilya_pushstring(L, getenv(ilyaL_checkstring(L, 1)));  /* if NULL push nil */
   return 1;
 }
 
@@ -212,7 +212,7 @@ static int os_clock (ilya_State *L) {
 static void setfield (ilya_State *L, const char *key, int value, int delta) {
   #if (defined(ILYA_NUMTIME) && ILYA_MAXINTEGER <= INT_MAX)
     if (l_unlikely(value > ILYA_MAXINTEGER - delta))
-      luaL_error(L, "field '%s' is out-of-bound", key);
+      ilyaL_error(L, "field '%s' is out-of-bound", key);
   #endif
   ilya_pushinteger(L, (ilya_Integer)value + delta);
   ilya_setfield(L, -2, key);
@@ -257,14 +257,14 @@ static int getfield (ilya_State *L, const char *key, int d, int delta) {
   ilya_Integer res = ilya_tointegerx(L, -1, &isnum);
   if (!isnum) {  /* field is not an integer? */
     if (l_unlikely(t != ILYA_TNIL))  /* some other value? */
-      return luaL_error(L, "field '%s' is not an integer", key);
+      return ilyaL_error(L, "field '%s' is not an integer", key);
     else if (l_unlikely(d < 0))  /* absent field; no default? */
-      return luaL_error(L, "field '%s' missing in date table", key);
+      return ilyaL_error(L, "field '%s' missing in date table", key);
     res = d;
   }
   else {
     if (!(res >= 0 ? res - delta <= INT_MAX : INT_MIN + delta <= res))
-      return luaL_error(L, "field '%s' is out-of-bound", key);
+      return ilyaL_error(L, "field '%s' is out-of-bound", key);
     res -= delta;
   }
   ilya_pop(L, 1);
@@ -285,7 +285,7 @@ static const char *checkoption (ilya_State *L, const char *conv,
       return conv + oplen;  /* return next item */
     }
   }
-  luaL_argerror(L, 1,
+  ilyaL_argerror(L, 1,
     ilya_pushfstring(L, "invalid conversion specifier '%%%s'", conv));
   return conv;  /* to avoid warnings */
 }
@@ -293,7 +293,7 @@ static const char *checkoption (ilya_State *L, const char *conv,
 
 static time_t l_checktime (ilya_State *L, int arg) {
   l_timet t = l_gettime(L, arg);
-  luaL_argcheck(L, (time_t)t == t, arg, "time out-of-bounds");
+  ilyaL_argcheck(L, (time_t)t == t, arg, "time out-of-bounds");
   return (time_t)t;
 }
 
@@ -304,8 +304,8 @@ static time_t l_checktime (ilya_State *L, int arg) {
 
 static int os_date (ilya_State *L) {
   size_t slen;
-  const char *s = luaL_optlstring(L, 1, "%c", &slen);
-  time_t t = luaL_opt(L, l_checktime, 2, time(NULL));
+  const char *s = ilyaL_optlstring(L, 1, "%c", &slen);
+  time_t t = ilyaL_opt(L, l_checktime, 2, time(NULL));
   const char *se = s + slen;  /* 's' end */
   struct tm tmr, *stm;
   if (*s == '!') {  /* UTC? */
@@ -315,7 +315,7 @@ static int os_date (ilya_State *L) {
   else
     stm = l_localtime(&t, &tmr);
   if (stm == NULL)  /* invalid date? */
-    return luaL_error(L,
+    return ilyaL_error(L,
                  "date result cannot be represented in this installation");
   if (strcmp(s, "*t") == 0) {
     ilya_createtable(L, 0, 9);  /* 9 = number of fields */
@@ -323,22 +323,22 @@ static int os_date (ilya_State *L) {
   }
   else {
     char cc[4];  /* buffer for individual conversion specifiers */
-    luaL_Buffer b;
+    ilyaL_Buffer b;
     cc[0] = '%';
-    luaL_buffinit(L, &b);
+    ilyaL_buffinit(L, &b);
     while (s < se) {
       if (*s != '%')  /* not a conversion specifier? */
-        luaL_addchar(&b, *s++);
+        ilyaL_addchar(&b, *s++);
       else {
         size_t reslen;
-        char *buff = luaL_prepbuffsize(&b, SIZETIMEFMT);
+        char *buff = ilyaL_prepbuffsize(&b, SIZETIMEFMT);
         s++;  /* skip '%' */
         s = checkoption(L, s, se - s, cc + 1);  /* copy specifier to 'cc' */
         reslen = strftime(buff, SIZETIMEFMT, cc, stm);
-        luaL_addsize(&b, reslen);
+        ilyaL_addsize(&b, reslen);
       }
     }
-    luaL_pushresult(&b);
+    ilyaL_pushresult(&b);
   }
   return 1;
 }
@@ -350,7 +350,7 @@ static int os_time (ilya_State *L) {
     t = time(NULL);  /* get current time */
   else {
     struct tm ts;
-    luaL_checktype(L, 1, ILYA_TTABLE);
+    ilyaL_checktype(L, 1, ILYA_TTABLE);
     ilya_settop(L, 1);  /* make sure table is at the top */
     ts.tm_year = getfield(L, "year", -1, 1900);
     ts.tm_mon = getfield(L, "month", -1, 1);
@@ -363,7 +363,7 @@ static int os_time (ilya_State *L) {
     setallfields(L, &ts);  /* update fields with normalized values */
   }
   if (t != (time_t)(l_timet)t || t == (time_t)(-1))
-    return luaL_error(L,
+    return ilyaL_error(L,
                   "time result cannot be represented in this installation");
   l_pushtime(L, t);
   return 1;
@@ -385,8 +385,8 @@ static int os_setlocale (ilya_State *L) {
                       LC_NUMERIC, LC_TIME};
   static const char *const catnames[] = {"all", "collate", "ctype", "monetary",
      "numeric", "time", NULL};
-  const char *l = luaL_optstring(L, 1, NULL);
-  int op = luaL_checkoption(L, 2, "all", catnames);
+  const char *l = ilyaL_optstring(L, 1, NULL);
+  int op = ilyaL_checkoption(L, 2, "all", catnames);
   ilya_pushstring(L, setlocale(cat[op], l));
   return 1;
 }
@@ -397,7 +397,7 @@ static int os_exit (ilya_State *L) {
   if (ilya_isboolean(L, 1))
     status = (ilya_toboolean(L, 1) ? EXIT_SUCCESS : EXIT_FAILURE);
   else
-    status = (int)luaL_optinteger(L, 1, EXIT_SUCCESS);
+    status = (int)ilyaL_optinteger(L, 1, EXIT_SUCCESS);
   if (ilya_toboolean(L, 2))
     ilya_close(L);
   if (L) exit(status);  /* 'if' to avoid warnings for unreachable 'return' */
@@ -405,7 +405,7 @@ static int os_exit (ilya_State *L) {
 }
 
 
-static const luaL_Reg syslib[] = {
+static const ilyaL_Reg syslib[] = {
   {"clock",     os_clock},
   {"date",      os_date},
   {"difftime",  os_difftime},
@@ -424,8 +424,8 @@ static const luaL_Reg syslib[] = {
 
 
 
-LUAMOD_API int luaopen_os (ilya_State *L) {
-  luaL_newlib(L, syslib);
+ILYAMOD_API int ilyaopen_os (ilya_State *L) {
+  ilyaL_newlib(L, syslib);
   return 1;
 }
 

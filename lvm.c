@@ -96,7 +96,7 @@ static int l_strton (const TValue *obj, TValue *result) {
     TString *st = tsvalue(obj);
     size_t stlen;
     const char *s = getlstr(st, stlen);
-    return (luaO_str2num(s, result) == stlen + 1);
+    return (ilyaO_str2num(s, result) == stlen + 1);
   }
 }
 
@@ -105,14 +105,14 @@ static int l_strton (const TValue *obj, TValue *result) {
 ** Try to convert a value to a float. The float case is already handled
 ** by the macro 'tonumber'.
 */
-int luaV_tonumber_ (const TValue *obj, ilya_Number *n) {
+int ilyaV_tonumber_ (const TValue *obj, ilya_Number *n) {
   TValue v;
   if (ttisinteger(obj)) {
     *n = cast_num(ivalue(obj));
     return 1;
   }
   else if (l_strton(obj, &v)) {  /* string coercible to number? */
-    *n = nvalue(&v);  /* convert result of 'luaO_str2num' to a float */
+    *n = nvalue(&v);  /* convert result of 'ilyaO_str2num' to a float */
     return 1;
   }
   else
@@ -123,7 +123,7 @@ int luaV_tonumber_ (const TValue *obj, ilya_Number *n) {
 /*
 ** try to convert a float to an integer, rounding according to 'mode'.
 */
-int luaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode) {
+int ilyaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode) {
   ilya_Number f = l_floor(n);
   if (n != f) {  /* not an integral value? */
     if (mode == F2Ieq) return 0;  /* fails if mode demands integral value */
@@ -139,9 +139,9 @@ int luaV_flttointeger (ilya_Number n, ilya_Integer *p, F2Imod mode) {
 ** without string coercion.
 ** ("Fast track" handled by macro 'tointegerns'.)
 */
-int luaV_tointegerns (const TValue *obj, ilya_Integer *p, F2Imod mode) {
+int ilyaV_tointegerns (const TValue *obj, ilya_Integer *p, F2Imod mode) {
   if (ttisfloat(obj))
-    return luaV_flttointeger(fltvalue(obj), p, mode);
+    return ilyaV_flttointeger(fltvalue(obj), p, mode);
   else if (ttisinteger(obj)) {
     *p = ivalue(obj);
     return 1;
@@ -154,11 +154,11 @@ int luaV_tointegerns (const TValue *obj, ilya_Integer *p, F2Imod mode) {
 /*
 ** try to convert a value to an integer.
 */
-int luaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode) {
+int ilyaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode) {
   TValue v;
   if (l_strton(obj, &v))  /* does 'obj' point to a numerical string? */
     obj = &v;  /* change it to point to its corresponding number */
-  return luaV_tointegerns(obj, p, mode);
+  return ilyaV_tointegerns(obj, p, mode);
 }
 
 
@@ -180,13 +180,13 @@ int luaV_tointeger (const TValue *obj, ilya_Integer *p, F2Imod mode) {
 */
 static int forlimit (ilya_State *L, ilya_Integer init, const TValue *lim,
                                    ilya_Integer *p, ilya_Integer step) {
-  if (!luaV_tointeger(lim, p, (step < 0 ? F2Iceil : F2Ifloor))) {
+  if (!ilyaV_tointeger(lim, p, (step < 0 ? F2Iceil : F2Ifloor))) {
     /* not coercible to in integer */
     ilya_Number flim;  /* try to convert to float */
     if (!tonumber(lim, &flim)) /* cannot convert to float? */
-      luaG_forerror(L, lim, "limit");
+      ilyaG_forerror(L, lim, "limit");
     /* else 'flim' is a float out of integer bounds */
-    if (luai_numlt(0, flim)) {  /* if it is positive, it is too large */
+    if (ilyai_numlt(0, flim)) {  /* if it is positive, it is too large */
       if (step < 0) return 1;  /* initial value must be less than it */
       *p = ILYA_MAXINTEGER;  /* truncate */
     }
@@ -220,7 +220,7 @@ static int forprep (ilya_State *L, StkId ra) {
     ilya_Integer step = ivalue(pstep);
     ilya_Integer limit;
     if (step == 0)
-      luaG_runerror(L, "'for' step is zero");
+      ilyaG_runerror(L, "'for' step is zero");
     if (forlimit(L, init, plimit, &limit, step))
       return 1;  /* skip the loop */
     else {  /* prepare loop counter */
@@ -244,15 +244,15 @@ static int forprep (ilya_State *L, StkId ra) {
   else {  /* try making all values floats */
     ilya_Number init; ilya_Number limit; ilya_Number step;
     if (l_unlikely(!tonumber(plimit, &limit)))
-      luaG_forerror(L, plimit, "limit");
+      ilyaG_forerror(L, plimit, "limit");
     if (l_unlikely(!tonumber(pstep, &step)))
-      luaG_forerror(L, pstep, "step");
+      ilyaG_forerror(L, pstep, "step");
     if (l_unlikely(!tonumber(pinit, &init)))
-      luaG_forerror(L, pinit, "initial value");
+      ilyaG_forerror(L, pinit, "initial value");
     if (step == 0)
-      luaG_runerror(L, "'for' step is zero");
-    if (luai_numlt(0, step) ? luai_numlt(limit, init)
-                            : luai_numlt(init, limit))
+      ilyaG_runerror(L, "'for' step is zero");
+    if (ilyai_numlt(0, step) ? ilyai_numlt(limit, init)
+                            : ilyai_numlt(init, limit))
       return 1;  /* skip the loop */
     else {
       /* make sure all values are floats */
@@ -274,9 +274,9 @@ static int floatforloop (StkId ra) {
   ilya_Number step = fltvalue(s2v(ra + 1));
   ilya_Number limit = fltvalue(s2v(ra));
   ilya_Number idx = fltvalue(s2v(ra + 2));  /* control variable */
-  idx = luai_numadd(L, idx, step);  /* increment index */
-  if (luai_numlt(0, step) ? luai_numle(idx, limit)
-                          : luai_numle(limit, idx)) {
+  idx = ilyai_numadd(L, idx, step);  /* increment index */
+  if (ilyai_numlt(0, step) ? ilyai_numle(idx, limit)
+                          : ilyai_numle(limit, idx)) {
     chgfltvalue(s2v(ra + 2), idx);  /* update control variable */
     return 1;  /* jump back */
   }
@@ -288,16 +288,16 @@ static int floatforloop (StkId ra) {
 /*
 ** Finish the table access 'val = t[key]' and return the tag of the result.
 */
-lu_byte luaV_finishget (ilya_State *L, const TValue *t, TValue *key,
+lu_byte ilyaV_finishget (ilya_State *L, const TValue *t, TValue *key,
                                       StkId val, lu_byte tag) {
   int loop;  /* counter to avoid infinite loops */
   const TValue *tm;  /* metamethod */
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     if (tag == ILYA_VNOTABLE) {  /* 't' is not a table? */
       ilya_assert(!ttistable(t));
-      tm = luaT_gettmbyobj(L, t, TM_INDEX);
+      tm = ilyaT_gettmbyobj(L, t, TM_INDEX);
       if (l_unlikely(notm(tm)))
-        luaG_typeerror(L, t, "index");  /* no metamethod */
+        ilyaG_typeerror(L, t, "index");  /* no metamethod */
       /* else will try the metamethod */
     }
     else {  /* 't' is a table */
@@ -309,16 +309,16 @@ lu_byte luaV_finishget (ilya_State *L, const TValue *t, TValue *key,
       /* else will try the metamethod */
     }
     if (ttisfunction(tm)) {  /* is metamethod a fn? */
-      tag = luaT_callTMres(L, tm, t, key, val);  /* call it */
+      tag = ilyaT_callTMres(L, tm, t, key, val);  /* call it */
       return tag;  /* return tag of the result */
     }
     t = tm;  /* else try to access 'tm[key]' */
-    luaV_fastget(t, key, s2v(val), luaH_get, tag);
+    ilyaV_fastget(t, key, s2v(val), ilyaH_get, tag);
     if (!tagisempty(tag))
       return tag;  /* done */
-    /* else repeat (tail call 'luaV_finishget') */
+    /* else repeat (tail call 'ilyaV_finishget') */
   }
-  luaG_runerror(L, "'__index' chain too long; possible loop");
+  ilyaG_runerror(L, "'__index' chain too long; possible loop");
   return 0;  /* to avoid warnings */
 }
 
@@ -326,7 +326,7 @@ lu_byte luaV_finishget (ilya_State *L, const TValue *t, TValue *key,
 /*
 ** Finish a table assignment 't[key] = val'.
 */
-void luaV_finishset (ilya_State *L, const TValue *t, TValue *key,
+void ilyaV_finishset (ilya_State *L, const TValue *t, TValue *key,
                       TValue *val, int hres) {
   int loop;  /* counter to avoid infinite loops */
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
@@ -335,30 +335,30 @@ void luaV_finishset (ilya_State *L, const TValue *t, TValue *key,
       Table *h = hvalue(t);  /* save 't' table */
       tm = fasttm(L, h->metatable, TM_NEWINDEX);  /* get metamethod */
       if (tm == NULL) {  /* no metamethod? */
-        luaH_finishset(L, h, key, val, hres);  /* set new value */
+        ilyaH_finishset(L, h, key, val, hres);  /* set new value */
         invalidateTMcache(h);
-        luaC_barrierback(L, obj2gco(h), val);
+        ilyaC_barrierback(L, obj2gco(h), val);
         return;
       }
       /* else will try the metamethod */
     }
     else {  /* not a table; check metamethod */
-      tm = luaT_gettmbyobj(L, t, TM_NEWINDEX);
+      tm = ilyaT_gettmbyobj(L, t, TM_NEWINDEX);
       if (l_unlikely(notm(tm)))
-        luaG_typeerror(L, t, "index");
+        ilyaG_typeerror(L, t, "index");
     }
     /* try the metamethod */
     if (ttisfunction(tm)) {
-      luaT_callTM(L, tm, t, key, val);
+      ilyaT_callTM(L, tm, t, key, val);
       return;
     }
     t = tm;  /* else repeat assignment over 'tm' */
-    luaV_fastset(t, key, val, hres, luaH_pset);
+    ilyaV_fastset(t, key, val, hres, ilyaH_pset);
     if (hres == HOK)
       return;  /* done */
-    /* else 'return luaV_finishset(L, t, key, val, slot)' (loop) */
+    /* else 'return ilyaV_finishset(L, t, key, val, slot)' (loop) */
   }
-  luaG_runerror(L, "'__newindex' chain too long; possible loop");
+  ilyaG_runerror(L, "'__newindex' chain too long; possible loop");
 }
 
 
@@ -407,10 +407,10 @@ static int l_strcmp (const TString *ts1, const TString *ts2) {
 */
 l_sinline int LTintfloat (ilya_Integer i, ilya_Number f) {
   if (l_intfitsf(i))
-    return luai_numlt(cast_num(i), f);  /* compare them as floats */
+    return ilyai_numlt(cast_num(i), f);  /* compare them as floats */
   else {  /* i < f <=> i < ceil(f) */
     ilya_Integer fi;
-    if (luaV_flttointeger(f, &fi, F2Iceil))  /* fi = ceil(f) */
+    if (ilyaV_flttointeger(f, &fi, F2Iceil))  /* fi = ceil(f) */
       return i < fi;   /* compare them as integers */
     else  /* 'f' is either greater or less than all integers */
       return f > 0;  /* greater? */
@@ -424,10 +424,10 @@ l_sinline int LTintfloat (ilya_Integer i, ilya_Number f) {
 */
 l_sinline int LEintfloat (ilya_Integer i, ilya_Number f) {
   if (l_intfitsf(i))
-    return luai_numle(cast_num(i), f);  /* compare them as floats */
+    return ilyai_numle(cast_num(i), f);  /* compare them as floats */
   else {  /* i <= f <=> i <= floor(f) */
     ilya_Integer fi;
-    if (luaV_flttointeger(f, &fi, F2Ifloor))  /* fi = floor(f) */
+    if (ilyaV_flttointeger(f, &fi, F2Ifloor))  /* fi = floor(f) */
       return i <= fi;   /* compare them as integers */
     else  /* 'f' is either greater or less than all integers */
       return f > 0;  /* greater? */
@@ -441,10 +441,10 @@ l_sinline int LEintfloat (ilya_Integer i, ilya_Number f) {
 */
 l_sinline int LTfloatint (ilya_Number f, ilya_Integer i) {
   if (l_intfitsf(i))
-    return luai_numlt(f, cast_num(i));  /* compare them as floats */
+    return ilyai_numlt(f, cast_num(i));  /* compare them as floats */
   else {  /* f < i <=> floor(f) < i */
     ilya_Integer fi;
-    if (luaV_flttointeger(f, &fi, F2Ifloor))  /* fi = floor(f) */
+    if (ilyaV_flttointeger(f, &fi, F2Ifloor))  /* fi = floor(f) */
       return fi < i;   /* compare them as integers */
     else  /* 'f' is either greater or less than all integers */
       return f < 0;  /* less? */
@@ -458,10 +458,10 @@ l_sinline int LTfloatint (ilya_Number f, ilya_Integer i) {
 */
 l_sinline int LEfloatint (ilya_Number f, ilya_Integer i) {
   if (l_intfitsf(i))
-    return luai_numle(f, cast_num(i));  /* compare them as floats */
+    return ilyai_numle(f, cast_num(i));  /* compare them as floats */
   else {  /* f <= i <=> ceil(f) <= i */
     ilya_Integer fi;
-    if (luaV_flttointeger(f, &fi, F2Iceil))  /* fi = ceil(f) */
+    if (ilyaV_flttointeger(f, &fi, F2Iceil))  /* fi = ceil(f) */
       return fi <= i;   /* compare them as integers */
     else  /* 'f' is either greater or less than all integers */
       return f < 0;  /* less? */
@@ -484,7 +484,7 @@ l_sinline int LTnum (const TValue *l, const TValue *r) {
   else {
     ilya_Number lf = fltvalue(l);  /* 'l' must be float */
     if (ttisfloat(r))
-      return luai_numlt(lf, fltvalue(r));  /* both are float */
+      return ilyai_numlt(lf, fltvalue(r));  /* both are float */
     else  /* 'l' is float and 'r' is int */
       return LTfloatint(lf, ivalue(r));
   }
@@ -506,7 +506,7 @@ l_sinline int LEnum (const TValue *l, const TValue *r) {
   else {
     ilya_Number lf = fltvalue(l);  /* 'l' must be float */
     if (ttisfloat(r))
-      return luai_numle(lf, fltvalue(r));  /* both are float */
+      return ilyai_numle(lf, fltvalue(r));  /* both are float */
     else  /* 'l' is float and 'r' is int */
       return LEfloatint(lf, ivalue(r));
   }
@@ -521,14 +521,14 @@ static int lessthanothers (ilya_State *L, const TValue *l, const TValue *r) {
   if (ttisstring(l) && ttisstring(r))  /* both are strings? */
     return l_strcmp(tsvalue(l), tsvalue(r)) < 0;
   else
-    return luaT_callorderTM(L, l, r, TM_LT);
+    return ilyaT_callorderTM(L, l, r, TM_LT);
 }
 
 
 /*
 ** Main operation less than; return 'l < r'.
 */
-int luaV_lessthan (ilya_State *L, const TValue *l, const TValue *r) {
+int ilyaV_lessthan (ilya_State *L, const TValue *l, const TValue *r) {
   if (ttisnumber(l) && ttisnumber(r))  /* both operands are numbers? */
     return LTnum(l, r);
   else return lessthanothers(L, l, r);
@@ -543,14 +543,14 @@ static int lessequalothers (ilya_State *L, const TValue *l, const TValue *r) {
   if (ttisstring(l) && ttisstring(r))  /* both are strings? */
     return l_strcmp(tsvalue(l), tsvalue(r)) <= 0;
   else
-    return luaT_callorderTM(L, l, r, TM_LE);
+    return ilyaT_callorderTM(L, l, r, TM_LE);
 }
 
 
 /*
 ** Main operation less than or equal to; return 'l <= r'.
 */
-int luaV_lessequal (ilya_State *L, const TValue *l, const TValue *r) {
+int ilyaV_lessequal (ilya_State *L, const TValue *l, const TValue *r) {
   if (ttisnumber(l) && ttisnumber(r))  /* both operands are numbers? */
     return LEnum(l, r);
   else return lessequalothers(L, l, r);
@@ -561,7 +561,7 @@ int luaV_lessequal (ilya_State *L, const TValue *l, const TValue *r) {
 ** Main operation for equality of Ilya values; return 't1 == t2'.
 ** L == NULL means raw equality (no metamethods)
 */
-int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2) {
+int ilyaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2) {
   const TValue *tm;
   if (ttypetag(t1) != ttypetag(t2)) {  /* not the same variant? */
     if (ttype(t1) != ttype(t2) || ttype(t1) != ILYA_TNUMBER)
@@ -571,8 +571,8 @@ int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2) {
          integer value, they cannot be equal; otherwise, compare their
          integer values. */
       ilya_Integer i1, i2;
-      return (luaV_tointegerns(t1, &i1, F2Ieq) &&
-              luaV_tointegerns(t2, &i2, F2Ieq) &&
+      return (ilyaV_tointegerns(t1, &i1, F2Ieq) &&
+              ilyaV_tointegerns(t2, &i2, F2Ieq) &&
               i1 == i2);
     }
   }
@@ -580,11 +580,11 @@ int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2) {
   switch (ttypetag(t1)) {
     case ILYA_VNIL: case ILYA_VFALSE: case ILYA_VTRUE: return 1;
     case ILYA_VNUMINT: return (ivalue(t1) == ivalue(t2));
-    case ILYA_VNUMFLT: return luai_numeq(fltvalue(t1), fltvalue(t2));
+    case ILYA_VNUMFLT: return ilyai_numeq(fltvalue(t1), fltvalue(t2));
     case ILYA_VLIGHTUSERDATA: return pvalue(t1) == pvalue(t2);
     case ILYA_VLCF: return fvalue(t1) == fvalue(t2);
     case ILYA_VSHRSTR: return eqshrstr(tsvalue(t1), tsvalue(t2));
-    case ILYA_VLNGSTR: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
+    case ILYA_VLNGSTR: return ilyaS_eqlngstr(tsvalue(t1), tsvalue(t2));
     case ILYA_VUSERDATA: {
       if (uvalue(t1) == uvalue(t2)) return 1;
       else if (L == NULL) return 0;
@@ -607,15 +607,15 @@ int luaV_equalobj (ilya_State *L, const TValue *t1, const TValue *t2) {
   if (tm == NULL)  /* no TM? */
     return 0;  /* objects are different */
   else {
-    int tag = luaT_callTMres(L, tm, t1, t2, L->top.p);  /* call TM */
+    int tag = ilyaT_callTMres(L, tm, t1, t2, L->top.p);  /* call TM */
     return !tagisfalse(tag);
   }
 }
 
 
-/* macro used by 'luaV_concat' to ensure that element at 'o' is a string */
+/* macro used by 'ilyaV_concat' to ensure that element at 'o' is a string */
 #define tostring(L,o)  \
-	(ttisstring(o) || (cvt2str(o) && (luaO_tostring(L, o), 1)))
+	(ttisstring(o) || (cvt2str(o) && (ilyaO_tostring(L, o), 1)))
 
 #define isemptystr(o)	(ttisshrstring(o) && tsvalue(o)->shrlen == 0)
 
@@ -636,7 +636,7 @@ static void copy2buff (StkId top, int n, char *buff) {
 ** Main operation for concatenation: concat 'total' values in the stack,
 ** from 'L->top.p - total' up to 'L->top.p - 1'.
 */
-void luaV_concat (ilya_State *L, int total) {
+void ilyaV_concat (ilya_State *L, int total) {
   if (total == 1)
     return;  /* "all" values already concatenated */
   do {
@@ -644,7 +644,7 @@ void luaV_concat (ilya_State *L, int total) {
     int n = 2;  /* number of elements handled in this pass (at least 2) */
     if (!(ttisstring(s2v(top - 2)) || cvt2str(s2v(top - 2))) ||
         !tostring(L, s2v(top - 1)))
-      luaT_tryconcatTM(L);  /* may invalidate 'top' */
+      ilyaT_tryconcatTM(L);  /* may invalidate 'top' */
     else if (isemptystr(s2v(top - 1)))  /* second operand is empty? */
       cast_void(tostring(L, s2v(top - 2)));  /* result is first operand */
     else if (isemptystr(s2v(top - 2))) {  /* first operand is empty string? */
@@ -659,17 +659,17 @@ void luaV_concat (ilya_State *L, int total) {
         size_t l = tsslen(tsvalue(s2v(top - n - 1)));
         if (l_unlikely(l >= MAX_SIZE - sizeof(TString) - tl)) {
           L->top.p = top - total;  /* pop strings to avoid wasting stack */
-          luaG_runerror(L, "string length overflow");
+          ilyaG_runerror(L, "string length overflow");
         }
         tl += l;
       }
-      if (tl <= LUAI_MAXSHORTLEN) {  /* is result a short string? */
-        char buff[LUAI_MAXSHORTLEN];
+      if (tl <= ILYAI_MAXSHORTLEN) {  /* is result a short string? */
+        char buff[ILYAI_MAXSHORTLEN];
         copy2buff(top, n, buff);  /* copy strings to buffer */
-        ts = luaS_newlstr(L, buff, tl);
+        ts = ilyaS_newlstr(L, buff, tl);
       }
       else {  /* long string; copy strings directly to final result */
-        ts = luaS_createlngstrobj(L, tl);
+        ts = ilyaS_createlngstrobj(L, tl);
         copy2buff(top, n, getlngstr(ts));
       }
       setsvalue2s(L, top - n, ts);  /* create result */
@@ -683,14 +683,14 @@ void luaV_concat (ilya_State *L, int total) {
 /*
 ** Main operation 'ra = #rb'.
 */
-void luaV_objlen (ilya_State *L, StkId ra, const TValue *rb) {
+void ilyaV_objlen (ilya_State *L, StkId ra, const TValue *rb) {
   const TValue *tm;
   switch (ttypetag(rb)) {
     case ILYA_VTABLE: {
       Table *h = hvalue(rb);
       tm = fasttm(L, h->metatable, TM_LEN);
       if (tm) break;  /* metamethod? break switch to call it */
-      setivalue(s2v(ra), l_castU2S(luaH_getn(h)));  /* else primitive len */
+      setivalue(s2v(ra), l_castU2S(ilyaH_getn(h)));  /* else primitive len */
       return;
     }
     case ILYA_VSHRSTR: {
@@ -702,13 +702,13 @@ void luaV_objlen (ilya_State *L, StkId ra, const TValue *rb) {
       return;
     }
     default: {  /* try metamethod */
-      tm = luaT_gettmbyobj(L, rb, TM_LEN);
+      tm = ilyaT_gettmbyobj(L, rb, TM_LEN);
       if (l_unlikely(notm(tm)))  /* no metamethod? */
-        luaG_typeerror(L, rb, "get length of");
+        ilyaG_typeerror(L, rb, "get length of");
       break;
     }
   }
-  luaT_callTMres(L, tm, rb, rb, ra);
+  ilyaT_callTMres(L, tm, rb, rb, ra);
 }
 
 
@@ -718,10 +718,10 @@ void luaV_objlen (ilya_State *L, StkId ra, const TValue *rb) {
 ** 'floor(q) == trunc(q)' when 'q >= 0' or when 'q' is integer,
 ** otherwise 'floor(q) == trunc(q) - 1'.
 */
-ilya_Integer luaV_idiv (ilya_State *L, ilya_Integer m, ilya_Integer n) {
+ilya_Integer ilyaV_idiv (ilya_State *L, ilya_Integer m, ilya_Integer n) {
   if (l_unlikely(l_castS2U(n) + 1u <= 1u)) {  /* special cases: -1 or 0 */
     if (n == 0)
-      luaG_runerror(L, "attempt to divide by zero");
+      ilyaG_runerror(L, "attempt to divide by zero");
     return intop(-, 0, m);   /* n==-1; avoid overflow with 0x80000...//-1 */
   }
   else {
@@ -736,12 +736,12 @@ ilya_Integer luaV_idiv (ilya_State *L, ilya_Integer m, ilya_Integer n) {
 /*
 ** Integer modulus; return 'm % n'. (Assume that C '%' with
 ** negative operands follows C99 behavior. See previous comment
-** about luaV_idiv.)
+** about ilyaV_idiv.)
 */
-ilya_Integer luaV_mod (ilya_State *L, ilya_Integer m, ilya_Integer n) {
+ilya_Integer ilyaV_mod (ilya_State *L, ilya_Integer m, ilya_Integer n) {
   if (l_unlikely(l_castS2U(n) + 1u <= 1u)) {  /* special cases: -1 or 0 */
     if (n == 0)
-      luaG_runerror(L, "attempt to perform 'n%%0'");
+      ilyaG_runerror(L, "attempt to perform 'n%%0'");
     return 0;   /* m % -1 == 0; avoid overflow with 0x80000...%-1 */
   }
   else {
@@ -756,9 +756,9 @@ ilya_Integer luaV_mod (ilya_State *L, ilya_Integer m, ilya_Integer n) {
 /*
 ** Float modulus
 */
-ilya_Number luaV_modf (ilya_State *L, ilya_Number m, ilya_Number n) {
+ilya_Number ilyaV_modf (ilya_State *L, ilya_Number m, ilya_Number n) {
   ilya_Number r;
-  luai_nummod(L, m, n, r);
+  ilyai_nummod(L, m, n, r);
   return r;
 }
 
@@ -770,7 +770,7 @@ ilya_Number luaV_modf (ilya_State *L, ilya_Number m, ilya_Number n) {
 /*
 ** Shift left operation. (Shift right just negates 'y'.)
 */
-ilya_Integer luaV_shiftl (ilya_Integer x, ilya_Integer y) {
+ilya_Integer ilyaV_shiftl (ilya_Integer x, ilya_Integer y) {
   if (y < 0) {  /* shift right? */
     if (y <= -NBITS) return 0;
     else return intop(>>, x, -y);
@@ -791,15 +791,15 @@ static void pushclosure (ilya_State *L, Proto *p, UpVal **encup, StkId base,
   int nup = p->sizeupvalues;
   Upvaldesc *uv = p->upvalues;
   int i;
-  LClosure *ncl = luaF_newLclosure(L, nup);
+  LClosure *ncl = ilyaF_newLclosure(L, nup);
   ncl->p = p;
   setclLvalue2s(L, ra, ncl);  /* anchor new closure in stack */
   for (i = 0; i < nup; i++) {  /* fill in its upvalues */
     if (uv[i].instack)  /* upvalue refers to lock variable? */
-      ncl->upvals[i] = luaF_findupval(L, base + uv[i].idx);
+      ncl->upvals[i] = ilyaF_findupval(L, base + uv[i].idx);
     else  /* get upvalue from enclosing fn */
       ncl->upvals[i] = encup[uv[i].idx];
-    luaC_objbarrier(L, ncl, ncl->upvals[i]);
+    ilyaC_objbarrier(L, ncl, ncl->upvals[i]);
   }
 }
 
@@ -807,7 +807,7 @@ static void pushclosure (ilya_State *L, Proto *p, UpVal **encup, StkId base,
 /*
 ** finish execution of an opcode interrupted by a yield
 */
-void luaV_finishOp (ilya_State *L) {
+void ilyaV_finishOp (ilya_State *L) {
   CallInfo *ci = L->ci;
   StkId base = ci->func.p + 1;
   Instruction inst = *(ci->u.l.savedpc - 1);  /* interrupted instruction */
@@ -841,12 +841,12 @@ void luaV_finishOp (ilya_State *L) {
       break;
     }
     case OP_CONCAT: {
-      StkId top = L->top.p - 1;  /* top when 'luaT_tryconcatTM' was called */
+      StkId top = L->top.p - 1;  /* top when 'ilyaT_tryconcatTM' was called */
       int a = GETARG_A(inst);      /* first element to concatenate */
       int total = cast_int(top - 1 - (base + a));  /* yet to concatenate */
       setobjs2s(L, top - 2, top);  /* put TM result in proper position */
       L->top.p = top - 1;  /* top is one after last element (at top-2) */
-      luaV_concat(L, total);  /* concat them (may yield again) */
+      ilyaV_concat(L, total);  /* concat them (may yield again) */
       break;
     }
     case OP_CLOSE: {  /* yielded closing variables */
@@ -877,7 +877,7 @@ void luaV_finishOp (ilya_State *L) {
 
 /*
 ** {==================================================================
-** Macros for arithmetic/bitwise/comparison opcodes in 'luaV_execute'
+** Macros for arithmetic/bitwise/comparison opcodes in 'ilyaV_execute'
 ** ===================================================================
 */
 
@@ -1039,7 +1039,7 @@ void luaV_finishOp (ilya_State *L) {
   }  \
   else {  \
     int isf = GETARG_C(i);  \
-    Protect(cond = luaT_callorderiTM(L, s2v(ra), im, inv, isf, tm));  \
+    Protect(cond = ilyaT_callorderiTM(L, s2v(ra), im, inv, isf, tm));  \
   }  \
   docondjump(); }
 
@@ -1048,12 +1048,12 @@ void luaV_finishOp (ilya_State *L) {
 
 /*
 ** {==================================================================
-** Function 'luaV_execute': main interpreter loop
+** Function 'ilyaV_execute': main interpreter loop
 ** ===================================================================
 */
 
 /*
-** some macros for common tasks in 'luaV_execute'
+** some macros for common tasks in 'ilyaV_execute'
 */
 
 
@@ -1127,21 +1127,21 @@ void luaV_finishOp (ilya_State *L) {
 ** macro executed during Ilya functions at points where the
 ** fn can yield.
 */
-#if !defined(luai_threadyield)
-#define luai_threadyield(L)	{ilya_unlock(L); ilya_lock(L);}
+#if !defined(ilyai_threadyield)
+#define ilyai_threadyield(L)	{ilya_unlock(L); ilya_lock(L);}
 #endif
 
 /* 'c' is the limit of live values in the stack */
 #define checkGC(L,c)  \
-	{ luaC_condGC(L, (savepc(L), L->top.p = (c)), \
+	{ ilyaC_condGC(L, (savepc(L), L->top.p = (c)), \
                          updatetrap(ci)); \
-           luai_threadyield(L); }
+           ilyai_threadyield(L); }
 
 
 /* fetch an instruction and prepare its execution */
 #define vmfetch()	{ \
   if (l_unlikely(trap)) {  /* stack reallocation or hooks? */ \
-    trap = luaG_traceexec(L, pc);  /* handle hooks */ \
+    trap = ilyaG_traceexec(L, pc);  /* handle hooks */ \
     updatebase(ci);  /* correct stack */ \
   } \
   i = *(pc++); \
@@ -1152,7 +1152,7 @@ void luaV_finishOp (ilya_State *L) {
 #define vmbreak		break
 
 
-void luaV_execute (ilya_State *L, CallInfo *ci) {
+void ilyaV_execute (ilya_State *L, CallInfo *ci) {
   LClosure *cl;
   TValue *k;
   StkId base;
@@ -1168,7 +1168,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
   k = cl->p->k;
   pc = ci->u.l.savedpc;
   if (l_unlikely(trap))
-    trap = luaG_tracecall(L);
+    trap = ilyaG_tracecall(L);
   base = ci->func.p + 1;
   /* main loop of interpreter */
   for (;;) {
@@ -1178,14 +1178,14 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
     { /* low-level line tracing for debugging Ilya */
       #include "lopnames.h"
       int pcrel = pcRel(pc, cl->p);
-      printf("line: %d; %s (%d)\n", luaG_getfuncline(cl->p, pcrel),
+      printf("line: %d; %s (%d)\n", ilyaG_getfuncline(cl->p, pcrel),
              opnames[GET_OPCODE(i)], pcrel);
     }
     #endif
     ilya_assert(base == ci->func.p + 1);
     ilya_assert(base <= L->top.p && L->top.p <= L->stack_last.p);
     /* for tests, invalidate top for instructions not expecting it */
-    ilya_assert(luaP_isIT(i) || (cast_void(L->top.p = base), 1));
+    ilya_assert(ilyaP_isIT(i) || (cast_void(L->top.p = base), 1));
     vmdispatch (GET_OPCODE(i)) {
       vmcase(OP_MOVE) {
         StkId ra = RA(i);
@@ -1251,7 +1251,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         StkId ra = RA(i);
         UpVal *uv = cl->upvals[GETARG_B(i)];
         setobj(L, uv->v.p, s2v(ra));
-        luaC_barrier(L, uv, s2v(ra));
+        ilyaC_barrier(L, uv, s2v(ra));
         vmbreak;
       }
       vmcase(OP_GETTABUP) {
@@ -1260,9 +1260,9 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         lu_byte tag;
-        luaV_fastget(upval, key, s2v(ra), luaH_getshortstr, tag);
+        ilyaV_fastget(upval, key, s2v(ra), ilyaH_getshortstr, tag);
         if (tagisempty(tag))
-          Protect(luaV_finishget(L, upval, rc, ra, tag));
+          Protect(ilyaV_finishget(L, upval, rc, ra, tag));
         vmbreak;
       }
       vmcase(OP_GETTABLE) {
@@ -1271,12 +1271,12 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rc = vRC(i);
         lu_byte tag;
         if (ttisinteger(rc)) {  /* fast track for integers? */
-          luaV_fastgeti(rb, ivalue(rc), s2v(ra), tag);
+          ilyaV_fastgeti(rb, ivalue(rc), s2v(ra), tag);
         }
         else
-          luaV_fastget(rb, rc, s2v(ra), luaH_get, tag);
+          ilyaV_fastget(rb, rc, s2v(ra), ilyaH_get, tag);
         if (tagisempty(tag))
-          Protect(luaV_finishget(L, rb, rc, ra, tag));
+          Protect(ilyaV_finishget(L, rb, rc, ra, tag));
         vmbreak;
       }
       vmcase(OP_GETI) {
@@ -1284,11 +1284,11 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rb = vRB(i);
         int c = GETARG_C(i);
         lu_byte tag;
-        luaV_fastgeti(rb, c, s2v(ra), tag);
+        ilyaV_fastgeti(rb, c, s2v(ra), tag);
         if (tagisempty(tag)) {
           TValue key;
           setivalue(&key, c);
-          Protect(luaV_finishget(L, rb, &key, ra, tag));
+          Protect(ilyaV_finishget(L, rb, &key, ra, tag));
         }
         vmbreak;
       }
@@ -1298,9 +1298,9 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         lu_byte tag;
-        luaV_fastget(rb, key, s2v(ra), luaH_getshortstr, tag);
+        ilyaV_fastget(rb, key, s2v(ra), ilyaH_getshortstr, tag);
         if (tagisempty(tag))
-          Protect(luaV_finishget(L, rb, rc, ra, tag));
+          Protect(ilyaV_finishget(L, rb, rc, ra, tag));
         vmbreak;
       }
       vmcase(OP_SETTABUP) {
@@ -1309,11 +1309,11 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rb = KB(i);
         TValue *rc = RKC(i);
         TString *key = tsvalue(rb);  /* key must be a short string */
-        luaV_fastset(upval, key, rc, hres, luaH_psetshortstr);
+        ilyaV_fastset(upval, key, rc, hres, ilyaH_psetshortstr);
         if (hres == HOK)
-          luaV_finishfastset(L, upval, rc);
+          ilyaV_finishfastset(L, upval, rc);
         else
-          Protect(luaV_finishset(L, upval, rb, rc, hres));
+          Protect(ilyaV_finishset(L, upval, rb, rc, hres));
         vmbreak;
       }
       vmcase(OP_SETTABLE) {
@@ -1322,15 +1322,15 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rb = vRB(i);  /* key (table is in 'ra') */
         TValue *rc = RKC(i);  /* value */
         if (ttisinteger(rb)) {  /* fast track for integers? */
-          luaV_fastseti(s2v(ra), ivalue(rb), rc, hres);
+          ilyaV_fastseti(s2v(ra), ivalue(rb), rc, hres);
         }
         else {
-          luaV_fastset(s2v(ra), rb, rc, hres, luaH_pset);
+          ilyaV_fastset(s2v(ra), rb, rc, hres, ilyaH_pset);
         }
         if (hres == HOK)
-          luaV_finishfastset(L, s2v(ra), rc);
+          ilyaV_finishfastset(L, s2v(ra), rc);
         else
-          Protect(luaV_finishset(L, s2v(ra), rb, rc, hres));
+          Protect(ilyaV_finishset(L, s2v(ra), rb, rc, hres));
         vmbreak;
       }
       vmcase(OP_SETI) {
@@ -1338,13 +1338,13 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         int hres;
         int b = GETARG_B(i);
         TValue *rc = RKC(i);
-        luaV_fastseti(s2v(ra), b, rc, hres);
+        ilyaV_fastseti(s2v(ra), b, rc, hres);
         if (hres == HOK)
-          luaV_finishfastset(L, s2v(ra), rc);
+          ilyaV_finishfastset(L, s2v(ra), rc);
         else {
           TValue key;
           setivalue(&key, b);
-          Protect(luaV_finishset(L, s2v(ra), &key, rc, hres));
+          Protect(ilyaV_finishset(L, s2v(ra), &key, rc, hres));
         }
         vmbreak;
       }
@@ -1354,11 +1354,11 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rb = KB(i);
         TValue *rc = RKC(i);
         TString *key = tsvalue(rb);  /* key must be a short string */
-        luaV_fastset(s2v(ra), key, rc, hres, luaH_psetshortstr);
+        ilyaV_fastset(s2v(ra), key, rc, hres, ilyaH_psetshortstr);
         if (hres == HOK)
-          luaV_finishfastset(L, s2v(ra), rc);
+          ilyaV_finishfastset(L, s2v(ra), rc);
         else
-          Protect(luaV_finishset(L, s2v(ra), rb, rc, hres));
+          Protect(ilyaV_finishset(L, s2v(ra), rb, rc, hres));
         vmbreak;
       }
       vmcase(OP_NEWTABLE) {
@@ -1375,10 +1375,10 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         }
         pc++;  /* skip extra argument */
         L->top.p = ra + 1;  /* correct top in case of emergency GC */
-        t = luaH_new(L);  /* memory allocation */
+        t = ilyaH_new(L);  /* memory allocation */
         sethvalue2s(L, ra, t);
         if (b != 0 || c != 0)
-          luaH_resize(L, t, c, b);  /* idem */
+          ilyaH_resize(L, t, c, b);  /* idem */
         checkGC(L, ra + 1);
         vmbreak;
       }
@@ -1389,43 +1389,43 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TValue *rc = KC(i);
         TString *key = tsvalue(rc);  /* key must be a short string */
         setobj2s(L, ra + 1, rb);
-        luaV_fastget(rb, key, s2v(ra), luaH_getshortstr, tag);
+        ilyaV_fastget(rb, key, s2v(ra), ilyaH_getshortstr, tag);
         if (tagisempty(tag))
-          Protect(luaV_finishget(L, rb, rc, ra, tag));
+          Protect(ilyaV_finishget(L, rb, rc, ra, tag));
         vmbreak;
       }
       vmcase(OP_ADDI) {
-        op_arithI(L, l_addi, luai_numadd);
+        op_arithI(L, l_addi, ilyai_numadd);
         vmbreak;
       }
       vmcase(OP_ADDK) {
-        op_arithK(L, l_addi, luai_numadd);
+        op_arithK(L, l_addi, ilyai_numadd);
         vmbreak;
       }
       vmcase(OP_SUBK) {
-        op_arithK(L, l_subi, luai_numsub);
+        op_arithK(L, l_subi, ilyai_numsub);
         vmbreak;
       }
       vmcase(OP_MULK) {
-        op_arithK(L, l_muli, luai_nummul);
+        op_arithK(L, l_muli, ilyai_nummul);
         vmbreak;
       }
       vmcase(OP_MODK) {
         savestate(L, ci);  /* in case of division by 0 */
-        op_arithK(L, luaV_mod, luaV_modf);
+        op_arithK(L, ilyaV_mod, ilyaV_modf);
         vmbreak;
       }
       vmcase(OP_POWK) {
-        op_arithfK(L, luai_numpow);
+        op_arithfK(L, ilyai_numpow);
         vmbreak;
       }
       vmcase(OP_DIVK) {
-        op_arithfK(L, luai_numdiv);
+        op_arithfK(L, ilyai_numdiv);
         vmbreak;
       }
       vmcase(OP_IDIVK) {
         savestate(L, ci);  /* in case of division by 0 */
-        op_arithK(L, luaV_idiv, luai_numidiv);
+        op_arithK(L, ilyaV_idiv, ilyai_numidiv);
         vmbreak;
       }
       vmcase(OP_BANDK) {
@@ -1446,7 +1446,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         int ic = GETARG_sC(i);
         ilya_Integer ib;
         if (tointegerns(rb, &ib)) {
-          pc++; setivalue(s2v(ra), luaV_shiftl(ib, -ic));
+          pc++; setivalue(s2v(ra), ilyaV_shiftl(ib, -ic));
         }
         vmbreak;
       }
@@ -1456,38 +1456,38 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         int ic = GETARG_sC(i);
         ilya_Integer ib;
         if (tointegerns(rb, &ib)) {
-          pc++; setivalue(s2v(ra), luaV_shiftl(ic, ib));
+          pc++; setivalue(s2v(ra), ilyaV_shiftl(ic, ib));
         }
         vmbreak;
       }
       vmcase(OP_ADD) {
-        op_arith(L, l_addi, luai_numadd);
+        op_arith(L, l_addi, ilyai_numadd);
         vmbreak;
       }
       vmcase(OP_SUB) {
-        op_arith(L, l_subi, luai_numsub);
+        op_arith(L, l_subi, ilyai_numsub);
         vmbreak;
       }
       vmcase(OP_MUL) {
-        op_arith(L, l_muli, luai_nummul);
+        op_arith(L, l_muli, ilyai_nummul);
         vmbreak;
       }
       vmcase(OP_MOD) {
         savestate(L, ci);  /* in case of division by 0 */
-        op_arith(L, luaV_mod, luaV_modf);
+        op_arith(L, ilyaV_mod, ilyaV_modf);
         vmbreak;
       }
       vmcase(OP_POW) {
-        op_arithf(L, luai_numpow);
+        op_arithf(L, ilyai_numpow);
         vmbreak;
       }
       vmcase(OP_DIV) {  /* float division (always with floats) */
-        op_arithf(L, luai_numdiv);
+        op_arithf(L, ilyai_numdiv);
         vmbreak;
       }
       vmcase(OP_IDIV) {  /* floor division */
         savestate(L, ci);  /* in case of division by 0 */
-        op_arith(L, luaV_idiv, luai_numidiv);
+        op_arith(L, ilyaV_idiv, ilyai_numidiv);
         vmbreak;
       }
       vmcase(OP_BAND) {
@@ -1503,11 +1503,11 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         vmbreak;
       }
       vmcase(OP_SHR) {
-        op_bitwise(L, luaV_shiftr);
+        op_bitwise(L, ilyaV_shiftr);
         vmbreak;
       }
       vmcase(OP_SHL) {
-        op_bitwise(L, luaV_shiftl);
+        op_bitwise(L, ilyaV_shiftl);
         vmbreak;
       }
       vmcase(OP_MMBIN) {
@@ -1517,7 +1517,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TMS tm = (TMS)GETARG_C(i);
         StkId result = RA(pi);
         ilya_assert(OP_ADD <= GET_OPCODE(pi) && GET_OPCODE(pi) <= OP_SHR);
-        Protect(luaT_trybinTM(L, s2v(ra), rb, result, tm));
+        Protect(ilyaT_trybinTM(L, s2v(ra), rb, result, tm));
         vmbreak;
       }
       vmcase(OP_MMBINI) {
@@ -1527,7 +1527,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TMS tm = (TMS)GETARG_C(i);
         int flip = GETARG_k(i);
         StkId result = RA(pi);
-        Protect(luaT_trybiniTM(L, s2v(ra), imm, flip, result, tm));
+        Protect(ilyaT_trybiniTM(L, s2v(ra), imm, flip, result, tm));
         vmbreak;
       }
       vmcase(OP_MMBINK) {
@@ -1537,7 +1537,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         TMS tm = (TMS)GETARG_C(i);
         int flip = GETARG_k(i);
         StkId result = RA(pi);
-        Protect(luaT_trybinassocTM(L, s2v(ra), imm, flip, result, tm));
+        Protect(ilyaT_trybinassocTM(L, s2v(ra), imm, flip, result, tm));
         vmbreak;
       }
       vmcase(OP_UNM) {
@@ -1549,10 +1549,10 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           setivalue(s2v(ra), intop(-, 0, ib));
         }
         else if (tonumberns(rb, nb)) {
-          setfltvalue(s2v(ra), luai_numunm(L, nb));
+          setfltvalue(s2v(ra), ilyai_numunm(L, nb));
         }
         else
-          Protect(luaT_trybinTM(L, rb, rb, ra, TM_UNM));
+          Protect(ilyaT_trybinTM(L, rb, rb, ra, TM_UNM));
         vmbreak;
       }
       vmcase(OP_BNOT) {
@@ -1563,7 +1563,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           setivalue(s2v(ra), intop(^, ~l_castS2U(0), ib));
         }
         else
-          Protect(luaT_trybinTM(L, rb, rb, ra, TM_BNOT));
+          Protect(ilyaT_trybinTM(L, rb, rb, ra, TM_BNOT));
         vmbreak;
       }
       vmcase(OP_NOT) {
@@ -1577,27 +1577,27 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
       }
       vmcase(OP_LEN) {
         StkId ra = RA(i);
-        Protect(luaV_objlen(L, ra, vRB(i)));
+        Protect(ilyaV_objlen(L, ra, vRB(i)));
         vmbreak;
       }
       vmcase(OP_CONCAT) {
         StkId ra = RA(i);
         int n = GETARG_B(i);  /* number of elements to concatenate */
         L->top.p = ra + n;  /* mark the end of concat operands */
-        ProtectNT(luaV_concat(L, n));
-        checkGC(L, L->top.p); /* 'luaV_concat' ensures correct top */
+        ProtectNT(ilyaV_concat(L, n));
+        checkGC(L, L->top.p); /* 'ilyaV_concat' ensures correct top */
         vmbreak;
       }
       vmcase(OP_CLOSE) {
         StkId ra = RA(i);
         ilya_assert(!GETARG_B(i));  /* 'close must be alive */
-        Protect(luaF_close(L, ra, ILYA_OK, 1));
+        Protect(ilyaF_close(L, ra, ILYA_OK, 1));
         vmbreak;
       }
       vmcase(OP_TBC) {
         StkId ra = RA(i);
         /* create new to-be-closed upvalue */
-        halfProtect(luaF_newtbcupval(L, ra));
+        halfProtect(ilyaF_newtbcupval(L, ra));
         vmbreak;
       }
       vmcase(OP_JMP) {
@@ -1608,7 +1608,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         StkId ra = RA(i);
         int cond;
         TValue *rb = vRB(i);
-        Protect(cond = luaV_equalobj(L, s2v(ra), rb));
+        Protect(cond = ilyaV_equalobj(L, s2v(ra), rb));
         docondjump();
         vmbreak;
       }
@@ -1624,7 +1624,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         StkId ra = RA(i);
         TValue *rb = KB(i);
         /* basic types do not use '__eq'; we can use raw equality */
-        int cond = luaV_rawequalobj(s2v(ra), rb);
+        int cond = ilyaV_rawequalobj(s2v(ra), rb);
         docondjump();
         vmbreak;
       }
@@ -1635,26 +1635,26 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         if (ttisinteger(s2v(ra)))
           cond = (ivalue(s2v(ra)) == im);
         else if (ttisfloat(s2v(ra)))
-          cond = luai_numeq(fltvalue(s2v(ra)), cast_num(im));
+          cond = ilyai_numeq(fltvalue(s2v(ra)), cast_num(im));
         else
           cond = 0;  /* other types cannot be equal to a number */
         docondjump();
         vmbreak;
       }
       vmcase(OP_LTI) {
-        op_orderI(L, l_lti, luai_numlt, 0, TM_LT);
+        op_orderI(L, l_lti, ilyai_numlt, 0, TM_LT);
         vmbreak;
       }
       vmcase(OP_LEI) {
-        op_orderI(L, l_lei, luai_numle, 0, TM_LE);
+        op_orderI(L, l_lei, ilyai_numle, 0, TM_LE);
         vmbreak;
       }
       vmcase(OP_GTI) {
-        op_orderI(L, l_gti, luai_numgt, 1, TM_LT);
+        op_orderI(L, l_gti, ilyai_numgt, 1, TM_LT);
         vmbreak;
       }
       vmcase(OP_GEI) {
-        op_orderI(L, l_gei, luai_numge, 1, TM_LE);
+        op_orderI(L, l_gei, ilyai_numge, 1, TM_LE);
         vmbreak;
       }
       vmcase(OP_TEST) {
@@ -1683,7 +1683,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           L->top.p = ra + b;  /* top signals number of arguments */
         /* else previous instruction set top */
         savepc(L);  /* in case of errors */
-        if ((newci = luaD_precall(L, ra, nresults)) == NULL)
+        if ((newci = ilyaD_precall(L, ra, nresults)) == NULL)
           updatetrap(ci);  /* C call; nothing else to be done */
         else {  /* Ilya call: run fn in this same C frame */
           ci = newci;
@@ -1704,16 +1704,16 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           b = cast_int(L->top.p - ra);
         savepc(ci);  /* several calls here can raise errors */
         if (TESTARG_k(i)) {
-          luaF_closeupval(L, base);  /* close upvalues from current call */
+          ilyaF_closeupval(L, base);  /* close upvalues from current call */
           ilya_assert(L->tbclist.p < base);  /* no pending tbc variables */
           ilya_assert(base == ci->func.p + 1);
         }
-        if ((n = luaD_pretailcall(L, ci, ra, b, delta)) < 0)  /* Ilya fn? */
+        if ((n = ilyaD_pretailcall(L, ci, ra, b, delta)) < 0)  /* Ilya fn? */
           goto startfunc;  /* execute the callee */
         else {  /* C fn? */
           ci->func.p -= delta;  /* restore 'func' (if vararg) */
-          luaD_poscall(L, ci, n);  /* finish caller */
-          updatetrap(ci);  /* 'luaD_poscall' can change hooks */
+          ilyaD_poscall(L, ci, n);  /* finish caller */
+          updatetrap(ci);  /* 'ilyaD_poscall' can change hooks */
           goto ret;  /* caller returns after the tail call */
         }
       }
@@ -1728,15 +1728,15 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           ci->u2.nres = n;  /* save number of returns */
           if (L->top.p < ci->top.p)
             L->top.p = ci->top.p;
-          luaF_close(L, base, CLOSEKTOP, 1);
+          ilyaF_close(L, base, CLOSEKTOP, 1);
           updatetrap(ci);
           updatestack(ci);
         }
         if (nparams1)  /* vararg fn? */
           ci->func.p -= ci->u.l.nextraargs + nparams1;
-        L->top.p = ra + n;  /* set call for 'luaD_poscall' */
-        luaD_poscall(L, ci, n);
-        updatetrap(ci);  /* 'luaD_poscall' can change hooks */
+        L->top.p = ra + n;  /* set call for 'ilyaD_poscall' */
+        ilyaD_poscall(L, ci, n);
+        updatetrap(ci);  /* 'ilyaD_poscall' can change hooks */
         goto ret;
       }
       vmcase(OP_RETURN0) {
@@ -1744,7 +1744,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           StkId ra = RA(i);
           L->top.p = ra;
           savepc(ci);
-          luaD_poscall(L, ci, 0);  /* no hurry... */
+          ilyaD_poscall(L, ci, 0);  /* no hurry... */
           trap = 1;
         }
         else {  /* do the 'poscall' here */
@@ -1761,7 +1761,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
           StkId ra = RA(i);
           L->top.p = ra + 1;
           savepc(ci);
-          luaD_poscall(L, ci, 1);  /* no hurry... */
+          ilyaD_poscall(L, ci, 1);  /* no hurry... */
           trap = 1;
         }
         else {  /* do the 'poscall' here */
@@ -1823,7 +1823,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
        setobjs2s(L, ra + 3, ra + 2);
        setobj2s(L, ra + 2, &temp);
         /* create to-be-closed upvalue (if closing var. is not nil) */
-        halfProtect(luaF_newtbcupval(L, ra + 2));
+        halfProtect(ilyaF_newtbcupval(L, ra + 2));
         pc += GETARG_Bx(i);  /* go to end of the loop */
         i = *(pc++);  /* fetch next instruction */
         ilya_assert(GET_OPCODE(i) == OP_TFORCALL && ra == RA(i));
@@ -1842,7 +1842,7 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         setobjs2s(L, ra + 4, ra + 1);  /* copy state */
         setobjs2s(L, ra + 3, ra);  /* copy fn */
         L->top.p = ra + 3 + 3;
-        ProtectNT(luaD_call(L, ra + 3, GETARG_C(i)));  /* do the call */
+        ProtectNT(ilyaD_call(L, ra + 3, GETARG_C(i)));  /* do the call */
         updatestack(ci);  /* stack may have changed */
         i = *(pc++);  /* go to next instruction */
         ilya_assert(GET_OPCODE(i) == OP_TFORLOOP && ra == RA(i));
@@ -1873,13 +1873,13 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
         if (last > h->asize) {  /* needs more space? */
           /* fixed-size sets should have space preallocated */
           ilya_assert(GETARG_vB(i) == 0);
-          luaH_resizearray(L, h, last);  /* preallocate it at once */
+          ilyaH_resizearray(L, h, last);  /* preallocate it at once */
         }
         for (; n > 0; n--) {
           TValue *val = s2v(ra + n);
           obj2arr(h, last - 1, val);
           last--;
-          luaC_barrierback(L, obj2gco(h), val);
+          ilyaC_barrierback(L, obj2gco(h), val);
         }
         vmbreak;
       }
@@ -1893,13 +1893,13 @@ void luaV_execute (ilya_State *L, CallInfo *ci) {
       vmcase(OP_VARARG) {
         StkId ra = RA(i);
         int n = GETARG_C(i) - 1;  /* required results */
-        Protect(luaT_getvarargs(L, ci, ra, n));
+        Protect(ilyaT_getvarargs(L, ci, ra, n));
         vmbreak;
       }
       vmcase(OP_VARARGPREP) {
-        ProtectNT(luaT_adjustvarargs(L, GETARG_A(i), ci, cl->p));
+        ProtectNT(ilyaT_adjustvarargs(L, GETARG_A(i), ci, cl->p));
         if (l_unlikely(trap)) {  /* previous "Protect" updated trap */
-          luaD_hookcall(L, ci);
+          ilyaD_hookcall(L, ci);
           L->oldpc = 1;  /* next opcode will be seen as a "new" line */
         }
         updatebase(ci);  /* fn has new base after adjustment */

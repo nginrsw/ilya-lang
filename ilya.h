@@ -1,7 +1,7 @@
 /*
 ** $Id: ilya.h $
 ** Ilya - A Scripting Language
-** github.com/nginrsw, KRS-Bdg, Indonesia
+** github.com/nginrsw/ilya, KRS-Bdg, Indonesia
 ** See Copyright Notice at the end of this file
 */
 
@@ -13,7 +13,7 @@
 #include <stddef.h>
 
 
-#define ILYA_COPYRIGHT	ILYA_RELEASE "  Copyright (C) 2025 github.com/nginrsw/ilya-lang, KRS-Bdg"
+#define ILYA_COPYRIGHT	ILYA_RELEASE "  Copyright (C) 2025 github.com/nginrsw/ilya, KRS-Bdg"
 #define ILYA_AUTHORS	"Gillar Ajie Prasatya"
 
 
@@ -29,7 +29,7 @@
 
 
 /* mark for precompiled code ('<esc>Ilya') */
-#define ILYA_SIGNATURE	"\x1bLua"
+#define ILYA_SIGNATURE	"\x1bIlya"
 
 /* option for multiple returns in 'ilya_pcall' and 'ilya_call' */
 #define ILYA_MULTRET	(-1)
@@ -37,10 +37,10 @@
 
 /*
 ** Pseudo-indices
-** (-LUAI_MAXSTACK is the minimum valid index; we keep some free empty
+** (-ILYAI_MAXSTACK is the minimum valid index; we keep some free empty
 ** space after that to help overflow detection)
 */
-#define ILYA_REGISTRYINDEX	(-LUAI_MAXSTACK - 1000)
+#define ILYA_REGISTRYINDEX	(-ILYAI_MAXSTACK - 1000)
 #define ilya_upvalueindex(i)	(ILYA_REGISTRYINDEX - (i))
 
 
@@ -516,12 +516,12 @@ struct ilya_Debug {
 /* }====================================================================== */
 
 
-#define LUAI_TOSTRAUX(x)	#x
-#define LUAI_TOSTR(x)		LUAI_TOSTRAUX(x)
+#define ILYAI_TOSTRAUX(x)	#x
+#define ILYAI_TOSTR(x)		ILYAI_TOSTRAUX(x)
 
-#define ILYA_VERSION_MAJOR	LUAI_TOSTR(ILYA_VERSION_MAJOR_N)
-#define ILYA_VERSION_MINOR	LUAI_TOSTR(ILYA_VERSION_MINOR_N)
-#define ILYA_VERSION_RELEASE	LUAI_TOSTR(ILYA_VERSION_RELEASE_N)
+#define ILYA_VERSION_MAJOR	ILYAI_TOSTR(ILYA_VERSION_MAJOR_N)
+#define ILYA_VERSION_MINOR	ILYAI_TOSTR(ILYA_VERSION_MINOR_N)
+#define ILYA_VERSION_RELEASE	ILYAI_TOSTR(ILYA_VERSION_RELEASE_N)
 
 #define ILYA_VERSION	"Ilya " ILYA_VERSION_MAJOR "." ILYA_VERSION_MINOR
 #define ILYA_RELEASE	ILYA_VERSION "." ILYA_VERSION_RELEASE

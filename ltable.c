@@ -96,7 +96,7 @@ typedef union {
 ** between 2^MAXHBITS and the maximum size such that, measured in bytes,
 ** it fits in a 'size_t'.
 */
-#define MAXHSIZE	luaM_limitN(1 << MAXHBITS, Node)
+#define MAXHSIZE	ilyaM_limitN(1 << MAXHBITS, Node)
 
 
 /*
@@ -170,7 +170,7 @@ static unsigned l_hashfloat (ilya_Number n) {
   ilya_Integer ni;
   n = l_mathop(frexp)(n, &i) * -cast_num(INT_MIN);
   if (!ilya_numbertointeger(n, &ni)) {  /* is 'n' inf/-inf/NaN? */
-    ilya_assert(luai_numisnan(n) || l_mathop(fabs)(n) == cast_num(HUGE_VAL));
+    ilya_assert(ilyai_numisnan(n) || l_mathop(fabs)(n) == cast_num(HUGE_VAL));
     return 0;
   }
   else {  /* normal case */
@@ -201,7 +201,7 @@ static Node *mainpositionTV (const Table *t, const TValue *key) {
     }
     case ILYA_VLNGSTR: {
       TString *ts = tsvalue(key);
-      return hashpow2(t, luaS_hashlongstr(ts));
+      return hashpow2(t, ilyaS_hashlongstr(ts));
     }
     case ILYA_VFALSE:
       return hashboolean(t, 0);
@@ -260,13 +260,13 @@ static int equalkey (const TValue *k1, const Node *n2, int deadok) {
     case ILYA_VNUMINT:
       return (ivalue(k1) == keyival(n2));
     case ILYA_VNUMFLT:
-      return luai_numeq(fltvalue(k1), fltvalueraw(keyval(n2)));
+      return ilyai_numeq(fltvalue(k1), fltvalueraw(keyval(n2)));
     case ILYA_VLIGHTUSERDATA:
       return pvalue(k1) == pvalueraw(keyval(n2));
     case ILYA_VLCF:
       return fvalue(k1) == fvalueraw(keyval(n2));
     case ctb(ILYA_VLNGSTR):
-      return luaS_eqlngstr(tsvalue(k1), keystrval(n2));
+      return ilyaS_eqlngstr(tsvalue(k1), keystrval(n2));
     default:
       return gcvalue(k1) == gcvalueraw(keyval(n2));
   }
@@ -340,7 +340,7 @@ static unsigned findindex (ilya_State *L, Table *t, TValue *key,
   else {
     const TValue *n = getgeneric(t, key, 1);
     if (l_unlikely(isabstkey(n)))
-      luaG_runerror(L, "invalid key to 'next'");  /* key not found */
+      ilyaG_runerror(L, "invalid key to 'next'");  /* key not found */
     i = cast_uint(nodefromval(n) - gnode(t, 0));  /* key index in hash table */
     /* hash elements are numbered after array ones */
     return (i + 1) + asize;
@@ -348,7 +348,7 @@ static unsigned findindex (ilya_State *L, Table *t, TValue *key,
 }
 
 
-int luaH_next (ilya_State *L, Table *t, StkId key) {
+int ilyaH_next (ilya_State *L, Table *t, StkId key) {
   unsigned int asize = t->asize;
   unsigned int i = findindex(L, t, s2v(key), asize);  /* find original key */
   for (; i < asize; i++) {  /* try first array part */
@@ -384,7 +384,7 @@ static void freehash (ilya_State *L, Table *t) {
   if (!isdummy(t)) {
     /* get pointer to the beginning of Node array */
     char *arr = cast_charp(t->node) - extraLastfree(t);
-    luaM_freearray(L, arr, sizehash(t));
+    ilyaM_freearray(L, arr, sizehash(t));
   }
 }
 
@@ -419,7 +419,7 @@ typedef struct {
 /*
 ** Check whether it is worth to use 'na' array entries instead of 'nh'
 ** hash nodes. (A hash node uses ~3 times more memory than an array
-** entry: Two values plus 'next' versus one value.) Evaluate with size_t
+** entry: Two values plus 'next' versus one value.) Evailyate with size_t
 ** to avoid overflows.
 */
 #define arrayXhash(na,nh)	(cast_sizet(na) <= cast_sizet(nh) * 3)
@@ -460,7 +460,7 @@ static unsigned computesizes (Counters *ct) {
 static void countint (ilya_Integer key, Counters *ct) {
   unsigned int k = arrayindex(key);
   if (k != 0) {  /* is 'key' an array index? */
-    ct->nums[luaO_ceillog2(k)]++;  /* count as such */
+    ct->nums[ilyaO_ceillog2(k)]++;  /* count as such */
     ct->na++;
   }
 }
@@ -557,13 +557,13 @@ static Value *resizearray (ilya_State *L , Table *t,
     return t->array;  /* nothing to be done */
   else if (newasize == 0) {  /* erasing array? */
     Value *op = t->array - oldasize;  /* original array's real address */
-    luaM_freemem(L, op, concretesize(oldasize));  /* free it */
+    ilyaM_freemem(L, op, concretesize(oldasize));  /* free it */
     return NULL;
   }
   else {
     size_t newasizeb = concretesize(newasize);
     Value *np = cast(Value *,
-                  luaM_reallocvector(L, NULL, 0, newasizeb, lu_byte));
+                  ilyaM_reallocvector(L, NULL, 0, newasizeb, lu_byte));
     if (np == NULL)  /* allocation error? */
       return NULL;
     np += newasize;  /* shift pointer to the end of value segment */
@@ -575,7 +575,7 @@ static Value *resizearray (ilya_State *L , Table *t,
       size_t tomoveb = (oldasize < newasize) ? oldasizeb : newasizeb;
       ilya_assert(tomoveb > 0);
       memcpy(np - tomove, op - tomove, tomoveb);
-      luaM_freemem(L, op - oldasize, oldasizeb);  /* free old block */
+      ilyaM_freemem(L, op - oldasize, oldasizeb);  /* free old block */
     }
     return np;
   }
@@ -597,15 +597,15 @@ static void setnodevector (ilya_State *L, Table *t, unsigned size) {
   }
   else {
     int i;
-    int lsize = luaO_ceillog2(size);
+    int lsize = ilyaO_ceillog2(size);
     if (lsize > MAXHBITS || (1 << lsize) > MAXHSIZE)
-      luaG_runerror(L, "table overflow");
+      ilyaG_runerror(L, "table overflow");
     size = twoto(lsize);
     if (lsize < LIMFORLAST)  /* no 'lastfree' field? */
-      t->node = luaM_newvector(L, size, Node);
+      t->node = ilyaM_newvector(L, size, Node);
     else {
       size_t bsize = size * sizeof(Node) + sizeof(Limbox);
-      char *node = luaM_newblock(L, bsize);
+      char *node = ilyaM_newblock(L, bsize);
       t->node = cast(Node *, node + sizeof(Limbox));
       getlastfree(t) = gnode(t, size);  /* all positions are free */
     }
@@ -703,13 +703,13 @@ static void clearNewSlice (Table *t, unsigned oldasize, unsigned newasize) {
 ** the old one ('oldasize'), this fn will do nothing with that
 ** part.
 */
-void luaH_resize (ilya_State *L, Table *t, unsigned newasize,
+void ilyaH_resize (ilya_State *L, Table *t, unsigned newasize,
                                           unsigned nhsize) {
   Table newt;  /* to keep the new hash part */
   unsigned oldasize = t->asize;
   Value *newarray;
   if (newasize > MAXASIZE)
-    luaG_runerror(L, "table overflow");
+    ilyaG_runerror(L, "table overflow");
   /* create new hash part with appropriate size into 'newt' */
   newt.flags = 0;
   setnodevector(L, &newt, nhsize);
@@ -723,7 +723,7 @@ void luaH_resize (ilya_State *L, Table *t, unsigned newasize,
   newarray = resizearray(L, t, oldasize, newasize);
   if (l_unlikely(newarray == NULL && newasize > 0)) {  /* allocation failed? */
     freehash(L, &newt);  /* release new hash part */
-    luaM_error(L);  /* raise error (with array unchanged) */
+    ilyaM_error(L);  /* raise error (with array unchanged) */
   }
   /* allocation ok; initialize new part of the array */
   exchangehashpart(t, &newt);  /* 't' has the new hash ('newt' has the old) */
@@ -738,9 +738,9 @@ void luaH_resize (ilya_State *L, Table *t, unsigned newasize,
 }
 
 
-void luaH_resizearray (ilya_State *L, Table *t, unsigned int nasize) {
+void ilyaH_resizearray (ilya_State *L, Table *t, unsigned int nasize) {
   unsigned nsize = allocsizenode(t);
-  luaH_resize(L, t, nasize, nsize);
+  ilyaH_resize(L, t, nasize, nsize);
 }
 
 
@@ -778,7 +778,7 @@ static void rehash (ilya_State *L, Table *t, const TValue *ek) {
     nsize += nsize >> 2;
   }
   /* resize the table to new computed sizes */
-  luaH_resize(L, t, asize, nsize);
+  ilyaH_resize(L, t, asize, nsize);
 }
 
 /*
@@ -786,8 +786,8 @@ static void rehash (ilya_State *L, Table *t, const TValue *ek) {
 */
 
 
-Table *luaH_new (ilya_State *L) {
-  GCObject *o = luaC_newobj(L, ILYA_VTABLE, sizeof(Table));
+Table *ilyaH_new (ilya_State *L) {
+  GCObject *o = ilyaC_newobj(L, ILYA_VTABLE, sizeof(Table));
   Table *t = gco2t(o);
   t->metatable = NULL;
   t->flags = maskflags;  /* table has no metamethod fields */
@@ -798,7 +798,7 @@ Table *luaH_new (ilya_State *L) {
 }
 
 
-lu_mem luaH_size (Table *t) {
+lu_mem ilyaH_size (Table *t) {
   lu_mem sz = cast(lu_mem, sizeof(Table)) + concretesize(t->asize);
   if (!isdummy(t))
     sz += sizehash(t);
@@ -809,10 +809,10 @@ lu_mem luaH_size (Table *t) {
 /*
 ** Frees a table.
 */
-void luaH_free (ilya_State *L, Table *t) {
+void ilyaH_free (ilya_State *L, Table *t) {
   freehash(L, t);
   resizearray(L, t, t->asize, 0);
-  luaM_free(L, t);
+  ilyaM_free(L, t);
 }
 
 
@@ -901,7 +901,7 @@ static void newcheckedkey (Table *t, const TValue *key, TValue *value) {
 }
 
 
-static void luaH_newkey (ilya_State *L, Table *t, const TValue *key,
+static void ilyaH_newkey (ilya_State *L, Table *t, const TValue *key,
                                                  TValue *value) {
   if (!ttisnil(value)) {  /* do not insert nil values */
     int done = insertkey(t, key, value);
@@ -909,7 +909,7 @@ static void luaH_newkey (ilya_State *L, Table *t, const TValue *key,
       rehash(L, t, key);  /* grow table */
       newcheckedkey(t, key, value);  /* insert key in grown table */
     }
-    luaC_barrierback(L, obj2gco(t), key);
+    ilyaC_barrierback(L, obj2gco(t), key);
     /* for debugging only: any new key may force an emergency collection */
     condchangemem(L, (void)0, (void)0, 1);
   }
@@ -946,7 +946,7 @@ static lu_byte finishnodeget (const TValue *val, TValue *res) {
 }
 
 
-lu_byte luaH_getint (Table *t, ilya_Integer key, TValue *res) {
+lu_byte ilyaH_getint (Table *t, ilya_Integer key, TValue *res) {
   unsigned k = ikeyinarray(t, key);
   if (k > 0) {
     lu_byte tag = *getArrTag(t, k - 1);
@@ -962,7 +962,7 @@ lu_byte luaH_getint (Table *t, ilya_Integer key, TValue *res) {
 /*
 ** search fn for short strings
 */
-const TValue *luaH_Hgetshortstr (Table *t, TString *key) {
+const TValue *ilyaH_Hgetshortstr (Table *t, TString *key) {
   Node *n = hashstr(t, key);
   ilya_assert(strisshr(key));
   for (;;) {  /* check whether 'key' is somewhere in the chain */
@@ -978,8 +978,8 @@ const TValue *luaH_Hgetshortstr (Table *t, TString *key) {
 }
 
 
-lu_byte luaH_getshortstr (Table *t, TString *key, TValue *res) {
-  return finishnodeget(luaH_Hgetshortstr(t, key), res);
+lu_byte ilyaH_getshortstr (Table *t, TString *key, TValue *res) {
+  return finishnodeget(ilyaH_Hgetshortstr(t, key), res);
 }
 
 
@@ -993,13 +993,13 @@ static const TValue *Hgetlongstr (Table *t, TString *key) {
 
 static const TValue *Hgetstr (Table *t, TString *key) {
   if (strisshr(key))
-    return luaH_Hgetshortstr(t, key);
+    return ilyaH_Hgetshortstr(t, key);
   else
     return Hgetlongstr(t, key);
 }
 
 
-lu_byte luaH_getstr (Table *t, TString *key, TValue *res) {
+lu_byte ilyaH_getstr (Table *t, TString *key, TValue *res) {
   return finishnodeget(Hgetstr(t, key), res);
 }
 
@@ -1007,21 +1007,21 @@ lu_byte luaH_getstr (Table *t, TString *key, TValue *res) {
 /*
 ** main search fn
 */
-lu_byte luaH_get (Table *t, const TValue *key, TValue *res) {
+lu_byte ilyaH_get (Table *t, const TValue *key, TValue *res) {
   const TValue *slot;
   switch (ttypetag(key)) {
     case ILYA_VSHRSTR:
-      slot = luaH_Hgetshortstr(t, tsvalue(key));
+      slot = ilyaH_Hgetshortstr(t, tsvalue(key));
       break;
     case ILYA_VNUMINT:
-      return luaH_getint(t, ivalue(key), res);
+      return ilyaH_getint(t, ivalue(key), res);
     case ILYA_VNIL:
       slot = &absentkey;
       break;
     case ILYA_VNUMFLT: {
       ilya_Integer k;
-      if (luaV_flttointeger(fltvalue(key), &k, F2Ieq)) /* integral index? */
-        return luaH_getint(t, k, res);  /* use specialized version */
+      if (ilyaV_flttointeger(fltvalue(key), &k, F2Ieq)) /* integral index? */
+        return ilyaH_getint(t, k, res);  /* use specialized version */
       /* else... */
     }  /* FALLTHROUGH */
     default:
@@ -1034,7 +1034,7 @@ lu_byte luaH_get (Table *t, const TValue *key, TValue *res) {
 
 /*
 ** When a 'pset' cannot be completed, this fn returns an encoding
-** of its result, to be used by 'luaH_finishset'.
+** of its result, to be used by 'ilyaH_finishset'.
 */
 static int retpsetcode (Table *t, const TValue *slot) {
   if (isabstkey(slot))
@@ -1064,7 +1064,7 @@ static int rawfinishnodeset (const TValue *slot, TValue *val) {
 }
 
 
-int luaH_psetint (Table *t, ilya_Integer key, TValue *val) {
+int ilyaH_psetint (Table *t, ilya_Integer key, TValue *val) {
   ilya_assert(!ikeyinarray(t, key));
   return finishnodeset(t, getintfromhash(t, key), val);
 }
@@ -1072,21 +1072,21 @@ int luaH_psetint (Table *t, ilya_Integer key, TValue *val) {
 
 static int psetint (Table *t, ilya_Integer key, TValue *val) {
   int hres;
-  luaH_fastseti(t, key, val, hres);
+  ilyaH_fastseti(t, key, val, hres);
   return hres;
 }
 
 
 /*
 ** This fn could be just this:
-**    return finishnodeset(t, luaH_Hgetshortstr(t, key), val);
+**    return finishnodeset(t, ilyaH_Hgetshortstr(t, key), val);
 ** However, it optimizes the common case created by constructors (e.g.,
 ** {x=1, y=2}), which creates a key in a table that has no metatable,
 ** it is not old/black, and it already has space for the key.
 */
 
-int luaH_psetshortstr (Table *t, TString *key, TValue *val) {
-  const TValue *slot = luaH_Hgetshortstr(t, key);
+int ilyaH_psetshortstr (Table *t, TString *key, TValue *val) {
+  const TValue *slot = ilyaH_Hgetshortstr(t, key);
   if (!ttisnil(slot)) {  /* key already has a value? (all too common) */
     setobj(((ilya_State*)NULL), cast(TValue*, slot), val);  /* update it */
     return HOK;  /* done */
@@ -1111,22 +1111,22 @@ int luaH_psetshortstr (Table *t, TString *key, TValue *val) {
 }
 
 
-int luaH_psetstr (Table *t, TString *key, TValue *val) {
+int ilyaH_psetstr (Table *t, TString *key, TValue *val) {
   if (strisshr(key))
-    return luaH_psetshortstr(t, key, val);
+    return ilyaH_psetshortstr(t, key, val);
   else
     return finishnodeset(t, Hgetlongstr(t, key), val);
 }
 
 
-int luaH_pset (Table *t, const TValue *key, TValue *val) {
+int ilyaH_pset (Table *t, const TValue *key, TValue *val) {
   switch (ttypetag(key)) {
-    case ILYA_VSHRSTR: return luaH_psetshortstr(t, tsvalue(key), val);
+    case ILYA_VSHRSTR: return ilyaH_psetshortstr(t, tsvalue(key), val);
     case ILYA_VNUMINT: return psetint(t, ivalue(key), val);
     case ILYA_VNIL: return HNOTFOUND;
     case ILYA_VNUMFLT: {
       ilya_Integer k;
-      if (luaV_flttointeger(fltvalue(key), &k, F2Ieq)) /* integral index? */
+      if (ilyaV_flttointeger(fltvalue(key), &k, F2Ieq)) /* integral index? */
         return psetint(t, k, val);  /* use specialized version */
       /* else... */
     }  /* FALLTHROUGH */
@@ -1141,24 +1141,24 @@ int luaH_pset (Table *t, const TValue *key, TValue *val) {
 ** Beware: when using this fn the caller probably need to check a
 ** GC barrier and invalidate the TM cache.
 */
-void luaH_finishset (ilya_State *L, Table *t, const TValue *key,
+void ilyaH_finishset (ilya_State *L, Table *t, const TValue *key,
                                     TValue *value, int hres) {
   ilya_assert(hres != HOK);
   if (hres == HNOTFOUND) {
     TValue aux;
     if (l_unlikely(ttisnil(key)))
-      luaG_runerror(L, "table index is nil");
+      ilyaG_runerror(L, "table index is nil");
     else if (ttisfloat(key)) {
       ilya_Number f = fltvalue(key);
       ilya_Integer k;
-      if (luaV_flttointeger(f, &k, F2Ieq)) {
+      if (ilyaV_flttointeger(f, &k, F2Ieq)) {
         setivalue(&aux, k);  /* key is equal to an integer */
         key = &aux;  /* insert it as an integer */
       }
-      else if (l_unlikely(luai_numisnan(f)))
-        luaG_runerror(L, "table index is NaN");
+      else if (l_unlikely(ilyai_numisnan(f)))
+        ilyaG_runerror(L, "table index is NaN");
     }
-    luaH_newkey(L, t, key, value);
+    ilyaH_newkey(L, t, key, value);
   }
   else if (hres > 0) {  /* regular Node? */
     setobj2t(L, gval(gnode(t, hres - HFIRSTNODE)), value);
@@ -1174,10 +1174,10 @@ void luaH_finishset (ilya_State *L, Table *t, const TValue *key,
 ** beware: when using this fn you probably need to check a GC
 ** barrier and invalidate the TM cache.
 */
-void luaH_set (ilya_State *L, Table *t, const TValue *key, TValue *value) {
-  int hres = luaH_pset(t, key, value);
+void ilyaH_set (ilya_State *L, Table *t, const TValue *key, TValue *value) {
+  int hres = ilyaH_pset(t, key, value);
   if (hres != HOK)
-    luaH_finishset(L, t, key, value, hres);
+    ilyaH_finishset(L, t, key, value, hres);
 }
 
 
@@ -1185,7 +1185,7 @@ void luaH_set (ilya_State *L, Table *t, const TValue *key, TValue *value) {
 ** Ditto for a GC barrier. (No need to invalidate the TM cache, as
 ** integers cannot be keys to metamethods.)
 */
-void luaH_setint (ilya_State *L, Table *t, ilya_Integer key, TValue *value) {
+void ilyaH_setint (ilya_State *L, Table *t, ilya_Integer key, TValue *value) {
   unsigned ik = ikeyinarray(t, key);
   if (ik > 0)
     obj2arr(t, ik - 1, value);
@@ -1194,7 +1194,7 @@ void luaH_setint (ilya_State *L, Table *t, ilya_Integer key, TValue *value) {
     if (!ok) {
       TValue k;
       setivalue(&k, key);
-      luaH_newkey(L, t, &k, value);
+      ilyaH_newkey(L, t, &k, value);
     }
   }
 }
@@ -1268,7 +1268,7 @@ static ilya_Unsigned newhint (Table *t, unsigned hint) {
 ** If there is no array part, or its last element is non empty, the
 ** border may be in the hash part.
 */
-ilya_Unsigned luaH_getn (Table *t) {
+ilya_Unsigned ilyaH_getn (Table *t) {
   unsigned asize = t->asize;
   if (asize > 0) {  /* is there an array part? */
     const unsigned maxvicinity = 4;
@@ -1318,7 +1318,7 @@ ilya_Unsigned luaH_getn (Table *t) {
 
 /* export this fn for the test library */
 
-Node *luaH_mainposition (const Table *t, const TValue *key) {
+Node *ilyaH_mainposition (const Table *t, const TValue *key) {
   return mainpositionTV(t, key);
 }
 

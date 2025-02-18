@@ -5,8 +5,8 @@
 */
 
 
-#ifndef luaconf_h
-#define luaconf_h
+#ifndef ilyaconf_h
+#define ilyaconf_h
 
 #include <limits.h>
 #include <stddef.h>
@@ -93,9 +93,9 @@
 
 
 /*
-@@ LUAI_IS32INT is true iff 'int' has (at least) 32 bits.
+@@ ILYAI_IS32INT is true iff 'int' has (at least) 32 bits.
 */
-#define LUAI_IS32INT	((UINT_MAX >> 30) >= 3)
+#define ILYAI_IS32INT	((UINT_MAX >> 30) >= 3)
 
 /* }================================================================== */
 
@@ -157,7 +157,7 @@
 /*
 ** 32-bit integers and 'float'
 */
-#if LUAI_IS32INT  /* use 'int' if big enough */
+#if ILYAI_IS32INT  /* use 'int' if big enough */
 #define ILYA_INT_TYPE	ILYA_INT_INT
 #else  /* otherwise use 'long' */
 #define ILYA_INT_TYPE	ILYA_INT_LONG
@@ -276,7 +276,7 @@
 
 /*
 ** ILYA_IGMARK is a mark to ignore all after it when building the
-** module name (e.g., used to build the luaopen_ fn name).
+** module name (e.g., used to build the ilyaopen_ fn name).
 ** Typically, the suffix after the mark is the module version,
 ** as in "mod-v1.2.so".
 */
@@ -293,8 +293,8 @@
 
 /*
 @@ ILYA_API is a mark for all core API functions.
-@@ LUALIB_API is a mark for all auxiliary library functions.
-@@ LUAMOD_API is a mark for all standard library opening functions.
+@@ ILYALIB_API is a mark for all auxiliary library functions.
+@@ ILYAMOD_API is a mark for all standard library opening functions.
 ** CHANGE them if you need to define those functions in some special way.
 ** For instance, if you want to create one Windows DLL with the core and
 ** the libraries, you may want to use the following definition (define
@@ -318,16 +318,16 @@
 /*
 ** More often than not the libs go together with the core.
 */
-#define LUALIB_API	ILYA_API
-#define LUAMOD_API	ILYA_API
+#define ILYALIB_API	ILYA_API
+#define ILYAMOD_API	ILYA_API
 
 
 /*
-@@ LUAI_FUNC is a mark for all extern functions that are not to be
+@@ ILYAI_FUNC is a mark for all extern functions that are not to be
 ** exported to outside modules.
-@@ LUAI_DDEF and LUAI_DDEC are marks for all extern (const) variables,
-** none of which to be exported to outside modules (LUAI_DDEF for
-** definitions and LUAI_DDEC for declarations).
+@@ ILYAI_DDEF and ILYAI_DDEC are marks for all extern (const) variables,
+** none of which to be exported to outside modules (ILYAI_DDEF for
+** definitions and ILYAI_DDEC for declarations).
 ** CHANGE them if you need to mark them in some special way. Elf/gcc
 ** (versions 3.2 and later) mark them as "hidden" to optimize access
 ** when Ilya is compiled as a shared library. Not all elf targets support
@@ -338,13 +338,13 @@
 */
 #if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 302) && \
     defined(__ELF__)		/* { */
-#define LUAI_FUNC	__attribute__((visibility("internal"))) extern
+#define ILYAI_FUNC	__attribute__((visibility("internal"))) extern
 #else				/* }{ */
-#define LUAI_FUNC	extern
+#define ILYAI_FUNC	extern
 #endif				/* } */
 
-#define LUAI_DDEC(dec)	LUAI_FUNC dec
-#define LUAI_DDEF	/* empty */
+#define ILYAI_DDEC(dec)	ILYAI_FUNC dec
+#define ILYAI_DDEF	/* empty */
 
 /* }================================================================== */
 
@@ -373,7 +373,7 @@
 /*
 @@ ILYA_COMPAT_APIINTCASTS controls the presence of macros for
 ** manipulating other integer types (ilya_pushunsigned, ilya_tounsigned,
-** luaL_checkint, luaL_checklong, etc.)
+** ilyaL_checkint, ilyaL_checklong, etc.)
 ** (These macros were also officially removed in 5.3, but they are still
 ** available here.)
 */
@@ -416,7 +416,7 @@
 */
 
 /*
-@@ LUAI_UACNUMBER is the result of a 'default argument promotion'
+@@ ILYAI_UACNUMBER is the result of a 'default argument promotion'
 @@ over a floating number.
 @@ l_floatatt(x) corrects float attribute 'x' to the proper float type
 ** by prefixing it with one of FLT/DBL/LDBL.
@@ -462,7 +462,7 @@
 
 #define l_floatatt(n)		(FLT_##n)
 
-#define LUAI_UACNUMBER	double
+#define ILYAI_UACNUMBER	double
 
 #define ILYA_NUMBER_FRMLEN	""
 #define ILYA_NUMBER_FMT		"%.7g"
@@ -479,7 +479,7 @@
 
 #define l_floatatt(n)		(LDBL_##n)
 
-#define LUAI_UACNUMBER	long double
+#define ILYAI_UACNUMBER	long double
 
 #define ILYA_NUMBER_FRMLEN	"L"
 #define ILYA_NUMBER_FMT		"%.19Lg"
@@ -495,7 +495,7 @@
 
 #define l_floatatt(n)		(DBL_##n)
 
-#define LUAI_UACNUMBER	double
+#define ILYAI_UACNUMBER	double
 
 #define ILYA_NUMBER_FRMLEN	""
 #define ILYA_NUMBER_FMT		"%.15g"
@@ -515,7 +515,7 @@
 
 /*
 @@ ILYA_UNSIGNED is the unsigned version of ILYA_INTEGER.
-@@ LUAI_UACINT is the result of a 'default argument promotion'
+@@ ILYAI_UACINT is the result of a 'default argument promotion'
 @@ over a ILYA_INTEGER.
 @@ ILYA_INTEGER_FRMLEN is the length modifier for reading/writing integers.
 @@ ILYA_INTEGER_FMT is the format for writing integers.
@@ -530,16 +530,16 @@
 
 #define ILYA_INTEGER_FMT		"%" ILYA_INTEGER_FRMLEN "d"
 
-#define LUAI_UACINT		ILYA_INTEGER
+#define ILYAI_UACINT		ILYA_INTEGER
 
 #define ilya_integer2str(s,sz,n)  \
-	l_sprintf((s), sz, ILYA_INTEGER_FMT, (LUAI_UACINT)(n))
+	l_sprintf((s), sz, ILYA_INTEGER_FMT, (ILYAI_UACINT)(n))
 
 /*
-** use LUAI_UACINT here to avoid problems with promotions (which
+** use ILYAI_UACINT here to avoid problems with promotions (which
 ** can turn a comparison between unsigneds into a signed comparison)
 */
-#define ILYA_UNSIGNED		unsigned LUAI_UACINT
+#define ILYA_UNSIGNED		unsigned ILYAI_UACINT
 
 
 /* now the variable definitions */
@@ -591,8 +591,8 @@
 
 #else				/* }{ */
 
-#error "Compiler does not support 'long long'. Use option '-DLUA_32BITS' \
-  or '-DLUA_C89_NUMBERS' (see file 'ilyaconf.h' for details)"
+#error "Compiler does not support 'long long'. Use option '-DILYA_32BITS' \
+  or '-DILYA_C89_NUMBERS' (see file 'ilyaconf.h' for details)"
 
 #endif				/* } */
 
@@ -648,7 +648,7 @@
 */
 #if !defined(ILYA_USE_C89)
 #define ilya_number2strx(L,b,sz,f,n)  \
-	((void)L, l_sprintf(b,sz,f,(LUAI_UACNUMBER)(n)))
+	((void)L, l_sprintf(b,sz,f,(ILYAI_UACNUMBER)(n)))
 #endif
 
 
@@ -700,14 +700,14 @@
 ** Define ILYA_NOBUILTIN if you do not want '__builtin_expect' in your
 ** code.)
 */
-#if !defined(luai_likely)
+#if !defined(ilyai_likely)
 
 #if defined(__GNUC__) && !defined(ILYA_NOBUILTIN)
-#define luai_likely(x)		(__builtin_expect(((x) != 0), 1))
-#define luai_unlikely(x)	(__builtin_expect(((x) != 0), 0))
+#define ilyai_likely(x)		(__builtin_expect(((x) != 0), 1))
+#define ilyai_unlikely(x)	(__builtin_expect(((x) != 0), 0))
 #else
-#define luai_likely(x)		(x)
-#define luai_unlikely(x)	(x)
+#define ilyai_likely(x)		(x)
+#define ilyai_unlikely(x)	(x)
 #endif
 
 #endif
@@ -715,8 +715,8 @@
 
 #if defined(ILYA_CORE) || defined(ILYA_LIB)
 /* shorter names for Ilya's own use */
-#define l_likely(x)	luai_likely(x)
-#define l_unlikely(x)	luai_unlikely(x)
+#define l_likely(x)	ilyai_likely(x)
+#define l_unlikely(x)	ilyai_unlikely(x)
 #endif
 
 
@@ -758,16 +758,16 @@
 */
 
 /*
-@@ LUAI_MAXSTACK limits the size of the Ilya stack.
+@@ ILYAI_MAXSTACK limits the size of the Ilya stack.
 ** CHANGE it if you need a different limit. This limit is arbitrary;
 ** its only purpose is to stop Ilya from consuming unlimited stack
 ** space and to reserve some numbers for pseudo-indices.
 ** (It must fit into max(int)/2.)
 */
 #if 1000000 < (INT_MAX / 2)
-#define LUAI_MAXSTACK		1000000
+#define ILYAI_MAXSTACK		1000000
 #else
-#define LUAI_MAXSTACK		(INT_MAX / 2u)
+#define ILYAI_MAXSTACK		(INT_MAX / 2u)
 #endif
 
 
@@ -788,17 +788,17 @@
 
 
 /*
-@@ LUAL_BUFFERSIZE is the initial buffer size used by the lauxlib
+@@ ILYAL_BUFFERSIZE is the initial buffer size used by the lauxlib
 ** buffer system.
 */
-#define LUAL_BUFFERSIZE   ((int)(16 * sizeof(void*) * sizeof(ilya_Number)))
+#define ILYAL_BUFFERSIZE   ((int)(16 * sizeof(void*) * sizeof(ilya_Number)))
 
 
 /*
-@@ LUAI_MAXALIGN defines fields that, when used in a union, ensure
+@@ ILYAI_MAXALIGN defines fields that, when used in a union, ensure
 ** maximum alignment for the other items in that union.
 */
-#define LUAI_MAXALIGN  ilya_Number n; double u; void *s; ilya_Integer i; long l
+#define ILYAI_MAXALIGN  ilya_Number n; double u; void *s; ilya_Integer i; long l
 
 /* }================================================================== */
 

@@ -78,14 +78,14 @@ typedef struct LexState {
 } LexState;
 
 
-LUAI_FUNC void luaX_init (ilya_State *L);
-LUAI_FUNC void luaX_setinput (ilya_State *L, LexState *ls, ZIO *z,
+ILYAI_FUNC void ilyaX_init (ilya_State *L);
+ILYAI_FUNC void ilyaX_setinput (ilya_State *L, LexState *ls, ZIO *z,
                               TString *source, int firstchar);
-LUAI_FUNC TString *luaX_newstring (LexState *ls, const char *str, size_t l);
-LUAI_FUNC void luaX_next (LexState *ls);
-LUAI_FUNC int luaX_lookahead (LexState *ls);
-LUAI_FUNC l_noret luaX_syntaxerror (LexState *ls, const char *s);
-LUAI_FUNC const char *luaX_token2str (LexState *ls, int token);
+ILYAI_FUNC TString *ilyaX_newstring (LexState *ls, const char *str, size_t l);
+ILYAI_FUNC void ilyaX_next (LexState *ls);
+ILYAI_FUNC int ilyaX_lookahead (LexState *ls);
+ILYAI_FUNC l_noret ilyaX_syntaxerror (LexState *ls, const char *s);
+ILYAI_FUNC const char *ilyaX_token2str (LexState *ls, int token);
 
 
 #endif

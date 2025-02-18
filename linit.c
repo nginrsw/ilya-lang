@@ -25,17 +25,17 @@
 ** Standard Libraries. (Must be listed in the same ORDER of their
 ** respective constants ILYA_<libname>K.)
 */
-static const luaL_Reg stdlibs[] = {
-  {ILYA_GNAME, luaopen_base},
-  {ILYA_LOADLIBNAME, luaopen_package},
-  {ILYA_COLIBNAME, luaopen_coroutine},
-  {ILYA_DBLIBNAME, luaopen_debug},
-  {ILYA_IOLIBNAME, luaopen_io},
-  {ILYA_MATHLIBNAME, luaopen_math},
-  {ILYA_OSLIBNAME, luaopen_os},
-  {ILYA_STRLIBNAME, luaopen_string},
-  {ILYA_TABLIBNAME, luaopen_table},
-  {ILYA_UTF8LIBNAME, luaopen_utf8},
+static const ilyaL_Reg stdlibs[] = {
+  {ILYA_GNAME, ilyaopen_base},
+  {ILYA_LOADLIBNAME, ilyaopen_package},
+  {ILYA_COLIBNAME, ilyaopen_coroutine},
+  {ILYA_DBLIBNAME, ilyaopen_debug},
+  {ILYA_IOLIBNAME, ilyaopen_io},
+  {ILYA_MATHLIBNAME, ilyaopen_math},
+  {ILYA_OSLIBNAME, ilyaopen_os},
+  {ILYA_STRLIBNAME, ilyaopen_string},
+  {ILYA_TABLIBNAME, ilyaopen_table},
+  {ILYA_UTF8LIBNAME, ilyaopen_utf8},
   {NULL, NULL}
 };
 
@@ -43,13 +43,13 @@ static const luaL_Reg stdlibs[] = {
 /*
 ** require and preload selected standard libraries
 */
-LUALIB_API void luaL_openselectedlibs (ilya_State *L, int load, int preload) {
+ILYALIB_API void ilyaL_openselectedlibs (ilya_State *L, int load, int preload) {
   int mask;
-  const luaL_Reg *lib;
-  luaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_PRELOAD_TABLE);
+  const ilyaL_Reg *lib;
+  ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_PRELOAD_TABLE);
   for (lib = stdlibs, mask = 1; lib->name != NULL; lib++, mask <<= 1) {
     if (load & mask) {  /* selected? */
-      luaL_requiref(L, lib->name, lib->func, 1);  /* require library */
+      ilyaL_requiref(L, lib->name, lib->func, 1);  /* require library */
       ilya_pop(L, 1);  /* remove result from the stack */
     }
     else if (preload & mask) {  /* selected? */

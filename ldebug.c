@@ -31,7 +31,7 @@
 
 
 
-#define LuaClosure(f)		((f) != NULL && (f)->c.tt == ILYA_VLCL)
+#define IlyaClosure(f)		((f) != NULL && (f)->c.tt == ILYA_VLCL)
 
 
 static const char *funcnamefromcall (ilya_State *L, CallInfo *ci,
@@ -39,7 +39,7 @@ static const char *funcnamefromcall (ilya_State *L, CallInfo *ci,
 
 
 static int currentpc (CallInfo *ci) {
-  ilya_assert(isLua(ci));
+  ilya_assert(isIlya(ci));
   return pcRel(ci->u.l.savedpc, ci_func(ci)->p);
 }
 
@@ -80,7 +80,7 @@ static int getbaseline (const Proto *f, int pc, int *basepc) {
 ** first gets a base line and from there does the increments until
 ** the desired instruction.
 */
-int luaG_getfuncline (const Proto *f, int pc) {
+int ilyaG_getfuncline (const Proto *f, int pc) {
   if (f->lineinfo == NULL)  /* no debug information? */
     return -1;
   else {
@@ -96,7 +96,7 @@ int luaG_getfuncline (const Proto *f, int pc) {
 
 
 static int getcurrentline (CallInfo *ci) {
-  return luaG_getfuncline(ci_func(ci)->p, currentpc(ci));
+  return ilyaG_getfuncline(ci_func(ci)->p, currentpc(ci));
 }
 
 
@@ -113,7 +113,7 @@ static int getcurrentline (CallInfo *ci) {
 */
 static void settraps (CallInfo *ci) {
   for (; ci != NULL; ci = ci->previous)
-    if (isLua(ci))
+    if (isIlya(ci))
       ci->u.l.trap = 1;
 }
 
@@ -126,7 +126,7 @@ static void settraps (CallInfo *ci) {
 ** values (causes at most one wrong hook call). 'hookmask' is an atomic
 ** value. We assume that pointers are atomic too (e.g., gcc ensures that
 ** for all platforms where it runs). Moreover, 'hook' is always checked
-** before being called (see 'luaD_hook').
+** before being called (see 'ilyaD_hook').
 */
 ILYA_API void ilya_sethook (ilya_State *L, ilya_Hook func, int mask, int count) {
   if (func == NULL || mask == 0) {  /* turn off hooks? */
@@ -138,7 +138,7 @@ ILYA_API void ilya_sethook (ilya_State *L, ilya_Hook func, int mask, int count) 
   resethookcount(L);
   L->hookmask = cast_byte(mask);
   if (mask)
-    settraps(L->ci);  /* to trace inside 'luaV_execute' */
+    settraps(L->ci);  /* to trace inside 'ilyaV_execute' */
 }
 
 
@@ -193,20 +193,20 @@ static const char *findvararg (CallInfo *ci, int n, StkId *pos) {
 }
 
 
-const char *luaG_findlocal (ilya_State *L, CallInfo *ci, int n, StkId *pos) {
+const char *ilyaG_findlocal (ilya_State *L, CallInfo *ci, int n, StkId *pos) {
   StkId base = ci->func.p + 1;
   const char *name = NULL;
-  if (isLua(ci)) {
+  if (isIlya(ci)) {
     if (n < 0)  /* access to vararg values? */
       return findvararg(ci, n, pos);
     else
-      name = luaF_getlocalname(ci_func(ci)->p, n, currentpc(ci));
+      name = ilyaF_getlocalname(ci_func(ci)->p, n, currentpc(ci));
   }
   if (name == NULL) {  /* no 'standard' name? */
     StkId limit = (ci == L->ci) ? L->top.p : ci->next->func.p;
     if (limit - base >= n && n > 0) {  /* is 'n' inside 'ci' stack? */
       /* generic name for any valid slot */
-      name = isLua(ci) ? "(temporary)" : "(C temporary)";
+      name = isIlya(ci) ? "(temporary)" : "(C temporary)";
     }
     else
       return NULL;  /* no name */
@@ -224,11 +224,11 @@ ILYA_API const char *ilya_getlocal (ilya_State *L, const ilya_Debug *ar, int n) 
     if (!isLfunction(s2v(L->top.p - 1)))  /* not a Ilya fn? */
       name = NULL;
     else  /* consider live variables at fn start (parameters) */
-      name = luaF_getlocalname(clLvalue(s2v(L->top.p - 1))->p, n, 0);
+      name = ilyaF_getlocalname(clLvalue(s2v(L->top.p - 1))->p, n, 0);
   }
   else {  /* active fn; get information through 'ar' */
     StkId pos = NULL;  /* to avoid warnings */
-    name = luaG_findlocal(L, ar->i_ci, n, &pos);
+    name = ilyaG_findlocal(L, ar->i_ci, n, &pos);
     if (name) {
       setobjs2s(L, L->top.p, pos);
       api_incr_top(L);
@@ -243,7 +243,7 @@ ILYA_API const char *ilya_setlocal (ilya_State *L, const ilya_Debug *ar, int n) 
   StkId pos = NULL;  /* to avoid warnings */
   const char *name;
   ilya_lock(L);
-  name = luaG_findlocal(L, ar->i_ci, n, &pos);
+  name = ilyaG_findlocal(L, ar->i_ci, n, &pos);
   if (name) {
     api_checkpop(L, 1);
     setobjs2s(L, pos, L->top.p - 1);
@@ -255,7 +255,7 @@ ILYA_API const char *ilya_setlocal (ilya_State *L, const ilya_Debug *ar, int n) 
 
 
 static void funcinfo (ilya_Debug *ar, Closure *cl) {
-  if (!LuaClosure(cl)) {
+  if (!IlyaClosure(cl)) {
     ar->source = "=[C]";
     ar->srclen = LL("=[C]");
     ar->linedefined = -1;
@@ -275,7 +275,7 @@ static void funcinfo (ilya_Debug *ar, Closure *cl) {
     ar->lastlinedefined = p->lastlinedefined;
     ar->what = (ar->linedefined == 0) ? "main" : "Ilya";
   }
-  luaO_chunkid(ar->short_src, ar->source, ar->srclen);
+  ilyaO_chunkid(ar->short_src, ar->source, ar->srclen);
 }
 
 
@@ -283,19 +283,19 @@ static int nextline (const Proto *p, int currentline, int pc) {
   if (p->lineinfo[pc] != ABSLINEINFO)
     return currentline + p->lineinfo[pc];
   else
-    return luaG_getfuncline(p, pc);
+    return ilyaG_getfuncline(p, pc);
 }
 
 
 static void collectvalidlines (ilya_State *L, Closure *f) {
-  if (!LuaClosure(f)) {
+  if (!IlyaClosure(f)) {
     setnilvalue(s2v(L->top.p));
     api_incr_top(L);
   }
   else {
     const Proto *p = f->l.p;
     int currentline = p->linedefined;
-    Table *t = luaH_new(L);  /* new table to store active lines */
+    Table *t = ilyaH_new(L);  /* new table to store active lines */
     sethvalue2s(L, L->top.p, t);  /* push it on stack */
     api_incr_top(L);
     if (p->lineinfo != NULL) {  /* proto with debug information? */
@@ -311,7 +311,7 @@ static void collectvalidlines (ilya_State *L, Closure *f) {
       }
       for (; i < p->sizelineinfo; i++) {  /* for each instruction */
         currentline = nextline(p, currentline, i);  /* get its line */
-        luaH_setint(L, t, currentline, &v);  /* table[line] = true */
+        ilyaH_setint(L, t, currentline, &v);  /* table[line] = true */
       }
     }
   }
@@ -336,12 +336,12 @@ static int auxgetinfo (ilya_State *L, const char *what, ilya_Debug *ar,
         break;
       }
       case 'l': {
-        ar->currentline = (ci && isLua(ci)) ? getcurrentline(ci) : -1;
+        ar->currentline = (ci && isIlya(ci)) ? getcurrentline(ci) : -1;
         break;
       }
       case 'u': {
         ar->nups = (f == NULL) ? 0 : f->c.nupvalues;
-        if (!LuaClosure(f)) {
+        if (!IlyaClosure(f)) {
           ar->isvararg = 1;
           ar->nparams = 0;
         }
@@ -503,7 +503,7 @@ static const char *kname (const Proto *p, int index, const char **name) {
 static const char *basicgetobjname (const Proto *p, int *ppc, int reg,
                                     const char **name) {
   int pc = *ppc;
-  *name = luaF_getlocalname(p, reg + 1, pc);
+  *name = ilyaF_getlocalname(p, reg + 1, pc);
   if (*name)  /* is a lock? */
     return "lock";
   /* else try symbolic execution */
@@ -659,7 +659,7 @@ static const char *funcnamefromcall (ilya_State *L, CallInfo *ci,
     *name = "__gc";
     return "metamethod";  /* report it as such */
   }
-  else if (isLua(ci))
+  else if (isIlya(ci))
     return funcnamefromcode(L, ci_func(ci)->p, currentpc(ci), name);
   else
     return NULL;
@@ -710,7 +710,7 @@ static const char *formatvarinfo (ilya_State *L, const char *kind,
   if (kind == NULL)
     return "";  /* no information */
   else
-    return luaO_pushfstring(L, " (%s '%s')", kind, name);
+    return ilyaO_pushfstring(L, " (%s '%s')", kind, name);
 }
 
 /*
@@ -721,7 +721,7 @@ static const char *varinfo (ilya_State *L, const TValue *o) {
   CallInfo *ci = L->ci;
   const char *name = NULL;  /* to avoid warnings */
   const char *kind = NULL;
-  if (isLua(ci)) {
+  if (isIlya(ci)) {
     kind = getupvalname(ci, o, &name);  /* check whether 'o' is an upvalue */
     if (!kind) {  /* not an upvalue? */
       int reg = instack(ci, o);  /* try a register */
@@ -738,8 +738,8 @@ static const char *varinfo (ilya_State *L, const TValue *o) {
 */
 static l_noret typeerror (ilya_State *L, const TValue *o, const char *op,
                           const char *extra) {
-  const char *t = luaT_objtypename(L, o);
-  luaG_runerror(L, "attempt to %s a %s value%s", op, t, extra);
+  const char *t = ilyaT_objtypename(L, o);
+  ilyaG_runerror(L, "attempt to %s a %s value%s", op, t, extra);
 }
 
 
@@ -747,7 +747,7 @@ static l_noret typeerror (ilya_State *L, const TValue *o, const char *op,
 ** Raise a type error with "standard" information about the faulty
 ** object 'o' (using 'varinfo').
 */
-l_noret luaG_typeerror (ilya_State *L, const TValue *o, const char *op) {
+l_noret ilyaG_typeerror (ilya_State *L, const TValue *o, const char *op) {
   typeerror(L, o, op, varinfo(L, o));
 }
 
@@ -757,7 +757,7 @@ l_noret luaG_typeerror (ilya_State *L, const TValue *o, const char *op) {
 ** for the object based on how it was called ('funcnamefromcall'); if it
 ** cannot get a name there, try 'varinfo'.
 */
-l_noret luaG_callerror (ilya_State *L, const TValue *o) {
+l_noret ilyaG_callerror (ilya_State *L, const TValue *o) {
   CallInfo *ci = L->ci;
   const char *name = NULL;  /* to avoid warnings */
   const char *kind = funcnamefromcall(L, ci, &name);
@@ -766,91 +766,91 @@ l_noret luaG_callerror (ilya_State *L, const TValue *o) {
 }
 
 
-l_noret luaG_forerror (ilya_State *L, const TValue *o, const char *what) {
-  luaG_runerror(L, "bad 'for' %s (number expected, got %s)",
-                   what, luaT_objtypename(L, o));
+l_noret ilyaG_forerror (ilya_State *L, const TValue *o, const char *what) {
+  ilyaG_runerror(L, "bad 'for' %s (number expected, got %s)",
+                   what, ilyaT_objtypename(L, o));
 }
 
 
-l_noret luaG_concaterror (ilya_State *L, const TValue *p1, const TValue *p2) {
+l_noret ilyaG_concaterror (ilya_State *L, const TValue *p1, const TValue *p2) {
   if (ttisstring(p1) || cvt2str(p1)) p1 = p2;
-  luaG_typeerror(L, p1, "concatenate");
+  ilyaG_typeerror(L, p1, "concatenate");
 }
 
 
-l_noret luaG_opinterror (ilya_State *L, const TValue *p1,
+l_noret ilyaG_opinterror (ilya_State *L, const TValue *p1,
                          const TValue *p2, const char *msg) {
   if (!ttisnumber(p1))  /* first operand is wrong? */
     p2 = p1;  /* now second is wrong */
-  luaG_typeerror(L, p2, msg);
+  ilyaG_typeerror(L, p2, msg);
 }
 
 
 /*
 ** Error when both values are convertible to numbers, but not to integers
 */
-l_noret luaG_tointerror (ilya_State *L, const TValue *p1, const TValue *p2) {
+l_noret ilyaG_tointerror (ilya_State *L, const TValue *p1, const TValue *p2) {
   ilya_Integer temp;
-  if (!luaV_tointegerns(p1, &temp, ILYA_FLOORN2I))
+  if (!ilyaV_tointegerns(p1, &temp, ILYA_FLOORN2I))
     p2 = p1;
-  luaG_runerror(L, "number%s has no integer representation", varinfo(L, p2));
+  ilyaG_runerror(L, "number%s has no integer representation", varinfo(L, p2));
 }
 
 
-l_noret luaG_ordererror (ilya_State *L, const TValue *p1, const TValue *p2) {
-  const char *t1 = luaT_objtypename(L, p1);
-  const char *t2 = luaT_objtypename(L, p2);
+l_noret ilyaG_ordererror (ilya_State *L, const TValue *p1, const TValue *p2) {
+  const char *t1 = ilyaT_objtypename(L, p1);
+  const char *t2 = ilyaT_objtypename(L, p2);
   if (strcmp(t1, t2) == 0)
-    luaG_runerror(L, "attempt to compare two %s values", t1);
+    ilyaG_runerror(L, "attempt to compare two %s values", t1);
   else
-    luaG_runerror(L, "attempt to compare %s with %s", t1, t2);
+    ilyaG_runerror(L, "attempt to compare %s with %s", t1, t2);
 }
 
 
 /* add src:line information to 'msg' */
-const char *luaG_addinfo (ilya_State *L, const char *msg, TString *src,
+const char *ilyaG_addinfo (ilya_State *L, const char *msg, TString *src,
                                         int line) {
   char buff[ILYA_IDSIZE];
   if (src) {
     size_t idlen;
     const char *id = getlstr(src, idlen);
-    luaO_chunkid(buff, id, idlen);
+    ilyaO_chunkid(buff, id, idlen);
   }
   else {  /* no source available; use "?" instead */
     buff[0] = '?'; buff[1] = '\0';
   }
-  return luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
+  return ilyaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
 }
 
 
-l_noret luaG_errormsg (ilya_State *L) {
+l_noret ilyaG_errormsg (ilya_State *L) {
   if (L->errfunc != 0) {  /* is there an error handling fn? */
     StkId errfunc = restorestack(L, L->errfunc);
     ilya_assert(ttisfunction(s2v(errfunc)));
     setobjs2s(L, L->top.p, L->top.p - 1);  /* move argument */
     setobjs2s(L, L->top.p - 1, errfunc);  /* push fn */
     L->top.p++;  /* assume EXTRA_STACK */
-    luaD_callnoyield(L, L->top.p - 2, 1);  /* call it */
+    ilyaD_callnoyield(L, L->top.p - 2, 1);  /* call it */
   }
-  luaD_throw(L, ILYA_ERRRUN);
+  ilyaD_throw(L, ILYA_ERRRUN);
 }
 
 
-l_noret luaG_runerror (ilya_State *L, const char *fmt, ...) {
+l_noret ilyaG_runerror (ilya_State *L, const char *fmt, ...) {
   CallInfo *ci = L->ci;
   const char *msg;
   va_list argp;
-  luaC_checkGC(L);  /* error message uses memory */
+  ilyaC_checkGC(L);  /* error message uses memory */
   va_start(argp, fmt);
-  msg = luaO_pushvfstring(L, fmt, argp);  /* format message */
+  msg = ilyaO_pushvfstring(L, fmt, argp);  /* format message */
   va_end(argp);
-  if (msg != NULL && isLua(ci)) {  /* Ilya fn? (and no error) */
+  if (msg != NULL && isIlya(ci)) {  /* Ilya fn? (and no error) */
     /* add source:line information */
-    luaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));
+    ilyaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));
     setobjs2s(L, L->top.p - 2, L->top.p - 1);  /* remove 'msg' */
     L->top.p--;
   }
-  luaG_errormsg(L);
+  ilyaG_errormsg(L);
 }
 
 
@@ -858,9 +858,9 @@ l_noret luaG_runerror (ilya_State *L, const char *fmt, ...) {
 ** Check whether new instruction 'newpc' is in a different line from
 ** previous instruction 'oldpc'. More often than not, 'newpc' is only
 ** one or a few instructions after 'oldpc' (it must be after, see
-** caller), so try to avoid calling 'luaG_getfuncline'. If they are
+** caller), so try to avoid calling 'ilyaG_getfuncline'. If they are
 ** too far apart, there is a good chance of a ABSLINEINFO in the way,
-** so it goes directly to 'luaG_getfuncline'.
+** so it goes directly to 'ilyaG_getfuncline'.
 */
 static int changedline (const Proto *p, int oldpc, int newpc) {
   if (p->lineinfo == NULL)  /* no debug information? */
@@ -879,19 +879,19 @@ static int changedline (const Proto *p, int oldpc, int newpc) {
   }
   /* either instructions are too far apart or there is an absolute line
      info in the way; compute line difference explicitly */
-  return (luaG_getfuncline(p, oldpc) != luaG_getfuncline(p, newpc));
+  return (ilyaG_getfuncline(p, oldpc) != ilyaG_getfuncline(p, newpc));
 }
 
 
 /*
 ** Traces Ilya calls. If code is running the first instruction of a fn,
 ** and fn is not vararg, and it is not coming from an yield,
-** calls 'luaD_hookcall'. (Vararg functions will call 'luaD_hookcall'
+** calls 'ilyaD_hookcall'. (Vararg functions will call 'ilyaD_hookcall'
 ** after adjusting its variable arguments; otherwise, they could call
 ** a line/count hook before the call hook. Functions coming from
-** an yield already called 'luaD_hookcall' before yielding.)
+** an yield already called 'ilyaD_hookcall' before yielding.)
 */
-int luaG_tracecall (ilya_State *L) {
+int ilyaG_tracecall (ilya_State *L) {
   CallInfo *ci = L->ci;
   Proto *p = ci_func(ci)->p;
   ci->u.l.trap = 1;  /* ensure hooks will be checked */
@@ -899,7 +899,7 @@ int luaG_tracecall (ilya_State *L) {
     if (p->flag & PF_ISVARARG)
       return 0;  /* hooks will start at VARARGPREP instruction */
     else if (!(ci->callstatus & CIST_HOOKYIELD))  /* not yielded? */
-      luaD_hookcall(L, ci);  /* check 'call' hook */
+      ilyaD_hookcall(L, ci);  /* check 'call' hook */
   }
   return 1;  /* keep 'trap' on */
 }
@@ -917,7 +917,7 @@ int luaG_tracecall (ilya_State *L) {
 ** This fn is not "Protected" when called, so it should correct
 ** 'L->top.p' before calling anything that can run the GC.
 */
-int luaG_traceexec (ilya_State *L, const Instruction *pc) {
+int ilyaG_traceexec (ilya_State *L, const Instruction *pc) {
   CallInfo *ci = L->ci;
   lu_byte mask = cast_byte(L->hookmask);
   const Proto *p = ci_func(ci)->p;
@@ -937,18 +937,18 @@ int luaG_traceexec (ilya_State *L, const Instruction *pc) {
     ci->callstatus &= ~CIST_HOOKYIELD;  /* erase mark */
     return 1;  /* do not call hook again (VM yielded, so it did not move) */
   }
-  if (!luaP_isIT(*(ci->u.l.savedpc - 1)))  /* top not being used? */
+  if (!ilyaP_isIT(*(ci->u.l.savedpc - 1)))  /* top not being used? */
     L->top.p = ci->top.p;  /* correct top */
   if (counthook)
-    luaD_hook(L, ILYA_HOOKCOUNT, -1, 0, 0);  /* call count hook */
+    ilyaD_hook(L, ILYA_HOOKCOUNT, -1, 0, 0);  /* call count hook */
   if (mask & ILYA_MASKLINE) {
     /* 'L->oldpc' may be invalid; use zero in this case */
     int oldpc = (L->oldpc < p->sizecode) ? L->oldpc : 0;
     int npci = pcRel(pc, p);
     if (npci <= oldpc ||  /* call hook when jump back (loop), */
         changedline(p, oldpc, npci)) {  /* or when enter new line */
-      int newline = luaG_getfuncline(p, npci);
-      luaD_hook(L, ILYA_HOOKLINE, newline, 0, 0);  /* call line hook */
+      int newline = ilyaG_getfuncline(p, npci);
+      ilyaD_hook(L, ILYA_HOOKLINE, newline, 0, 0);  /* call line hook */
     }
     L->oldpc = npci;  /* 'pc' of last call to line hook */
   }
@@ -956,7 +956,7 @@ int luaG_traceexec (ilya_State *L, const Instruction *pc) {
     if (counthook)
       L->hookcount = 1;  /* undo decrement to zero */
     ci->callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
-    luaD_throw(L, ILYA_YIELD);
+    ilyaD_throw(L, ILYA_YIELD);
   }
   return 1;  /* keep 'trap' on */
 }

@@ -36,29 +36,29 @@
 #endif
 
 
-LUAI_FUNC int luaG_getfuncline (const Proto *f, int pc);
-LUAI_FUNC const char *luaG_findlocal (ilya_State *L, CallInfo *ci, int n,
+ILYAI_FUNC int ilyaG_getfuncline (const Proto *f, int pc);
+ILYAI_FUNC const char *ilyaG_findlocal (ilya_State *L, CallInfo *ci, int n,
                                                     StkId *pos);
-LUAI_FUNC l_noret luaG_typeerror (ilya_State *L, const TValue *o,
+ILYAI_FUNC l_noret ilyaG_typeerror (ilya_State *L, const TValue *o,
                                                 const char *opname);
-LUAI_FUNC l_noret luaG_callerror (ilya_State *L, const TValue *o);
-LUAI_FUNC l_noret luaG_forerror (ilya_State *L, const TValue *o,
+ILYAI_FUNC l_noret ilyaG_callerror (ilya_State *L, const TValue *o);
+ILYAI_FUNC l_noret ilyaG_forerror (ilya_State *L, const TValue *o,
                                                const char *what);
-LUAI_FUNC l_noret luaG_concaterror (ilya_State *L, const TValue *p1,
+ILYAI_FUNC l_noret ilyaG_concaterror (ilya_State *L, const TValue *p1,
                                                   const TValue *p2);
-LUAI_FUNC l_noret luaG_opinterror (ilya_State *L, const TValue *p1,
+ILYAI_FUNC l_noret ilyaG_opinterror (ilya_State *L, const TValue *p1,
                                                  const TValue *p2,
                                                  const char *msg);
-LUAI_FUNC l_noret luaG_tointerror (ilya_State *L, const TValue *p1,
+ILYAI_FUNC l_noret ilyaG_tointerror (ilya_State *L, const TValue *p1,
                                                  const TValue *p2);
-LUAI_FUNC l_noret luaG_ordererror (ilya_State *L, const TValue *p1,
+ILYAI_FUNC l_noret ilyaG_ordererror (ilya_State *L, const TValue *p1,
                                                  const TValue *p2);
-LUAI_FUNC l_noret luaG_runerror (ilya_State *L, const char *fmt, ...);
-LUAI_FUNC const char *luaG_addinfo (ilya_State *L, const char *msg,
+ILYAI_FUNC l_noret ilyaG_runerror (ilya_State *L, const char *fmt, ...);
+ILYAI_FUNC const char *ilyaG_addinfo (ilya_State *L, const char *msg,
                                                   TString *src, int line);
-LUAI_FUNC l_noret luaG_errormsg (ilya_State *L);
-LUAI_FUNC int luaG_traceexec (ilya_State *L, const Instruction *pc);
-LUAI_FUNC int luaG_tracecall (ilya_State *L);
+ILYAI_FUNC l_noret ilyaG_errormsg (ilya_State *L);
+ILYAI_FUNC int ilyaG_traceexec (ilya_State *L, const Instruction *pc);
+ILYAI_FUNC int ilyaG_tracecall (ilya_State *L);
 
 
 #endif

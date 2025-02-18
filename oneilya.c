@@ -3,19 +3,19 @@
 ** Compiling just this file generates a complete Ilya stand-alone
 ** program:
 **
-** $ gcc -O2 -std=c99 -o ilya onelua.c -lm
+** $ gcc -O2 -std=c99 -o ilya oneilya.c -lm
 **
 ** or
 **
-** $ gcc -O2 -std=c89 -DLUA_USE_C89 -o ilya onelua.c -lm
+** $ gcc -O2 -std=c89 -DILYA_USE_C89 -o ilya oneilya.c -lm
 **
 */
 
 /* default is to build the full interpreter */
 #ifndef MAKE_LIB
-#ifndef MAKE_LUAC
-#ifndef MAKE_LUA
-#define MAKE_LUA
+#ifndef MAKE_ILYAC
+#ifndef MAKE_ILYA
+#define MAKE_ILYA
 #endif
 #endif
 #endif
@@ -63,12 +63,12 @@
 #include "ilyaconf.h"
 
 /* do not export internal symbols */
-#undef LUAI_FUNC
-#undef LUAI_DDEC
-#undef LUAI_DDEF
-#define LUAI_FUNC	static
-#define LUAI_DDEC(def)	/* empty */
-#define LUAI_DDEF	static
+#undef ILYAI_FUNC
+#undef ILYAI_DDEC
+#undef ILYAI_DDEF
+#define ILYAI_FUNC	static
+#define ILYAI_DDEC(def)	/* empty */
+#define ILYAI_DDEF	static
 
 /* core -- used by all */
 #include "lzio.c"
@@ -95,8 +95,8 @@
 /* auxiliary library -- used by all */
 #include "lauxlib.c"
 
-/* standard library  -- not used by luac */
-#ifndef MAKE_LUAC
+/* standard library  -- not used by ilyac */
+#ifndef MAKE_ILYAC
 #include "lbaselib.c"
 #include "lcorolib.c"
 #include "ldblib.c"
@@ -111,11 +111,11 @@
 #endif
 
 /* ilya */
-#ifdef MAKE_LUA
+#ifdef MAKE_ILYA
 #include "ilya.c"
 #endif
 
-/* luac */
-#ifdef MAKE_LUAC
-#include "luac.c"
+/* ilyac */
+#ifdef MAKE_ILYAC
+#include "ilyac.c"
 #endif

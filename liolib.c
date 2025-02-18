@@ -74,7 +74,7 @@ static int l_checkmode (const char *mode) {
 /* ISO C definitions */
 #define l_popen(L,c,m)  \
 	  ((void)c, (void)m, \
-	  luaL_error(L, "'popen' not supported"), \
+	  ilyaL_error(L, "'popen' not supported"), \
 	  (FILE*)0)
 #define l_pclose(L,file)		((void)L, (void)file, -1)
 
@@ -151,20 +151,20 @@ static int l_checkmode (const char *mode) {
 #define IO_OUTPUT	(IO_PREFIX "output")
 
 
-typedef luaL_Stream LStream;
+typedef ilyaL_Stream LStream;
 
 
-#define tolstream(L)	((LStream *)luaL_checkudata(L, 1, ILYA_FILEHANDLE))
+#define tolstream(L)	((LStream *)ilyaL_checkudata(L, 1, ILYA_FILEHANDLE))
 
 #define isclosed(p)	((p)->closef == NULL)
 
 
 static int io_type (ilya_State *L) {
   LStream *p;
-  luaL_checkany(L, 1);
-  p = (LStream *)luaL_testudata(L, 1, ILYA_FILEHANDLE);
+  ilyaL_checkany(L, 1);
+  p = (LStream *)ilyaL_testudata(L, 1, ILYA_FILEHANDLE);
   if (p == NULL)
-    luaL_pushfail(L);  /* not a file */
+    ilyaL_pushfail(L);  /* not a file */
   else if (isclosed(p))
     ilya_pushliteral(L, "closed file");
   else
@@ -186,7 +186,7 @@ static int f_tostring (ilya_State *L) {
 static FILE *tofile (ilya_State *L) {
   LStream *p = tolstream(L);
   if (l_unlikely(isclosed(p)))
-    luaL_error(L, "attempt to use a closed file");
+    ilyaL_error(L, "attempt to use a closed file");
   ilya_assert(p->f);
   return p->f;
 }
@@ -200,7 +200,7 @@ static FILE *tofile (ilya_State *L) {
 static LStream *newprefile (ilya_State *L) {
   LStream *p = (LStream *)ilya_newuserdatauv(L, sizeof(LStream), 0);
   p->closef = NULL;  /* mark file handle as 'closed' */
-  luaL_setmetatable(L, ILYA_FILEHANDLE);
+  ilyaL_setmetatable(L, ILYA_FILEHANDLE);
   return p;
 }
 
@@ -245,7 +245,7 @@ static int f_gc (ilya_State *L) {
 static int io_fclose (ilya_State *L) {
   LStream *p = tolstream(L);
   errno = 0;
-  return luaL_fileresult(L, (fclose(p->f) == 0), NULL);
+  return ilyaL_fileresult(L, (fclose(p->f) == 0), NULL);
 }
 
 
@@ -261,19 +261,19 @@ static void opencheck (ilya_State *L, const char *fname, const char *mode) {
   LStream *p = newfile(L);
   p->f = fopen(fname, mode);
   if (l_unlikely(p->f == NULL))
-    luaL_error(L, "cannot open file '%s' (%s)", fname, strerror(errno));
+    ilyaL_error(L, "cannot open file '%s' (%s)", fname, strerror(errno));
 }
 
 
 static int io_open (ilya_State *L) {
-  const char *filename = luaL_checkstring(L, 1);
-  const char *mode = luaL_optstring(L, 2, "r");
+  const char *filename = ilyaL_checkstring(L, 1);
+  const char *mode = ilyaL_optstring(L, 2, "r");
   LStream *p = newfile(L);
   const char *md = mode;  /* to traverse/check mode */
-  luaL_argcheck(L, l_checkmode(md), 2, "invalid mode");
+  ilyaL_argcheck(L, l_checkmode(md), 2, "invalid mode");
   errno = 0;
   p->f = fopen(filename, mode);
-  return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+  return (p->f == NULL) ? ilyaL_fileresult(L, 0, filename) : 1;
 }
 
 
@@ -283,19 +283,19 @@ static int io_open (ilya_State *L) {
 static int io_pclose (ilya_State *L) {
   LStream *p = tolstream(L);
   errno = 0;
-  return luaL_execresult(L, l_pclose(L, p->f));
+  return ilyaL_execresult(L, l_pclose(L, p->f));
 }
 
 
 static int io_popen (ilya_State *L) {
-  const char *filename = luaL_checkstring(L, 1);
-  const char *mode = luaL_optstring(L, 2, "r");
+  const char *filename = ilyaL_checkstring(L, 1);
+  const char *mode = ilyaL_optstring(L, 2, "r");
   LStream *p = newprefile(L);
-  luaL_argcheck(L, l_checkmodep(mode), 2, "invalid mode");
+  ilyaL_argcheck(L, l_checkmodep(mode), 2, "invalid mode");
   errno = 0;
   p->f = l_popen(L, filename, mode);
   p->closef = &io_pclose;
-  return (p->f == NULL) ? luaL_fileresult(L, 0, filename) : 1;
+  return (p->f == NULL) ? ilyaL_fileresult(L, 0, filename) : 1;
 }
 
 
@@ -303,7 +303,7 @@ static int io_tmpfile (ilya_State *L) {
   LStream *p = newfile(L);
   errno = 0;
   p->f = tmpfile();
-  return (p->f == NULL) ? luaL_fileresult(L, 0, NULL) : 1;
+  return (p->f == NULL) ? ilyaL_fileresult(L, 0, NULL) : 1;
 }
 
 
@@ -312,7 +312,7 @@ static FILE *getiofile (ilya_State *L, const char *findex) {
   ilya_getfield(L, ILYA_REGISTRYINDEX, findex);
   p = (LStream *)ilya_touserdata(L, -1);
   if (l_unlikely(isclosed(p)))
-    luaL_error(L, "default %s file is closed", findex + IOPREF_LEN);
+    ilyaL_error(L, "default %s file is closed", findex + IOPREF_LEN);
   return p->f;
 }
 
@@ -364,7 +364,7 @@ static int io_readline (ilya_State *L);
 */
 static void aux_lines (ilya_State *L, int toclose) {
   int n = ilya_gettop(L) - 1;  /* number of arguments to read */
-  luaL_argcheck(L, n <= MAXARGLINE, MAXARGLINE + 2, "too many arguments");
+  ilyaL_argcheck(L, n <= MAXARGLINE, MAXARGLINE + 2, "too many arguments");
   ilya_pushvalue(L, 1);  /* file */
   ilya_pushinteger(L, n);  /* number of arguments to read */
   ilya_pushboolean(L, toclose);  /* close/not close file when finished */
@@ -395,7 +395,7 @@ static int io_lines (ilya_State *L) {
     toclose = 0;  /* do not close it after iteration */
   }
   else {  /* open a new file */
-    const char *filename = luaL_checkstring(L, 1);
+    const char *filename = ilyaL_checkstring(L, 1);
     opencheck(L, filename, "r");
     ilya_replace(L, 1);  /* put file at index 1 */
     toclose = 1;  /* close it after iteration */
@@ -519,21 +519,21 @@ static int test_eof (ilya_State *L, FILE *f) {
 
 
 static int read_line (ilya_State *L, FILE *f, int chop) {
-  luaL_Buffer b;
+  ilyaL_Buffer b;
   int c;
-  luaL_buffinit(L, &b);
+  ilyaL_buffinit(L, &b);
   do {  /* may need to read several chunks to get whole line */
-    char *buff = luaL_prepbuffer(&b);  /* preallocate buffer space */
+    char *buff = ilyaL_prepbuffer(&b);  /* preallocate buffer space */
     unsigned i = 0;
-    l_lockfile(f);  /* no memory errors can happen inside the lock */
-    while (i < LUAL_BUFFERSIZE && (c = l_getc(f)) != EOF && c != '\n')
+    l_lockfile(f);  /* no memory errors can happen inside the locked */
+    while (i < ILYAL_BUFFERSIZE && (c = l_getc(f)) != EOF && c != '\n')
       buff[i++] = cast_char(c);  /* read up to end of line or buffer limit */
     l_unlockfile(f);
-    luaL_addsize(&b, i);
+    ilyaL_addsize(&b, i);
   } while (c != EOF && c != '\n');  /* repeat until end of line */
   if (!chop && c == '\n')  /* want a newline and have one? */
-    luaL_addchar(&b, '\n');  /* add ending newline to result */
-  luaL_pushresult(&b);  /* close buffer */
+    ilyaL_addchar(&b, '\n');  /* add ending newline to result */
+  ilyaL_pushresult(&b);  /* close buffer */
   /* return ok if read something (either a newline or something else) */
   return (c == '\n' || ilya_rawlen(L, -1) > 0);
 }
@@ -541,26 +541,26 @@ static int read_line (ilya_State *L, FILE *f, int chop) {
 
 static void read_all (ilya_State *L, FILE *f) {
   size_t nr;
-  luaL_Buffer b;
-  luaL_buffinit(L, &b);
-  do {  /* read file in chunks of LUAL_BUFFERSIZE bytes */
-    char *p = luaL_prepbuffer(&b);
-    nr = fread(p, sizeof(char), LUAL_BUFFERSIZE, f);
-    luaL_addsize(&b, nr);
-  } while (nr == LUAL_BUFFERSIZE);
-  luaL_pushresult(&b);  /* close buffer */
+  ilyaL_Buffer b;
+  ilyaL_buffinit(L, &b);
+  do {  /* read file in chunks of ILYAL_BUFFERSIZE bytes */
+    char *p = ilyaL_prepbuffer(&b);
+    nr = fread(p, sizeof(char), ILYAL_BUFFERSIZE, f);
+    ilyaL_addsize(&b, nr);
+  } while (nr == ILYAL_BUFFERSIZE);
+  ilyaL_pushresult(&b);  /* close buffer */
 }
 
 
 static int read_chars (ilya_State *L, FILE *f, size_t n) {
   size_t nr;  /* number of chars actually read */
   char *p;
-  luaL_Buffer b;
-  luaL_buffinit(L, &b);
-  p = luaL_prepbuffsize(&b, n);  /* prepare buffer to read whole block */
+  ilyaL_Buffer b;
+  ilyaL_buffinit(L, &b);
+  p = ilyaL_prepbuffsize(&b, n);  /* prepare buffer to read whole block */
   nr = fread(p, sizeof(char), n, f);  /* try to read 'n' chars */
-  luaL_addsize(&b, nr);
-  luaL_pushresult(&b);  /* close buffer */
+  ilyaL_addsize(&b, nr);
+  ilyaL_pushresult(&b);  /* close buffer */
   return (nr > 0);  /* true iff read something */
 }
 
@@ -576,15 +576,15 @@ static int g_read (ilya_State *L, FILE *f, int first) {
   }
   else {
     /* ensure stack space for all results and for auxlib's buffer */
-    luaL_checkstack(L, nargs+ILYA_MINSTACK, "too many arguments");
+    ilyaL_checkstack(L, nargs+ILYA_MINSTACK, "too many arguments");
     success = 1;
     for (n = first; nargs-- && success; n++) {
       if (ilya_type(L, n) == ILYA_TNUMBER) {
-        size_t l = (size_t)luaL_checkinteger(L, n);
+        size_t l = (size_t)ilyaL_checkinteger(L, n);
         success = (l == 0) ? test_eof(L, f) : read_chars(L, f, l);
       }
       else {
-        const char *p = luaL_checkstring(L, n);
+        const char *p = ilyaL_checkstring(L, n);
         if (*p == '*') p++;  /* skip optional '*' (for compatibility) */
         switch (*p) {
           case 'n':  /* number */
@@ -601,16 +601,16 @@ static int g_read (ilya_State *L, FILE *f, int first) {
             success = 1; /* always success */
             break;
           default:
-            return luaL_argerror(L, n, "invalid format");
+            return ilyaL_argerror(L, n, "invalid format");
         }
       }
     }
   }
   if (ferror(f))
-    return luaL_fileresult(L, 0, NULL);
+    return ilyaL_fileresult(L, 0, NULL);
   if (!success) {
     ilya_pop(L, 1);  /* remove last result */
-    luaL_pushfail(L);  /* push nil instead */
+    ilyaL_pushfail(L);  /* push nil instead */
   }
   return n - first;
 }
@@ -634,9 +634,9 @@ static int io_readline (ilya_State *L) {
   int i;
   int n = (int)ilya_tointeger(L, ilya_upvalueindex(2));
   if (isclosed(p))  /* file is already closed? */
-    return luaL_error(L, "file is already closed");
+    return ilyaL_error(L, "file is already closed");
   ilya_settop(L , 1);
-  luaL_checkstack(L, n, "too many arguments");
+  ilyaL_checkstack(L, n, "too many arguments");
   for (i = 1; i <= n; i++)  /* push arguments to 'g_read' */
     ilya_pushvalue(L, ilya_upvalueindex(3 + i));
   n = g_read(L, p->f, 2);  /* 'n' is number of results */
@@ -646,7 +646,7 @@ static int io_readline (ilya_State *L) {
   else {  /* first result is false: EOF or error */
     if (n > 1) {  /* is there error information? */
       /* 2nd result is error message */
-      return luaL_error(L, "%s", ilya_tostring(L, -n + 1));
+      return ilyaL_error(L, "%s", ilya_tostring(L, -n + 1));
     }
     if (ilya_toboolean(L, ilya_upvalueindex(3))) {  /* generator created file? */
       ilya_settop(L, 0);  /* clear stack */
@@ -673,13 +673,13 @@ static int g_write (ilya_State *L, FILE *f, int arg) {
       len--;
     }
     else  /* must be a string */
-      s = luaL_checklstring(L, arg, &len);
+      s = ilyaL_checklstring(L, arg, &len);
     status = status && (fwrite(s, sizeof(char), len, f) == len);
   }
   if (l_likely(status))
     return 1;  /* file handle already on stack top */
   else
-    return luaL_fileresult(L, status, NULL);
+    return ilyaL_fileresult(L, status, NULL);
 }
 
 
@@ -699,15 +699,15 @@ static int f_seek (ilya_State *L) {
   static const int mode[] = {SEEK_SET, SEEK_CUR, SEEK_END};
   static const char *const modenames[] = {"set", "cur", "end", NULL};
   FILE *f = tofile(L);
-  int op = luaL_checkoption(L, 2, "cur", modenames);
-  ilya_Integer p3 = luaL_optinteger(L, 3, 0);
+  int op = ilyaL_checkoption(L, 2, "cur", modenames);
+  ilya_Integer p3 = ilyaL_optinteger(L, 3, 0);
   l_seeknum offset = (l_seeknum)p3;
-  luaL_argcheck(L, (ilya_Integer)offset == p3, 3,
+  ilyaL_argcheck(L, (ilya_Integer)offset == p3, 3,
                   "not an integer in proper range");
   errno = 0;
   op = l_fseek(f, offset, mode[op]);
   if (l_unlikely(op))
-    return luaL_fileresult(L, 0, NULL);  /* error */
+    return ilyaL_fileresult(L, 0, NULL);  /* error */
   else {
     ilya_pushinteger(L, (ilya_Integer)l_ftell(f));
     return 1;
@@ -719,12 +719,12 @@ static int f_setvbuf (ilya_State *L) {
   static const int mode[] = {_IONBF, _IOFBF, _IOLBF};
   static const char *const modenames[] = {"no", "full", "line", NULL};
   FILE *f = tofile(L);
-  int op = luaL_checkoption(L, 2, NULL, modenames);
-  ilya_Integer sz = luaL_optinteger(L, 3, LUAL_BUFFERSIZE);
+  int op = ilyaL_checkoption(L, 2, NULL, modenames);
+  ilya_Integer sz = ilyaL_optinteger(L, 3, ILYAL_BUFFERSIZE);
   int res;
   errno = 0;
   res = setvbuf(f, NULL, mode[op], (size_t)sz);
-  return luaL_fileresult(L, res == 0, NULL);
+  return ilyaL_fileresult(L, res == 0, NULL);
 }
 
 
@@ -732,21 +732,21 @@ static int f_setvbuf (ilya_State *L) {
 static int io_flush (ilya_State *L) {
   FILE *f = getiofile(L, IO_OUTPUT);
   errno = 0;
-  return luaL_fileresult(L, fflush(f) == 0, NULL);
+  return ilyaL_fileresult(L, fflush(f) == 0, NULL);
 }
 
 
 static int f_flush (ilya_State *L) {
   FILE *f = tofile(L);
   errno = 0;
-  return luaL_fileresult(L, fflush(f) == 0, NULL);
+  return ilyaL_fileresult(L, fflush(f) == 0, NULL);
 }
 
 
 /*
 ** functions for 'io' library
 */
-static const luaL_Reg iolib[] = {
+static const ilyaL_Reg iolib[] = {
   {"close", io_close},
   {"flush", io_flush},
   {"input", io_input},
@@ -765,7 +765,7 @@ static const luaL_Reg iolib[] = {
 /*
 ** methods for file handles
 */
-static const luaL_Reg meth[] = {
+static const ilyaL_Reg meth[] = {
   {"read", f_read},
   {"write", f_write},
   {"lines", f_lines},
@@ -780,7 +780,7 @@ static const luaL_Reg meth[] = {
 /*
 ** metamethods for file handles
 */
-static const luaL_Reg metameth[] = {
+static const ilyaL_Reg metameth[] = {
   {"__index", NULL},  /* placeholder */
   {"__gc", f_gc},
   {"__close", f_gc},
@@ -790,10 +790,10 @@ static const luaL_Reg metameth[] = {
 
 
 static void createmeta (ilya_State *L) {
-  luaL_newmetatable(L, ILYA_FILEHANDLE);  /* metatable for file handles */
-  luaL_setfuncs(L, metameth, 0);  /* add metamethods to new metatable */
-  luaL_newlibtable(L, meth);  /* create method table */
-  luaL_setfuncs(L, meth, 0);  /* add file methods to method table */
+  ilyaL_newmetatable(L, ILYA_FILEHANDLE);  /* metatable for file handles */
+  ilyaL_setfuncs(L, metameth, 0);  /* add metamethods to new metatable */
+  ilyaL_newlibtable(L, meth);  /* create method table */
+  ilyaL_setfuncs(L, meth, 0);  /* add file methods to method table */
   ilya_setfield(L, -2, "__index");  /* metatable.__index = method table */
   ilya_pop(L, 1);  /* pop metatable */
 }
@@ -805,7 +805,7 @@ static void createmeta (ilya_State *L) {
 static int io_noclose (ilya_State *L) {
   LStream *p = tolstream(L);
   p->closef = &io_noclose;  /* keep file opened */
-  luaL_pushfail(L);
+  ilyaL_pushfail(L);
   ilya_pushliteral(L, "cannot close standard file");
   return 2;
 }
@@ -824,8 +824,8 @@ static void createstdfile (ilya_State *L, FILE *f, const char *k,
 }
 
 
-LUAMOD_API int luaopen_io (ilya_State *L) {
-  luaL_newlib(L, iolib);  /* new module */
+ILYAMOD_API int ilyaopen_io (ilya_State *L) {
+  ilyaL_newlib(L, iolib);  /* new module */
   createmeta(L);
   /* create (and set) default files */
   createstdfile(L, stdin, IO_INPUT, "stdin");

@@ -1,8 +1,7 @@
 ## Ilya Programming Language
 
-Ilya is a personal fork of Lua,
-This modification has been made to simplify learning, writing, and personalizing
-the language for my own use.
+Ilya is a personal fork of Lua, This modification has been made to simplify
+learning, writing, and personalizing the language for my own use.
 
 For now, two main changes have been implemented:
 
@@ -25,6 +24,12 @@ language.
 2. Build the program by running `make` in your terminal:
    ```bash
    make
+   ```
+
+   Or, if you want to test whether everything is working correctly, you can run
+   the `all` file by executing:
+   ```bash
+   ./all
    ```
 
 3. After building, create a symbolic link to install the program:

@@ -39,7 +39,7 @@
 
 static int str_len (ilya_State *L) {
   size_t l;
-  luaL_checklstring(L, 1, &l);
+  ilyaL_checklstring(L, 1, &l);
   ilya_pushinteger(L, (ilya_Integer)l);
   return 1;
 }
@@ -71,7 +71,7 @@ static size_t posrelatI (ilya_Integer pos, size_t len) {
 */
 static size_t getendpos (ilya_State *L, int arg, ilya_Integer def,
                          size_t len) {
-  ilya_Integer pos = luaL_optinteger(L, arg, def);
+  ilya_Integer pos = ilyaL_optinteger(L, arg, def);
   if (pos > (ilya_Integer)len)
     return len;
   else if (pos >= 0)
@@ -84,8 +84,8 @@ static size_t getendpos (ilya_State *L, int arg, ilya_Integer def,
 
 static int str_sub (ilya_State *L) {
   size_t l;
-  const char *s = luaL_checklstring(L, 1, &l);
-  size_t start = posrelatI(luaL_checkinteger(L, 2), l);
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  size_t start = posrelatI(ilyaL_checkinteger(L, 2), l);
   size_t end = getendpos(L, 3, -1, l);
   if (start <= end)
     ilya_pushlstring(L, s + start - 1, (end - start) + 1);
@@ -96,12 +96,12 @@ static int str_sub (ilya_State *L) {
 
 static int str_reverse (ilya_State *L) {
   size_t l, i;
-  luaL_Buffer b;
-  const char *s = luaL_checklstring(L, 1, &l);
-  char *p = luaL_buffinitsize(L, &b, l);
+  ilyaL_Buffer b;
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  char *p = ilyaL_buffinitsize(L, &b, l);
   for (i = 0; i < l; i++)
     p[i] = s[l - i - 1];
-  luaL_pushresultsize(&b, l);
+  ilyaL_pushresultsize(&b, l);
   return 1;
 }
 
@@ -109,12 +109,12 @@ static int str_reverse (ilya_State *L) {
 static int str_lower (ilya_State *L) {
   size_t l;
   size_t i;
-  luaL_Buffer b;
-  const char *s = luaL_checklstring(L, 1, &l);
-  char *p = luaL_buffinitsize(L, &b, l);
+  ilyaL_Buffer b;
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  char *p = ilyaL_buffinitsize(L, &b, l);
   for (i=0; i<l; i++)
     p[i] = cast_char(tolower(cast_uchar(s[i])));
-  luaL_pushresultsize(&b, l);
+  ilyaL_pushresultsize(&b, l);
   return 1;
 }
 
@@ -122,29 +122,29 @@ static int str_lower (ilya_State *L) {
 static int str_upper (ilya_State *L) {
   size_t l;
   size_t i;
-  luaL_Buffer b;
-  const char *s = luaL_checklstring(L, 1, &l);
-  char *p = luaL_buffinitsize(L, &b, l);
+  ilyaL_Buffer b;
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  char *p = ilyaL_buffinitsize(L, &b, l);
   for (i=0; i<l; i++)
     p[i] = cast_char(toupper(cast_uchar(s[i])));
-  luaL_pushresultsize(&b, l);
+  ilyaL_pushresultsize(&b, l);
   return 1;
 }
 
 
 static int str_rep (ilya_State *L) {
   size_t l, lsep;
-  const char *s = luaL_checklstring(L, 1, &l);
-  ilya_Integer n = luaL_checkinteger(L, 2);
-  const char *sep = luaL_optlstring(L, 3, "", &lsep);
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  ilya_Integer n = ilyaL_checkinteger(L, 2);
+  const char *sep = ilyaL_optlstring(L, 3, "", &lsep);
   if (n <= 0)
     ilya_pushliteral(L, "");
   else if (l_unlikely(l + lsep < l || l + lsep > MAX_SIZE / cast_sizet(n)))
-    return luaL_error(L, "resulting string too large");
+    return ilyaL_error(L, "resulting string too large");
   else {
     size_t totallen = ((size_t)n * (l + lsep)) - lsep;
-    luaL_Buffer b;
-    char *p = luaL_buffinitsize(L, &b, totallen);
+    ilyaL_Buffer b;
+    char *p = ilyaL_buffinitsize(L, &b, totallen);
     while (n-- > 1) {  /* first n-1 copies (followed by separator) */
       memcpy(p, s, l * sizeof(char)); p += l;
       if (lsep > 0) {  /* empty 'memcpy' is not that cheap */
@@ -153,7 +153,7 @@ static int str_rep (ilya_State *L) {
       }
     }
     memcpy(p, s, l * sizeof(char));  /* last copy (not followed by separator) */
-    luaL_pushresultsize(&b, totallen);
+    ilyaL_pushresultsize(&b, totallen);
   }
   return 1;
 }
@@ -161,16 +161,16 @@ static int str_rep (ilya_State *L) {
 
 static int str_byte (ilya_State *L) {
   size_t l;
-  const char *s = luaL_checklstring(L, 1, &l);
-  ilya_Integer pi = luaL_optinteger(L, 2, 1);
+  const char *s = ilyaL_checklstring(L, 1, &l);
+  ilya_Integer pi = ilyaL_optinteger(L, 2, 1);
   size_t posi = posrelatI(pi, l);
   size_t pose = getendpos(L, 3, pi, l);
   int n, i;
   if (posi > pose) return 0;  /* empty interval; return no values */
   if (l_unlikely(pose - posi >= (size_t)INT_MAX))  /* arithmetic overflow? */
-    return luaL_error(L, "string slice too long");
+    return ilyaL_error(L, "string slice too long");
   n = (int)(pose -  posi) + 1;
-  luaL_checkstack(L, n, "string slice too long");
+  ilyaL_checkstack(L, n, "string slice too long");
   for (i=0; i<n; i++)
     ilya_pushinteger(L, cast_uchar(s[posi + cast_uint(i) - 1]));
   return n;
@@ -180,14 +180,14 @@ static int str_byte (ilya_State *L) {
 static int str_char (ilya_State *L) {
   int n = ilya_gettop(L);  /* number of arguments */
   int i;
-  luaL_Buffer b;
-  char *p = luaL_buffinitsize(L, &b, cast_uint(n));
+  ilyaL_Buffer b;
+  char *p = ilyaL_buffinitsize(L, &b, cast_uint(n));
   for (i=1; i<=n; i++) {
-    ilya_Unsigned c = (ilya_Unsigned)luaL_checkinteger(L, i);
-    luaL_argcheck(L, c <= (ilya_Unsigned)UCHAR_MAX, i, "value out of range");
+    ilya_Unsigned c = (ilya_Unsigned)ilyaL_checkinteger(L, i);
+    ilyaL_argcheck(L, c <= (ilya_Unsigned)UCHAR_MAX, i, "value out of range");
     p[i - 1] = cast_char(cast_uchar(c));
   }
-  luaL_pushresultsize(&b, cast_uint(n));
+  ilyaL_pushresultsize(&b, cast_uint(n));
   return 1;
 }
 
@@ -195,12 +195,12 @@ static int str_char (ilya_State *L) {
 /*
 ** Buffer to store the result of 'string.dump'. It must be initialized
 ** after the call to 'ilya_dump', to ensure that the fn is on the
-** top of the stack when 'ilya_dump' is called. ('luaL_buffinit' might
+** top of the stack when 'ilya_dump' is called. ('ilyaL_buffinit' might
 ** push stuff.)
 */
 struct str_Writer {
   int init;  /* true iff buffer has been initialized */
-  luaL_Buffer B;
+  ilyaL_Buffer B;
 };
 
 
@@ -208,14 +208,14 @@ static int writer (ilya_State *L, const void *b, size_t size, void *ud) {
   struct str_Writer *state = (struct str_Writer *)ud;
   if (!state->init) {
     state->init = 1;
-    luaL_buffinit(L, &state->B);
+    ilyaL_buffinit(L, &state->B);
   }
   if (b == NULL) {  /* finishing dump? */
-    luaL_pushresult(&state->B);  /* push result */
+    ilyaL_pushresult(&state->B);  /* push result */
     ilya_replace(L, 1);  /* move it to reserved slot */
   }
   else
-    luaL_addlstring(&state->B, (const char *)b, size);
+    ilyaL_addlstring(&state->B, (const char *)b, size);
   return 0;
 }
 
@@ -223,7 +223,7 @@ static int writer (ilya_State *L, const void *b, size_t size, void *ud) {
 static int str_dump (ilya_State *L) {
   struct str_Writer state;
   int strip = ilya_toboolean(L, 2);
-  luaL_argcheck(L, ilya_type(L, 1) == ILYA_TFUNCTION && !ilya_iscfunction(L, 1),
+  ilyaL_argcheck(L, ilya_type(L, 1) == ILYA_TFUNCTION && !ilya_iscfunction(L, 1),
                    1, "Ilya fn expected");
   /* ensure fn is on the top of the stack and vacate slot 1 */
   ilya_pushvalue(L, 1);
@@ -245,7 +245,7 @@ static int str_dump (ilya_State *L) {
 
 /* no coercion from strings to numbers */
 
-static const luaL_Reg stringmetamethods[] = {
+static const ilyaL_Reg stringmetamethods[] = {
   {"__index", NULL},  /* placeholder */
   {NULL, NULL}
 };
@@ -268,9 +268,9 @@ static int tonum (ilya_State *L, int arg) {
 static void trymt (ilya_State *L, const char *mtname) {
   ilya_settop(L, 2);  /* back to the original arguments */
   if (l_unlikely(ilya_type(L, 2) == ILYA_TSTRING ||
-                 !luaL_getmetafield(L, 2, mtname)))
-    luaL_error(L, "attempt to %s a '%s' with a '%s'", mtname + 2,
-                  luaL_typename(L, -2), luaL_typename(L, -1));
+                 !ilyaL_getmetafield(L, 2, mtname)))
+    ilyaL_error(L, "attempt to %s a '%s' with a '%s'", mtname + 2,
+                  ilyaL_typename(L, -2), ilyaL_typename(L, -1));
   ilya_insert(L, -3);  /* put metamethod before arguments */
   ilya_call(L, 2, 1);  /* call metamethod */
 }
@@ -318,7 +318,7 @@ static int arith_unm (ilya_State *L) {
 }
 
 
-static const luaL_Reg stringmetamethods[] = {
+static const ilyaL_Reg stringmetamethods[] = {
   {"__add", arith_add},
   {"__sub", arith_sub},
   {"__mul", arith_mul},
@@ -378,7 +378,7 @@ static int check_capture (MatchState *ms, int l) {
   l -= '1';
   if (l_unlikely(l < 0 || l >= ms->level ||
                  ms->capture[l].len == CAP_UNFINISHED))
-    return luaL_error(ms->L, "invalid capture index %%%d", l + 1);
+    return ilyaL_error(ms->L, "invalid capture index %%%d", l + 1);
   return l;
 }
 
@@ -387,7 +387,7 @@ static int capture_to_close (MatchState *ms) {
   int level = ms->level;
   for (level--; level>=0; level--)
     if (ms->capture[level].len == CAP_UNFINISHED) return level;
-  return luaL_error(ms->L, "invalid pattern capture");
+  return ilyaL_error(ms->L, "invalid pattern capture");
 }
 
 
@@ -395,14 +395,14 @@ static const char *classend (MatchState *ms, const char *p) {
   switch (*p++) {
     case L_ESC: {
       if (l_unlikely(p == ms->p_end))
-        luaL_error(ms->L, "malformed pattern (ends with '%%')");
+        ilyaL_error(ms->L, "malformed pattern (ends with '%%')");
       return p+1;
     }
     case '[': {
       if (*p == '^') p++;
       do {  /* look for a ']' */
         if (l_unlikely(p == ms->p_end))
-          luaL_error(ms->L, "malformed pattern (missing ']')");
+          ilyaL_error(ms->L, "malformed pattern (missing ']')");
         if (*(p++) == L_ESC && p < ms->p_end)
           p++;  /* skip escapes (e.g. '%]') */
       } while (*p != ']');
@@ -477,7 +477,7 @@ static int singlematch (MatchState *ms, const char *s, const char *p,
 static const char *matchbalance (MatchState *ms, const char *s,
                                    const char *p) {
   if (l_unlikely(p >= ms->p_end - 1))
-    luaL_error(ms->L, "malformed pattern (missing arguments to '%%b')");
+    ilyaL_error(ms->L, "malformed pattern (missing arguments to '%%b')");
   if (*s != *p) return NULL;
   else {
     int b = *p;
@@ -526,7 +526,7 @@ static const char *start_capture (MatchState *ms, const char *s,
                                     const char *p, int what) {
   const char *res;
   int level = ms->level;
-  if (level >= ILYA_MAXCAPTURES) luaL_error(ms->L, "too many captures");
+  if (level >= ILYA_MAXCAPTURES) ilyaL_error(ms->L, "too many captures");
   ms->capture[level].init = s;
   ms->capture[level].len = what;
   ms->level = level+1;
@@ -560,7 +560,7 @@ static const char *match_capture (MatchState *ms, const char *s, int l) {
 
 static const char *match (MatchState *ms, const char *s, const char *p) {
   if (l_unlikely(ms->matchdepth-- == 0))
-    luaL_error(ms->L, "pattern too complex");
+    ilyaL_error(ms->L, "pattern too complex");
   init: /* using goto to optimize tail recursion */
   if (p != ms->p_end) {  /* end of pattern? */
     switch (*p) {
@@ -594,7 +594,7 @@ static const char *match (MatchState *ms, const char *s, const char *p) {
             const char *ep; char previous;
             p += 2;
             if (l_unlikely(*p != '['))
-              luaL_error(ms->L, "missing '[' after '%%f' in pattern");
+              ilyaL_error(ms->L, "missing '[' after '%%f' in pattern");
             ep = classend(ms, p);  /* points to what is next */
             previous = (s == ms->src_init) ? '\0' : *(s - 1);
             if (!matchbracketclass(cast_uchar(previous), p, ep - 1) &&
@@ -694,7 +694,7 @@ static ptrdiff_t get_onecapture (MatchState *ms, int i, const char *s,
                               const char *e, const char **cap) {
   if (i >= ms->level) {
     if (l_unlikely(i != 0))
-      luaL_error(ms->L, "invalid capture index %%%d", i + 1);
+      ilyaL_error(ms->L, "invalid capture index %%%d", i + 1);
     *cap = s;
     return (e - s);
   }
@@ -702,7 +702,7 @@ static ptrdiff_t get_onecapture (MatchState *ms, int i, const char *s,
     ptrdiff_t capl = ms->capture[i].len;
     *cap = ms->capture[i].init;
     if (l_unlikely(capl == CAP_UNFINISHED))
-      luaL_error(ms->L, "unfinished capture");
+      ilyaL_error(ms->L, "unfinished capture");
     else if (capl == CAP_POSITION)
       ilya_pushinteger(ms->L,
           ct_diff2S(ms->capture[i].init - ms->src_init) + 1);
@@ -727,7 +727,7 @@ static void push_onecapture (MatchState *ms, int i, const char *s,
 static int push_captures (MatchState *ms, const char *s, const char *e) {
   int i;
   int nlevels = (ms->level == 0 && s) ? 1 : ms->level;
-  luaL_checkstack(ms->L, nlevels, "too many captures");
+  ilyaL_checkstack(ms->L, nlevels, "too many captures");
   for (i = 0; i < nlevels; i++)
     push_onecapture(ms, i, s, e);
   return nlevels;  /* number of strings pushed */
@@ -764,11 +764,11 @@ static void reprepstate (MatchState *ms) {
 
 static int str_find_aux (ilya_State *L, int find) {
   size_t ls, lp;
-  const char *s = luaL_checklstring(L, 1, &ls);
-  const char *p = luaL_checklstring(L, 2, &lp);
-  size_t init = posrelatI(luaL_optinteger(L, 3, 1), ls) - 1;
+  const char *s = ilyaL_checklstring(L, 1, &ls);
+  const char *p = ilyaL_checklstring(L, 2, &lp);
+  size_t init = posrelatI(ilyaL_optinteger(L, 3, 1), ls) - 1;
   if (init > ls) {  /* start after string's end? */
-    luaL_pushfail(L);  /* cannot find anything */
+    ilyaL_pushfail(L);  /* cannot find anything */
     return 1;
   }
   /* explicit request or no special characters? */
@@ -803,7 +803,7 @@ static int str_find_aux (ilya_State *L, int find) {
       }
     } while (s1++ < ms.src_end && !anchor);
   }
-  luaL_pushfail(L);  /* not found */
+  ilyaL_pushfail(L);  /* not found */
   return 1;
 }
 
@@ -845,9 +845,9 @@ static int gmatch_aux (ilya_State *L) {
 
 static int gmatch (ilya_State *L) {
   size_t ls, lp;
-  const char *s = luaL_checklstring(L, 1, &ls);
-  const char *p = luaL_checklstring(L, 2, &lp);
-  size_t init = posrelatI(luaL_optinteger(L, 3, 1), ls) - 1;
+  const char *s = ilyaL_checklstring(L, 1, &ls);
+  const char *p = ilyaL_checklstring(L, 2, &lp);
+  size_t init = posrelatI(ilyaL_optinteger(L, 3, 1), ls) - 1;
   GMatchState *gm;
   ilya_settop(L, 2);  /* keep strings on closure to avoid being collected */
   gm = (GMatchState *)ilya_newuserdatauv(L, sizeof(GMatchState), 0);
@@ -860,33 +860,33 @@ static int gmatch (ilya_State *L) {
 }
 
 
-static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
+static void add_s (MatchState *ms, ilyaL_Buffer *b, const char *s,
                                                    const char *e) {
   size_t l;
   ilya_State *L = ms->L;
   const char *news = ilya_tolstring(L, 3, &l);
   const char *p;
   while ((p = (char *)memchr(news, L_ESC, l)) != NULL) {
-    luaL_addlstring(b, news, ct_diff2sz(p - news));
+    ilyaL_addlstring(b, news, ct_diff2sz(p - news));
     p++;  /* skip ESC */
     if (*p == L_ESC)  /* '%%' */
-      luaL_addchar(b, *p);
+      ilyaL_addchar(b, *p);
     else if (*p == '0')  /* '%0' */
-        luaL_addlstring(b, s, ct_diff2sz(e - s));
+        ilyaL_addlstring(b, s, ct_diff2sz(e - s));
     else if (isdigit(cast_uchar(*p))) {  /* '%n' */
       const char *cap;
       ptrdiff_t resl = get_onecapture(ms, *p - '1', s, e, &cap);
       if (resl == CAP_POSITION)
-        luaL_addvalue(b);  /* add position to accumulated result */
+        ilyaL_addvalue(b);  /* add position to accumulated result */
       else
-        luaL_addlstring(b, cap, cast_sizet(resl));
+        ilyaL_addlstring(b, cap, cast_sizet(resl));
     }
     else
-      luaL_error(L, "invalid use of '%c' in replacement string", L_ESC);
+      ilyaL_error(L, "invalid use of '%c' in replacement string", L_ESC);
     l -= ct_diff2sz(p + 1 - news);
     news = p + 1;
   }
-  luaL_addlstring(b, news, l);
+  ilyaL_addlstring(b, news, l);
 }
 
 
@@ -895,7 +895,7 @@ static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
 ** Return true if the original string was changed. (Function calls and
 ** table indexing resulting in nil or false do not change the subject.)
 */
-static int add_value (MatchState *ms, luaL_Buffer *b, const char *s,
+static int add_value (MatchState *ms, ilyaL_Buffer *b, const char *s,
                                       const char *e, int tr) {
   ilya_State *L = ms->L;
   switch (tr) {
@@ -918,14 +918,14 @@ static int add_value (MatchState *ms, luaL_Buffer *b, const char *s,
   }
   if (!ilya_toboolean(L, -1)) {  /* nil or false? */
     ilya_pop(L, 1);  /* remove value */
-    luaL_addlstring(b, s, ct_diff2sz(e - s));  /* keep original text */
+    ilyaL_addlstring(b, s, ct_diff2sz(e - s));  /* keep original text */
     return 0;  /* no changes */
   }
   else if (l_unlikely(!ilya_isstring(L, -1)))
-    return luaL_error(L, "invalid replacement value (a %s)",
-                         luaL_typename(L, -1));
+    return ilyaL_error(L, "invalid replacement value (a %s)",
+                         ilyaL_typename(L, -1));
   else {
-    luaL_addvalue(b);  /* add result to accumulator */
+    ilyaL_addvalue(b);  /* add result to accumulator */
     return 1;  /* something changed */
   }
 }
@@ -933,21 +933,21 @@ static int add_value (MatchState *ms, luaL_Buffer *b, const char *s,
 
 static int str_gsub (ilya_State *L) {
   size_t srcl, lp;
-  const char *src = luaL_checklstring(L, 1, &srcl);  /* subject */
-  const char *p = luaL_checklstring(L, 2, &lp);  /* pattern */
+  const char *src = ilyaL_checklstring(L, 1, &srcl);  /* subject */
+  const char *p = ilyaL_checklstring(L, 2, &lp);  /* pattern */
   const char *lastmatch = NULL;  /* end of last match */
   int tr = ilya_type(L, 3);  /* replacement type */
   /* max replacements */
-  ilya_Integer max_s = luaL_optinteger(L, 4, cast_st2S(srcl) + 1);
+  ilya_Integer max_s = ilyaL_optinteger(L, 4, cast_st2S(srcl) + 1);
   int anchor = (*p == '^');
   ilya_Integer n = 0;  /* replacement count */
   int changed = 0;  /* change flag */
   MatchState ms;
-  luaL_Buffer b;
-  luaL_argexpected(L, tr == ILYA_TNUMBER || tr == ILYA_TSTRING ||
+  ilyaL_Buffer b;
+  ilyaL_argexpected(L, tr == ILYA_TNUMBER || tr == ILYA_TSTRING ||
                    tr == ILYA_TFUNCTION || tr == ILYA_TTABLE, 3,
                       "string/fn/table");
-  luaL_buffinit(L, &b);
+  ilyaL_buffinit(L, &b);
   if (anchor) {
     p++; lp--;  /* skip anchor character */
   }
@@ -961,15 +961,15 @@ static int str_gsub (ilya_State *L) {
       src = lastmatch = e;
     }
     else if (src < ms.src_end)  /* otherwise, skip one character */
-      luaL_addchar(&b, *src++);
+      ilyaL_addchar(&b, *src++);
     else break;  /* end of subject */
     if (anchor) break;
   }
   if (!changed)  /* no changes? */
     ilya_pushvalue(L, 1);  /* return original string */
   else {  /* something changed */
-    luaL_addlstring(&b, src, ct_diff2sz(ms.src_end - src));
-    luaL_pushresult(&b);  /* create and return new string */
+    ilyaL_addlstring(&b, src, ct_diff2sz(ms.src_end - src));
+    ilyaL_pushresult(&b);  /* create and return new string */
   }
   ilya_pushinteger(L, n);  /* number of substitutions */
   return 2;
@@ -1017,10 +1017,10 @@ static ilya_Number adddigit (char *buff, unsigned n, ilya_Number x) {
 static int num2straux (char *buff, unsigned sz, ilya_Number x) {
   /* if 'inf' or 'NaN', format it like '%g' */
   if (x != x || x == (ilya_Number)HUGE_VAL || x == -(ilya_Number)HUGE_VAL)
-    return l_sprintf(buff, sz, ILYA_NUMBER_FMT, (LUAI_UACNUMBER)x);
+    return l_sprintf(buff, sz, ILYA_NUMBER_FMT, (ILYAI_UACNUMBER)x);
   else if (x == 0) {  /* can be -0... */
     /* create "0" or "-0" followed by exponent */
-    return l_sprintf(buff, sz, ILYA_NUMBER_FMT "x0p+0", (LUAI_UACNUMBER)x);
+    return l_sprintf(buff, sz, ILYA_NUMBER_FMT "x0p+0", (ILYAI_UACNUMBER)x);
   }
   else {
     int e;
@@ -1055,7 +1055,7 @@ static int ilya_number2strx (ilya_State *L, char *buff, unsigned sz,
       buff[i] = cast_char(toupper(cast_uchar(buff[i])));
   }
   else if (l_unlikely(fmt[SIZELENMOD] != 'a'))
-    return luaL_error(L, "modifiers for format '%%a'/'%%A' not implemented");
+    return ilyaL_error(L, "modifiers for format '%%a'/'%%A' not implemented");
   return n;
 }
 
@@ -1112,12 +1112,12 @@ static int ilya_number2strx (ilya_State *L, char *buff, unsigned sz,
 #define MAX_FORMAT	32
 
 
-static void addquoted (luaL_Buffer *b, const char *s, size_t len) {
-  luaL_addchar(b, '"');
+static void addquoted (ilyaL_Buffer *b, const char *s, size_t len) {
+  ilyaL_addchar(b, '"');
   while (len--) {
     if (*s == '"' || *s == '\\' || *s == '\n') {
-      luaL_addchar(b, '\\');
-      luaL_addchar(b, *s);
+      ilyaL_addchar(b, '\\');
+      ilyaL_addchar(b, *s);
     }
     else if (iscntrl(cast_uchar(*s))) {
       char buff[10];
@@ -1125,13 +1125,13 @@ static void addquoted (luaL_Buffer *b, const char *s, size_t len) {
         l_sprintf(buff, sizeof(buff), "\\%d", (int)cast_uchar(*s));
       else
         l_sprintf(buff, sizeof(buff), "\\%03d", (int)cast_uchar(*s));
-      luaL_addstring(b, buff);
+      ilyaL_addstring(b, buff);
     }
     else
-      luaL_addchar(b, *s);
+      ilyaL_addchar(b, *s);
     s++;
   }
-  luaL_addchar(b, '"');
+  ilyaL_addchar(b, '"');
 }
 
 
@@ -1165,7 +1165,7 @@ static int quotefloat (ilya_State *L, char *buff, ilya_Number n) {
 }
 
 
-static void addliteral (ilya_State *L, luaL_Buffer *b, int arg) {
+static void addliteral (ilya_State *L, ilyaL_Buffer *b, int arg) {
   switch (ilya_type(L, arg)) {
     case ILYA_TSTRING: {
       size_t len;
@@ -1174,7 +1174,7 @@ static void addliteral (ilya_State *L, luaL_Buffer *b, int arg) {
       break;
     }
     case ILYA_TNUMBER: {
-      char *buff = luaL_prepbuffsize(b, MAX_ITEM);
+      char *buff = ilyaL_prepbuffsize(b, MAX_ITEM);
       int nb;
       if (!ilya_isinteger(L, arg))  /* float? */
         nb = quotefloat(L, buff, ilya_tonumber(L, arg));
@@ -1183,18 +1183,18 @@ static void addliteral (ilya_State *L, luaL_Buffer *b, int arg) {
         const char *format = (n == ILYA_MININTEGER)  /* corner case? */
                            ? "0x%" ILYA_INTEGER_FRMLEN "x"  /* use hex */
                            : ILYA_INTEGER_FMT;  /* else use default format */
-        nb = l_sprintf(buff, MAX_ITEM, format, (LUAI_UACINT)n);
+        nb = l_sprintf(buff, MAX_ITEM, format, (ILYAI_UACINT)n);
       }
-      luaL_addsize(b, cast_uint(nb));
+      ilyaL_addsize(b, cast_uint(nb));
       break;
     }
     case ILYA_TNIL: case ILYA_TBOOLEAN: {
-      luaL_tolstring(L, arg, NULL);
-      luaL_addvalue(b);
+      ilyaL_tolstring(L, arg, NULL);
+      ilyaL_addvalue(b);
       break;
     }
     default: {
-      luaL_argerror(L, arg, "value has no literal form");
+      ilyaL_argerror(L, arg, "value has no literal form");
     }
   }
 }
@@ -1227,7 +1227,7 @@ static void checkformat (ilya_State *L, const char *form, const char *flags,
     }
   }
   if (!isalpha(cast_uchar(*spec)))  /* did not go to the end? */
-    luaL_error(L, "invalid conversion specification: '%s'", form);
+    ilyaL_error(L, "invalid conversion specification: '%s'", form);
 }
 
 
@@ -1242,7 +1242,7 @@ static const char *getformat (ilya_State *L, const char *strfrmt,
   len++;  /* adds following character (should be the specifier) */
   /* still needs space for '%', '\0', plus a length modifier */
   if (len >= MAX_FORMAT - 10)
-    luaL_error(L, "invalid format (too long)");
+    ilyaL_error(L, "invalid format (too long)");
   *(form++) = '%';
   memcpy(form, strfrmt, len * sizeof(char));
   *(form + len) = '\0';
@@ -1267,28 +1267,28 @@ static int str_format (ilya_State *L) {
   int top = ilya_gettop(L);
   int arg = 1;
   size_t sfl;
-  const char *strfrmt = luaL_checklstring(L, arg, &sfl);
+  const char *strfrmt = ilyaL_checklstring(L, arg, &sfl);
   const char *strfrmt_end = strfrmt+sfl;
   const char *flags;
-  luaL_Buffer b;
-  luaL_buffinit(L, &b);
+  ilyaL_Buffer b;
+  ilyaL_buffinit(L, &b);
   while (strfrmt < strfrmt_end) {
     if (*strfrmt != L_ESC)
-      luaL_addchar(&b, *strfrmt++);
+      ilyaL_addchar(&b, *strfrmt++);
     else if (*++strfrmt == L_ESC)
-      luaL_addchar(&b, *strfrmt++);  /* %% */
+      ilyaL_addchar(&b, *strfrmt++);  /* %% */
     else { /* format item */
       char form[MAX_FORMAT];  /* to store the format ('%...') */
       unsigned maxitem = MAX_ITEM;  /* maximum length for the result */
-      char *buff = luaL_prepbuffsize(&b, maxitem);  /* to put result */
+      char *buff = ilyaL_prepbuffsize(&b, maxitem);  /* to put result */
       int nb = 0;  /* number of bytes in result */
       if (++arg > top)
-        return luaL_argerror(L, arg, "no value");
+        return ilyaL_argerror(L, arg, "no value");
       strfrmt = getformat(L, strfrmt, form);
       switch (*strfrmt++) {
         case 'c': {
           checkformat(L, form, L_FMTFLAGSC, 0);
-          nb = l_sprintf(buff, maxitem, form, (int)luaL_checkinteger(L, arg));
+          nb = l_sprintf(buff, maxitem, form, (int)ilyaL_checkinteger(L, arg));
           break;
         }
         case 'd': case 'i':
@@ -1300,27 +1300,27 @@ static int str_format (ilya_State *L) {
         case 'o': case 'x': case 'X':
           flags = L_FMTFLAGSX;
          intcase: {
-          ilya_Integer n = luaL_checkinteger(L, arg);
+          ilya_Integer n = ilyaL_checkinteger(L, arg);
           checkformat(L, form, flags, 1);
           addlenmod(form, ILYA_INTEGER_FRMLEN);
-          nb = l_sprintf(buff, maxitem, form, (LUAI_UACINT)n);
+          nb = l_sprintf(buff, maxitem, form, (ILYAI_UACINT)n);
           break;
         }
         case 'a': case 'A':
           checkformat(L, form, L_FMTFLAGSF, 1);
           addlenmod(form, ILYA_NUMBER_FRMLEN);
           nb = ilya_number2strx(L, buff, maxitem, form,
-                                  luaL_checknumber(L, arg));
+                                  ilyaL_checknumber(L, arg));
           break;
         case 'f':
           maxitem = MAX_ITEMF;  /* extra space for '%f' */
-          buff = luaL_prepbuffsize(&b, maxitem);
+          buff = ilyaL_prepbuffsize(&b, maxitem);
           /* FALLTHROUGH */
         case 'e': case 'E': case 'g': case 'G': {
-          ilya_Number n = luaL_checknumber(L, arg);
+          ilya_Number n = ilyaL_checknumber(L, arg);
           checkformat(L, form, L_FMTFLAGSF, 1);
           addlenmod(form, ILYA_NUMBER_FRMLEN);
-          nb = l_sprintf(buff, maxitem, form, (LUAI_UACNUMBER)n);
+          nb = l_sprintf(buff, maxitem, form, (ILYAI_UACNUMBER)n);
           break;
         }
         case 'p': {
@@ -1335,38 +1335,38 @@ static int str_format (ilya_State *L) {
         }
         case 'q': {
           if (form[2] != '\0')  /* modifiers? */
-            return luaL_error(L, "specifier '%%q' cannot have modifiers");
+            return ilyaL_error(L, "specifier '%%q' cannot have modifiers");
           addliteral(L, &b, arg);
           break;
         }
         case 's': {
           size_t l;
-          const char *s = luaL_tolstring(L, arg, &l);
+          const char *s = ilyaL_tolstring(L, arg, &l);
           if (form[2] == '\0')  /* no modifiers? */
-            luaL_addvalue(&b);  /* keep entire string */
+            ilyaL_addvalue(&b);  /* keep entire string */
           else {
-            luaL_argcheck(L, l == strlen(s), arg, "string contains zeros");
+            ilyaL_argcheck(L, l == strlen(s), arg, "string contains zeros");
             checkformat(L, form, L_FMTFLAGSC, 1);
             if (strchr(form, '.') == NULL && l >= 100) {
               /* no precision and string is too long to be formatted */
-              luaL_addvalue(&b);  /* keep entire string */
+              ilyaL_addvalue(&b);  /* keep entire string */
             }
             else {  /* format the string into 'buff' */
               nb = l_sprintf(buff, maxitem, form, s);
-              ilya_pop(L, 1);  /* remove result from 'luaL_tolstring' */
+              ilya_pop(L, 1);  /* remove result from 'ilyaL_tolstring' */
             }
           }
           break;
         }
         default: {  /* also treat cases 'pnLlh' */
-          return luaL_error(L, "invalid conversion '%s' to 'format'", form);
+          return ilyaL_error(L, "invalid conversion '%s' to 'format'", form);
         }
       }
       ilya_assert(cast_uint(nb) < maxitem);
-      luaL_addsize(&b, cast_uint(nb));
+      ilyaL_addsize(&b, cast_uint(nb));
     }
   }
-  luaL_pushresult(&b);
+  ilyaL_pushresult(&b);
   return 1;
 }
 
@@ -1381,8 +1381,8 @@ static int str_format (ilya_State *L) {
 
 
 /* value used for padding */
-#if !defined(LUAL_PACKPADBYTE)
-#define LUAL_PACKPADBYTE		0x00
+#if !defined(ILYAL_PACKPADBYTE)
+#define ILYAL_PACKPADBYTE		0x00
 #endif
 
 /* maximum size for the binary representation of an integer */
@@ -1459,7 +1459,7 @@ static size_t getnum (const char **fmt, size_t df) {
 static unsigned getnumlimit (Header *h, const char **fmt, size_t df) {
   size_t sz = getnum(fmt, df);
   if (l_unlikely((sz - 1u) >= MAXINTSIZE))
-    return cast_uint(luaL_error(h->L,
+    return cast_uint(ilyaL_error(h->L,
                "integral size (%d) out of limits [1,%d]", sz, MAXINTSIZE));
   return cast_uint(sz);
 }
@@ -1480,7 +1480,7 @@ static void initheader (ilya_State *L, Header *h) {
 */
 static KOption getoption (Header *h, const char **fmt, size_t *size) {
   /* dummy structure to get native alignment requirements */
-  struct cD { char c; union { LUAI_MAXALIGN; } u; };
+  struct cD { char c; union { ILYAI_MAXALIGN; } u; };
   int opt = *((*fmt)++);
   *size = 0;  /* default */
   switch (opt) {
@@ -1502,7 +1502,7 @@ static KOption getoption (Header *h, const char **fmt, size_t *size) {
     case 'c':
       *size = getnum(fmt, cast_sizet(-1));
       if (l_unlikely(*size == cast_sizet(-1)))
-        luaL_error(h->L, "missing size for format option 'c'");
+        ilyaL_error(h->L, "missing size for format option 'c'");
       return Kchar;
     case 'z': return Kzstr;
     case 'x': *size = 1; return Kpadding;
@@ -1516,7 +1516,7 @@ static KOption getoption (Header *h, const char **fmt, size_t *size) {
       h->maxalign = getnumlimit(h, fmt, maxalign);
       break;
     }
-    default: luaL_error(h->L, "invalid format option '%c'", opt);
+    default: ilyaL_error(h->L, "invalid format option '%c'", opt);
   }
   return Knop;
 }
@@ -1537,7 +1537,7 @@ static KOption getdetails (Header *h, size_t totalsize, const char **fmt,
   size_t align = *psize;  /* usually, alignment follows size */
   if (opt == Kpaddalign) {  /* 'X' gets alignment from following option */
     if (**fmt == '\0' || getoption(h, fmt, &align) == Kchar || align == 0)
-      luaL_argerror(h->L, 1, "invalid next option for option 'X'");
+      ilyaL_argerror(h->L, 1, "invalid next option for option 'X'");
   }
   if (align <= 1 || opt == Kchar)  /* need no alignment? */
     *ntoalign = 0;
@@ -1545,7 +1545,7 @@ static KOption getdetails (Header *h, size_t totalsize, const char **fmt,
     if (align > h->maxalign)  /* enforce maximum alignment */
       align = h->maxalign;
     if (l_unlikely(!ispow2(align)))  /* not a power of 2? */
-      luaL_argerror(h->L, 1, "format asks for alignment not power of 2");
+      ilyaL_argerror(h->L, 1, "format asks for alignment not power of 2");
     else {
       /* 'szmoda' = totalsize % align */
       unsigned szmoda = cast_uint(totalsize & (align - 1));
@@ -1562,9 +1562,9 @@ static KOption getdetails (Header *h, size_t totalsize, const char **fmt,
 ** the size of a Ilya integer, correcting the extra sign-extension
 ** bytes if necessary (by default they would be zeros).
 */
-static void packint (luaL_Buffer *b, ilya_Unsigned n,
+static void packint (ilyaL_Buffer *b, ilya_Unsigned n,
                      int islittle, unsigned size, int neg) {
-  char *buff = luaL_prepbuffsize(b, size);
+  char *buff = ilyaL_prepbuffsize(b, size);
   unsigned i;
   buff[islittle ? 0 : size - 1] = (char)(n & MC);  /* first byte */
   for (i = 1; i < size; i++) {
@@ -1575,7 +1575,7 @@ static void packint (luaL_Buffer *b, ilya_Unsigned n,
     for (i = SZINT; i < size; i++)  /* correct extra bytes */
       buff[islittle ? i : size - 1 - i] = (char)MC;
   }
-  luaL_addsize(b, size);  /* add result to buffer */
+  ilyaL_addsize(b, size);  /* add result to buffer */
 }
 
 
@@ -1596,124 +1596,124 @@ static void copywithendian (char *dest, const char *src,
 
 
 static int str_pack (ilya_State *L) {
-  luaL_Buffer b;
+  ilyaL_Buffer b;
   Header h;
-  const char *fmt = luaL_checkstring(L, 1);  /* format string */
+  const char *fmt = ilyaL_checkstring(L, 1);  /* format string */
   int arg = 1;  /* current argument to pack */
   size_t totalsize = 0;  /* accumulate total size of result */
   initheader(L, &h);
   ilya_pushnil(L);  /* mark to separate arguments from string buffer */
-  luaL_buffinit(L, &b);
+  ilyaL_buffinit(L, &b);
   while (*fmt != '\0') {
     unsigned ntoalign;
     size_t size;
     KOption opt = getdetails(&h, totalsize, &fmt, &size, &ntoalign);
-    luaL_argcheck(L, size + ntoalign <= MAX_SIZE - totalsize, arg,
+    ilyaL_argcheck(L, size + ntoalign <= MAX_SIZE - totalsize, arg,
                      "result too long");
     totalsize += ntoalign + size;
     while (ntoalign-- > 0)
-     luaL_addchar(&b, LUAL_PACKPADBYTE);  /* fill alignment */
+     ilyaL_addchar(&b, ILYAL_PACKPADBYTE);  /* fill alignment */
     arg++;
     switch (opt) {
       case Kint: {  /* signed integers */
-        ilya_Integer n = luaL_checkinteger(L, arg);
+        ilya_Integer n = ilyaL_checkinteger(L, arg);
         if (size < SZINT) {  /* need overflow check? */
           ilya_Integer lim = (ilya_Integer)1 << ((size * NB) - 1);
-          luaL_argcheck(L, -lim <= n && n < lim, arg, "integer overflow");
+          ilyaL_argcheck(L, -lim <= n && n < lim, arg, "integer overflow");
         }
         packint(&b, (ilya_Unsigned)n, h.islittle, cast_uint(size), (n < 0));
         break;
       }
       case Kuint: {  /* unsigned integers */
-        ilya_Integer n = luaL_checkinteger(L, arg);
+        ilya_Integer n = ilyaL_checkinteger(L, arg);
         if (size < SZINT)  /* need overflow check? */
-          luaL_argcheck(L, (ilya_Unsigned)n < ((ilya_Unsigned)1 << (size * NB)),
+          ilyaL_argcheck(L, (ilya_Unsigned)n < ((ilya_Unsigned)1 << (size * NB)),
                            arg, "unsigned overflow");
         packint(&b, (ilya_Unsigned)n, h.islittle, cast_uint(size), 0);
         break;
       }
       case Kfloat: {  /* C float */
-        float f = (float)luaL_checknumber(L, arg);  /* get argument */
-        char *buff = luaL_prepbuffsize(&b, sizeof(f));
+        float f = (float)ilyaL_checknumber(L, arg);  /* get argument */
+        char *buff = ilyaL_prepbuffsize(&b, sizeof(f));
         /* move 'f' to final result, correcting endianness if needed */
         copywithendian(buff, (char *)&f, sizeof(f), h.islittle);
-        luaL_addsize(&b, size);
+        ilyaL_addsize(&b, size);
         break;
       }
       case Knumber: {  /* Ilya float */
-        ilya_Number f = luaL_checknumber(L, arg);  /* get argument */
-        char *buff = luaL_prepbuffsize(&b, sizeof(f));
+        ilya_Number f = ilyaL_checknumber(L, arg);  /* get argument */
+        char *buff = ilyaL_prepbuffsize(&b, sizeof(f));
         /* move 'f' to final result, correcting endianness if needed */
         copywithendian(buff, (char *)&f, sizeof(f), h.islittle);
-        luaL_addsize(&b, size);
+        ilyaL_addsize(&b, size);
         break;
       }
       case Kdouble: {  /* C double */
-        double f = (double)luaL_checknumber(L, arg);  /* get argument */
-        char *buff = luaL_prepbuffsize(&b, sizeof(f));
+        double f = (double)ilyaL_checknumber(L, arg);  /* get argument */
+        char *buff = ilyaL_prepbuffsize(&b, sizeof(f));
         /* move 'f' to final result, correcting endianness if needed */
         copywithendian(buff, (char *)&f, sizeof(f), h.islittle);
-        luaL_addsize(&b, size);
+        ilyaL_addsize(&b, size);
         break;
       }
       case Kchar: {  /* fixed-size string */
         size_t len;
-        const char *s = luaL_checklstring(L, arg, &len);
-        luaL_argcheck(L, len <= size, arg, "string longer than given size");
-        luaL_addlstring(&b, s, len);  /* add string */
+        const char *s = ilyaL_checklstring(L, arg, &len);
+        ilyaL_argcheck(L, len <= size, arg, "string longer than given size");
+        ilyaL_addlstring(&b, s, len);  /* add string */
         if (len < size) {  /* does it need padding? */
           size_t psize = size - len;  /* pad size */
-          char *buff = luaL_prepbuffsize(&b, psize);
-          memset(buff, LUAL_PACKPADBYTE, psize);
-          luaL_addsize(&b, psize);
+          char *buff = ilyaL_prepbuffsize(&b, psize);
+          memset(buff, ILYAL_PACKPADBYTE, psize);
+          ilyaL_addsize(&b, psize);
         }
         break;
       }
       case Kstring: {  /* strings with length count */
         size_t len;
-        const char *s = luaL_checklstring(L, arg, &len);
-        luaL_argcheck(L, size >= sizeof(ilya_Unsigned) ||
+        const char *s = ilyaL_checklstring(L, arg, &len);
+        ilyaL_argcheck(L, size >= sizeof(ilya_Unsigned) ||
                          len < ((ilya_Unsigned)1 << (size * NB)),
                          arg, "string length does not fit in given size");
         /* pack length */
         packint(&b, (ilya_Unsigned)len, h.islittle, cast_uint(size), 0);
-        luaL_addlstring(&b, s, len);
+        ilyaL_addlstring(&b, s, len);
         totalsize += len;
         break;
       }
       case Kzstr: {  /* zero-terminated string */
         size_t len;
-        const char *s = luaL_checklstring(L, arg, &len);
-        luaL_argcheck(L, strlen(s) == len, arg, "string contains zeros");
-        luaL_addlstring(&b, s, len);
-        luaL_addchar(&b, '\0');  /* add zero at the end */
+        const char *s = ilyaL_checklstring(L, arg, &len);
+        ilyaL_argcheck(L, strlen(s) == len, arg, "string contains zeros");
+        ilyaL_addlstring(&b, s, len);
+        ilyaL_addchar(&b, '\0');  /* add zero at the end */
         totalsize += len + 1;
         break;
       }
-      case Kpadding: luaL_addchar(&b, LUAL_PACKPADBYTE);  /* FALLTHROUGH */
+      case Kpadding: ilyaL_addchar(&b, ILYAL_PACKPADBYTE);  /* FALLTHROUGH */
       case Kpaddalign: case Knop:
         arg--;  /* undo increment */
         break;
     }
   }
-  luaL_pushresult(&b);
+  ilyaL_pushresult(&b);
   return 1;
 }
 
 
 static int str_packsize (ilya_State *L) {
   Header h;
-  const char *fmt = luaL_checkstring(L, 1);  /* format string */
+  const char *fmt = ilyaL_checkstring(L, 1);  /* format string */
   size_t totalsize = 0;  /* accumulate total size of result */
   initheader(L, &h);
   while (*fmt != '\0') {
     unsigned ntoalign;
     size_t size;
     KOption opt = getdetails(&h, totalsize, &fmt, &size, &ntoalign);
-    luaL_argcheck(L, opt != Kstring && opt != Kzstr, 1,
+    ilyaL_argcheck(L, opt != Kstring && opt != Kzstr, 1,
                      "variable-length format");
     size += ntoalign;  /* total space used by option */
-    luaL_argcheck(L, totalsize <= ILYA_MAXINTEGER - size,
+    ilyaL_argcheck(L, totalsize <= ILYA_MAXINTEGER - size,
                      1, "format result too large");
     totalsize += size;
   }
@@ -1749,7 +1749,7 @@ static ilya_Integer unpackint (ilya_State *L, const char *str,
     int mask = (!issigned || (ilya_Integer)res >= 0) ? 0 : MC;
     for (i = limit; i < size; i++) {
       if (l_unlikely((unsigned char)str[islittle ? i : size - 1 - i] != mask))
-        luaL_error(L, "%d-byte integer does not fit into Ilya Integer", size);
+        ilyaL_error(L, "%d-byte integer does not fit into Ilya Integer", size);
     }
   }
   return (ilya_Integer)res;
@@ -1758,22 +1758,22 @@ static ilya_Integer unpackint (ilya_State *L, const char *str,
 
 static int str_unpack (ilya_State *L) {
   Header h;
-  const char *fmt = luaL_checkstring(L, 1);
+  const char *fmt = ilyaL_checkstring(L, 1);
   size_t ld;
-  const char *data = luaL_checklstring(L, 2, &ld);
-  size_t pos = posrelatI(luaL_optinteger(L, 3, 1), ld) - 1;
+  const char *data = ilyaL_checklstring(L, 2, &ld);
+  size_t pos = posrelatI(ilyaL_optinteger(L, 3, 1), ld) - 1;
   int n = 0;  /* number of results */
-  luaL_argcheck(L, pos <= ld, 3, "initial position out of string");
+  ilyaL_argcheck(L, pos <= ld, 3, "initial position out of string");
   initheader(L, &h);
   while (*fmt != '\0') {
     unsigned ntoalign;
     size_t size;
     KOption opt = getdetails(&h, pos, &fmt, &size, &ntoalign);
-    luaL_argcheck(L, ntoalign + size <= ld - pos, 2,
+    ilyaL_argcheck(L, ntoalign + size <= ld - pos, 2,
                     "data string too short");
     pos += ntoalign;  /* skip alignment */
     /* stack space for item + next position */
-    luaL_checkstack(L, 2, "too many results");
+    ilyaL_checkstack(L, 2, "too many results");
     n++;
     switch (opt) {
       case Kint:
@@ -1808,14 +1808,14 @@ static int str_unpack (ilya_State *L) {
       case Kstring: {
         ilya_Unsigned len = (ilya_Unsigned)unpackint(L, data + pos,
                                           h.islittle, cast_int(size), 0);
-        luaL_argcheck(L, len <= ld - pos - size, 2, "data string too short");
+        ilyaL_argcheck(L, len <= ld - pos - size, 2, "data string too short");
         ilya_pushlstring(L, data + pos + size, len);
         pos += len;  /* skip string */
         break;
       }
       case Kzstr: {
         size_t len = strlen(data + pos);
-        luaL_argcheck(L, pos + len < ld, 2,
+        ilyaL_argcheck(L, pos + len < ld, 2,
                          "unfinished string for format 'z'");
         ilya_pushlstring(L, data + pos, len);
         pos += len + 1;  /* skip string plus final '\0' */
@@ -1834,7 +1834,7 @@ static int str_unpack (ilya_State *L) {
 /* }====================================================== */
 
 
-static const luaL_Reg strlib[] = {
+static const ilyaL_Reg strlib[] = {
   {"byte", str_byte},
   {"char", str_char},
   {"dump", str_dump},
@@ -1858,8 +1858,8 @@ static const luaL_Reg strlib[] = {
 
 static void createmetatable (ilya_State *L) {
   /* table to be metatable for strings */
-  luaL_newlibtable(L, stringmetamethods);
-  luaL_setfuncs(L, stringmetamethods, 0);
+  ilyaL_newlibtable(L, stringmetamethods);
+  ilyaL_setfuncs(L, stringmetamethods, 0);
   ilya_pushliteral(L, "");  /* dummy string */
   ilya_pushvalue(L, -2);  /* copy table */
   ilya_setmetatable(L, -2);  /* set table as metatable for strings */
@@ -1873,8 +1873,8 @@ static void createmetatable (ilya_State *L) {
 /*
 ** Open string library
 */
-LUAMOD_API int luaopen_string (ilya_State *L) {
-  luaL_newlib(L, strlib);
+ILYAMOD_API int ilyaopen_string (ilya_State *L) {
+  ilyaL_newlib(L, strlib);
   createmetatable(L);
   return 1;
 }

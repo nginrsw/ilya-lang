@@ -64,7 +64,7 @@ static void setsignal (int sig, void (*handler)(int)) {
 static void lstop (ilya_State *L, ilya_Debug *ar) {
   (void)ar;  /* unused arg. */
   ilya_sethook(L, NULL, 0, 0);  /* reset hook */
-  luaL_error(L, "interrupted!");
+  ilyaL_error(L, "interrupted!");
 }
 
 
@@ -136,14 +136,14 @@ static int report (ilya_State *L, int status) {
 static int msghandler (ilya_State *L) {
   const char *msg = ilya_tostring(L, 1);
   if (msg == NULL) {  /* is error object not a string? */
-    if (luaL_callmeta(L, 1, "__tostring") &&  /* does it have a metamethod */
+    if (ilyaL_callmeta(L, 1, "__tostring") &&  /* does it have a metamethod */
         ilya_type(L, -1) == ILYA_TSTRING)  /* that produces a string? */
       return 1;  /* that is the message */
     else
       msg = ilya_pushfstring(L, "(error object is a %s value)",
-                               luaL_typename(L, 1));
+                               ilyaL_typename(L, 1));
   }
-  luaL_traceback(L, L, msg, 1);  /* append a standard traceback */
+  ilyaL_traceback(L, L, msg, 1);  /* append a standard traceback */
   return 1;  /* return the traceback */
 }
 
@@ -201,12 +201,12 @@ static int dochunk (ilya_State *L, int status) {
 
 
 static int dofile (ilya_State *L, const char *name) {
-  return dochunk(L, luaL_loadfile(L, name));
+  return dochunk(L, ilyaL_loadfile(L, name));
 }
 
 
 static int dostring (ilya_State *L, const char *s, const char *name) {
-  return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
+  return dochunk(L, ilyaL_loadbuffer(L, s, strlen(s), name));
 }
 
 
@@ -245,9 +245,9 @@ static int dolibrary (ilya_State *L, char *globname) {
 static int pushargs (ilya_State *L) {
   int i, n;
   if (ilya_getglobal(L, "arg") != ILYA_TTABLE)
-    luaL_error(L, "'arg' is not a table");
-  n = (int)luaL_len(L, -1);
-  luaL_checkstack(L, n + 3, "too many arguments to script");
+    ilyaL_error(L, "'arg' is not a table");
+  n = (int)ilyaL_len(L, -1);
+  ilyaL_checkstack(L, n + 3, "too many arguments to script");
   for (i = 1; i <= n; i++)
     ilya_rawgeti(L, -i, i);
   ilya_remove(L, -i);  /* remove table from the stack */
@@ -260,7 +260,7 @@ static int handle_script (ilya_State *L, char **argv) {
   const char *fname = argv[0];
   if (strcmp(fname, "-") == 0 && strcmp(argv[-1], "--") != 0)
     fname = NULL;  /* stdin */
-  status = luaL_loadfile(L, fname);
+  status = ilyaL_loadfile(L, fname);
   if (status == ILYA_OK) {
     int n = pushargs(L);  /* push arguments to script */
     status = docall(L, n, ILYA_MULTRET);
@@ -372,7 +372,7 @@ static int runargs (ilya_State *L, char **argv, int n) {
 }
 
 
-static int handle_luainit (ilya_State *L) {
+static int handle_ilyainit (ilya_State *L) {
   const char *name = "=" ILYA_INITVARVERSION;
   const char *init = getenv(name + 1);
   if (init == NULL) {
@@ -524,7 +524,7 @@ static const char *get_prompt (ilya_State *L, int firstline) {
   if (ilya_getglobal(L, firstline ? "_PROMPT" : "_PROMPT2") == ILYA_TNIL)
     return (firstline ? ILYA_PROMPT : ILYA_PROMPT2);  /* use the default */
   else {  /* apply 'tostring' over the value */
-    const char *p = luaL_tolstring(L, -1, NULL);
+    const char *p = ilyaL_tolstring(L, -1, NULL);
     ilya_remove(L, -2);  /* remove original value */
     return p;
   }
@@ -578,11 +578,11 @@ static int pushline (ilya_State *L, int firstline) {
 static int addreturn (ilya_State *L) {
   const char *line = ilya_tostring(L, -1);  /* original line */
   const char *retline = ilya_pushfstring(L, "return %s;", line);
-  int status = luaL_loadbuffer(L, retline, strlen(retline), "=stdin");
+  int status = ilyaL_loadbuffer(L, retline, strlen(retline), "=stdin");
   if (status == ILYA_OK)
     ilya_remove(L, -2);  /* remove modified line */
   else
-    ilya_pop(L, 2);  /* pop result from 'luaL_loadbuffer' and modified line */
+    ilya_pop(L, 2);  /* pop result from 'ilyaL_loadbuffer' and modified line */
   return status;
 }
 
@@ -609,7 +609,7 @@ static int multiline (ilya_State *L) {
   const char *line = ilya_tolstring(L, 1, &len);  /* get first line */
   checklocal(line);
   for (;;) {  /* repeat until gets a complete statement */
-    int status = luaL_loadbuffer(L, line, len, "=stdin");  /* try it */
+    int status = ilyaL_loadbuffer(L, line, len, "=stdin");  /* try it */
     if (!incomplete(L, status) || !pushline(L, 0))
       return status;  /* should not or cannot try to add continuation line */
     ilya_remove(L, -2);  /* remove error message (from incomplete line) */
@@ -650,7 +650,7 @@ static int loadline (ilya_State *L) {
 static void l_print (ilya_State *L) {
   int n = ilya_gettop(L);
   if (n > 0) {  /* any result to be printed? */
-    luaL_checkstack(L, ILYA_MINSTACK, "too many results to print");
+    ilyaL_checkstack(L, ILYA_MINSTACK, "too many results to print");
     ilya_getglobal(L, "print");
     ilya_insert(L, 1);
     if (ilya_pcall(L, n, 0, 0) != ILYA_OK)
@@ -661,7 +661,7 @@ static void l_print (ilya_State *L) {
 
 
 /*
-** Do the REPL: repeatedly read (load) a line, evaluate (call) it, and
+** Do the REPL: repeatedly read (load) a line, evailyate (call) it, and
 ** print any results.
 */
 static void doREPL (ilya_State *L) {
@@ -682,8 +682,8 @@ static void doREPL (ilya_State *L) {
 
 /* }================================================================== */
 
-#if !defined(luai_openlibs)
-#define luai_openlibs(L)	luaL_openselectedlibs(L, ~0, 0)
+#if !defined(ilyai_openlibs)
+#define ilyai_openlibs(L)	ilyaL_openselectedlibs(L, ~0, 0)
 #endif
 
 
@@ -697,7 +697,7 @@ static int pmain (ilya_State *L) {
   int script;
   int args = collectargs(argv, &script);
   int optlim = (script > 0) ? script : argc; /* first argv not an option */
-  luaL_checkversion(L);  /* check that interpreter has correct version */
+  ilyaL_checkversion(L);  /* check that interpreter has correct version */
   if (args == has_error) {  /* bad arg? */
     print_usage(argv[script]);  /* 'script' has index of bad arg. */
     return 0;
@@ -708,12 +708,12 @@ static int pmain (ilya_State *L) {
     ilya_pushboolean(L, 1);  /* signal for libraries to ignore env. vars. */
     ilya_setfield(L, ILYA_REGISTRYINDEX, "ILYA_NOENV");
   }
-  luai_openlibs(L);  /* open standard libraries */
+  ilyai_openlibs(L);  /* open standard libraries */
   createargtable(L, argv, argc, script);  /* create table 'arg' */
   ilya_gc(L, ILYA_GCRESTART);  /* start GC... */
   ilya_gc(L, ILYA_GCGEN);  /* ...in generational mode */
   if (!(args & has_E)) {  /* no option '-E'? */
-    if (handle_luainit(L) != ILYA_OK)  /* run ILYA_INIT */
+    if (handle_ilyainit(L) != ILYA_OK)  /* run ILYA_INIT */
       return 0;  /* error running ILYA_INIT */
   }
   if (!runargs(L, argv, optlim))  /* execute arguments -e and -l */
@@ -738,7 +738,7 @@ static int pmain (ilya_State *L) {
 
 int main (int argc, char **argv) {
   int status, result;
-  ilya_State *L = luaL_newstate();  /* create state */
+  ilya_State *L = ilyaL_newstate();  /* create state */
   if (L == NULL) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;

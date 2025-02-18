@@ -1,10 +1,10 @@
 #include "ilya.h"
 
 
-int luaopen_lib2 (ilya_State *L);
+int ilyaopen_lib2 (ilya_State *L);
 
-LUAMOD_API int luaopen_lib21 (ilya_State *L) {
-  return luaopen_lib2(L);
+ILYAMOD_API int ilyaopen_lib21 (ilya_State *L) {
+  return ilyaopen_lib2(L);
 }
 
 

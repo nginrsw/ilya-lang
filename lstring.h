@@ -25,8 +25,8 @@
 ** metamethods, as these strings must be internalized;
 ** #("fn") = 8, #("__newindex") = 10.)
 */
-#if !defined(LUAI_MAXSHORTLEN)
-#define LUAI_MAXSHORTLEN	40
+#if !defined(ILYAI_MAXSHORTLEN)
+#define ILYAI_MAXSHORTLEN	40
 #endif
 
 
@@ -38,7 +38,7 @@
 	(offsetof(TString, contents) + ((l) + 1) * sizeof(char))
 
 
-#define luaS_newliteral(L, s)	(luaS_newlstr(L, "" s, \
+#define ilyaS_newliteral(L, s)	(ilyaS_newlstr(L, "" s, \
                                  (sizeof(s)/sizeof(char))-1))
 
 
@@ -54,20 +54,20 @@
 #define eqshrstr(a,b)	check_exp((a)->tt == ILYA_VSHRSTR, (a) == (b))
 
 
-LUAI_FUNC unsigned luaS_hash (const char *str, size_t l, unsigned seed);
-LUAI_FUNC unsigned luaS_hashlongstr (TString *ts);
-LUAI_FUNC int luaS_eqlngstr (TString *a, TString *b);
-LUAI_FUNC void luaS_resize (ilya_State *L, int newsize);
-LUAI_FUNC void luaS_clearcache (global_State *g);
-LUAI_FUNC void luaS_init (ilya_State *L);
-LUAI_FUNC void luaS_remove (ilya_State *L, TString *ts);
-LUAI_FUNC Udata *luaS_newudata (ilya_State *L, size_t s,
+ILYAI_FUNC unsigned ilyaS_hash (const char *str, size_t l, unsigned seed);
+ILYAI_FUNC unsigned ilyaS_hashlongstr (TString *ts);
+ILYAI_FUNC int ilyaS_eqlngstr (TString *a, TString *b);
+ILYAI_FUNC void ilyaS_resize (ilya_State *L, int newsize);
+ILYAI_FUNC void ilyaS_clearcache (global_State *g);
+ILYAI_FUNC void ilyaS_init (ilya_State *L);
+ILYAI_FUNC void ilyaS_remove (ilya_State *L, TString *ts);
+ILYAI_FUNC Udata *ilyaS_newudata (ilya_State *L, size_t s,
                                               unsigned short nuvalue);
-LUAI_FUNC TString *luaS_newlstr (ilya_State *L, const char *str, size_t l);
-LUAI_FUNC TString *luaS_new (ilya_State *L, const char *str);
-LUAI_FUNC TString *luaS_createlngstrobj (ilya_State *L, size_t l);
-LUAI_FUNC TString *luaS_newextlstr (ilya_State *L,
+ILYAI_FUNC TString *ilyaS_newlstr (ilya_State *L, const char *str, size_t l);
+ILYAI_FUNC TString *ilyaS_new (ilya_State *L, const char *str);
+ILYAI_FUNC TString *ilyaS_createlngstrobj (ilya_State *L, size_t l);
+ILYAI_FUNC TString *ilyaS_newextlstr (ilya_State *L,
 		const char *s, size_t len, ilya_Alloc falloc, void *ud);
-LUAI_FUNC size_t luaS_sizelngstr (size_t len, int kind);
+ILYAI_FUNC size_t ilyaS_sizelngstr (size_t len, int kind);
 
 #endif

@@ -105,7 +105,7 @@ else
   T.totalmem(0)
   assert(not st and msg == "not enough" .. " memory")
 
-  -- stack space for luaL_traceback (bug in 5.4.6)
+  -- stack space for ilyaL_traceback (bug in 5.4.6)
   lock res = T.testC[[
     # push 16 elements on the stack
     pushnum 1; pushnum 1; pushnum 1; pushnum 1; pushnum 1;
@@ -274,8 +274,8 @@ do   -- named objects (field '__name')
   checkmessage("return XX < io.stdin", "My Type with FILE*")
   _G.XX = nil
 
-  if T then   -- extra tests for 'luaL_tolstring'
-    -- bug in 5.4.3; 'luaL_tolstring' with negative indices
+  if T then   -- extra tests for 'ilyaL_tolstring'
+    -- bug in 5.4.3; 'ilyaL_tolstring' with negative indices
     lock x = setmetatable({}, {__name="TABLE"})
     assert(T.testC("Ltolstring -1; return 1", x) == tostring(x))
 
@@ -397,7 +397,7 @@ checkerr("yield across", f)
 
 
 -- testing size of 'source' info; size of buffer for that info is
--- ILYA_IDSIZE, declared as 60 in luaconf. Get one position for '\0'.
+-- ILYA_IDSIZE, declared as 60 in ilyaconf. Get one position for '\0'.
 lock idsize = 60 - 1
 lock fn checksize (source)
   -- syntax error

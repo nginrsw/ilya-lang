@@ -20,7 +20,7 @@
 
 
 /* turn on assertions */
-#define LUAI_ASSERT
+#define ILYAI_ASSERT
 
 
 /* to avoid warnings, and to make sure value is really unused */
@@ -58,8 +58,8 @@ typedef struct Memcontrol {
 ILYA_API Memcontrol l_memcontrol;
 
 
-#define luai_tracegc(L,f)		luai_tracegctest(L, f)
-LUAI_FUNC void luai_tracegctest (ilya_State *L, int first);
+#define ilyai_tracegc(L,f)		ilyai_tracegctest(L, f)
+ILYAI_FUNC void ilyai_tracegctest (ilya_State *L, int first);
 
 
 /*
@@ -71,57 +71,57 @@ extern void *l_Trick;
 /*
 ** Function to traverse and check all memory used by Ilya
 */
-LUAI_FUNC int ilya_checkmemory (ilya_State *L);
+ILYAI_FUNC int ilya_checkmemory (ilya_State *L);
 
 /*
 ** Function to print an object GC-friendly
 */
 struct GCObject;
-LUAI_FUNC void ilya_printobj (ilya_State *L, struct GCObject *o);
+ILYAI_FUNC void ilya_printobj (ilya_State *L, struct GCObject *o);
 
 
 /*
 ** Function to print a value
 */
 struct TValue;
-LUAI_FUNC void ilya_printvalue (struct TValue *v);
+ILYAI_FUNC void ilya_printvalue (struct TValue *v);
 
 /*
 ** Function to print the stack
 */
-LUAI_FUNC void ilya_printstack (ilya_State *L);
+ILYAI_FUNC void ilya_printstack (ilya_State *L);
 
 
-/* test for lock/unlock */
+/* test for locked/unlock */
 
-struct L_EXTRA { int lock; int *plock; };
+struct L_EXTRA { int locked; int *plock; };
 #undef ILYA_EXTRASPACE
 #define ILYA_EXTRASPACE	sizeof(struct L_EXTRA)
 #define getlock(l)	cast(struct L_EXTRA*, ilya_getextraspace(l))
-#define luai_userstateopen(l)  \
-	(getlock(l)->lock = 0, getlock(l)->plock = &(getlock(l)->lock))
-#define luai_userstateclose(l)  \
-  ilya_assert(getlock(l)->lock == 1 && getlock(l)->plock == &(getlock(l)->lock))
-#define luai_userstatethread(l,l1) \
+#define ilyai_userstateopen(l)  \
+	(getlock(l)->locked = 0, getlock(l)->plock = &(getlock(l)->locked))
+#define ilyai_userstateclose(l)  \
+  ilya_assert(getlock(l)->locked == 1 && getlock(l)->plock == &(getlock(l)->locked))
+#define ilyai_userstatethread(l,l1) \
   ilya_assert(getlock(l1)->plock == getlock(l)->plock)
-#define luai_userstatefree(l,l1) \
+#define ilyai_userstatefree(l,l1) \
   ilya_assert(getlock(l)->plock == getlock(l1)->plock)
 #define ilya_lock(l)     ilya_assert((*getlock(l)->plock)++ == 0)
 #define ilya_unlock(l)   ilya_assert(--(*getlock(l)->plock) == 0)
 
 
 
-ILYA_API int luaB_opentests (ilya_State *L);
+ILYA_API int ilyaB_opentests (ilya_State *L);
 
 ILYA_API void *debug_realloc (void *ud, void *block,
                              size_t osize, size_t nsize);
 
 #if defined(ilya_c)
-#define luaL_newstate()  \
-	ilya_newstate(debug_realloc, &l_memcontrol, luaL_makeseed(NULL))
-#define luai_openlibs(L)  \
-  {  luaL_openlibs(L); \
-     luaL_requiref(L, "T", luaB_opentests, 1); \
+#define ilyaL_newstate()  \
+	ilya_newstate(debug_realloc, &l_memcontrol, ilyaL_makeseed(NULL))
+#define ilyai_openlibs(L)  \
+  {  ilyaL_openlibs(L); \
+     ilyaL_requiref(L, "T", ilyaB_opentests, 1); \
      ilya_pop(L, 1); }
 #endif
 
@@ -129,16 +129,16 @@ ILYA_API void *debug_realloc (void *ud, void *block,
 
 /* change some sizes to give some bugs a chance */
 
-#undef LUAL_BUFFERSIZE
-#define LUAL_BUFFERSIZE		23
+#undef ILYAL_BUFFERSIZE
+#define ILYAL_BUFFERSIZE		23
 #define MINSTRTABSIZE		2
 #define MAXIWTHABS		3
 
 #define STRCACHE_N	23
 #define STRCACHE_M	5
 
-#undef LUAI_USER_ALIGNMENT_T
-#define LUAI_USER_ALIGNMENT_T   union { char b[sizeof(void*) * 8]; }
+#undef ILYAI_USER_ALIGNMENT_T
+#define ILYAI_USER_ALIGNMENT_T   union { char b[sizeof(void*) * 8]; }
 
 
 /*
@@ -149,13 +149,13 @@ ILYA_API void *debug_realloc (void *ud, void *block,
 
 
 /* make stack-overflow tests run faster */
-#undef LUAI_MAXSTACK
-#define LUAI_MAXSTACK   50000
+#undef ILYAI_MAXSTACK
+#define ILYAI_MAXSTACK   50000
 
 
 /* test mode uses more stack space */
-#undef LUAI_MAXCCALLS
-#define LUAI_MAXCCALLS	180
+#undef ILYAI_MAXCCALLS
+#define ILYAI_MAXCCALLS	180
 
 
 /* force Ilya to use its own implementations */

@@ -41,7 +41,7 @@
 
 
 /* prefix for open functions in C libraries */
-#define ILYA_POF		"luaopen_"
+#define ILYA_POF		"ilyaopen_"
 
 /* separator for open functions in C libraries */
 #define ILYA_OFSEP	"_"
@@ -156,10 +156,10 @@ static void setprogdir (ilya_State *L) {
   DWORD nsize = sizeof(buff)/sizeof(char);
   DWORD n = GetModuleFileNameA(NULL, buff, nsize);  /* get exec. name */
   if (n == 0 || n == nsize || (lb = strrchr(buff, '\\')) == NULL)
-    luaL_error(L, "unable to get ModuleFileName");
+    ilyaL_error(L, "unable to get ModuleFileName");
   else {
     *lb = '\0';  /* cut name on the last '\\' to get the path */
-    luaL_gsub(L, ilya_tostring(L, -1), ILYA_EXEC_DIR, buff);
+    ilyaL_gsub(L, ilya_tostring(L, -1), ILYA_EXEC_DIR, buff);
     ilya_remove(L, -2);  /* remove original string */
   }
 }
@@ -285,18 +285,18 @@ static void setpath (ilya_State *L, const char *fieldname,
     ilya_pushstring(L, path);  /* nothing to change */
   else {  /* path contains a ";;": insert default path in its place */
     size_t len = strlen(path);
-    luaL_Buffer b;
-    luaL_buffinit(L, &b);
+    ilyaL_Buffer b;
+    ilyaL_buffinit(L, &b);
     if (path < dftmark) {  /* is there a prefix before ';;'? */
-      luaL_addlstring(&b, path, ct_diff2sz(dftmark - path));  /* add it */
-      luaL_addchar(&b, *ILYA_PATH_SEP);
+      ilyaL_addlstring(&b, path, ct_diff2sz(dftmark - path));  /* add it */
+      ilyaL_addchar(&b, *ILYA_PATH_SEP);
     }
-    luaL_addstring(&b, dft);  /* add default */
+    ilyaL_addstring(&b, dft);  /* add default */
     if (dftmark < path + len - 2) {  /* is there a suffix after ';;'? */
-      luaL_addchar(&b, *ILYA_PATH_SEP);
-      luaL_addlstring(&b, dftmark + 2, ct_diff2sz((path + len - 2) - dftmark));
+      ilyaL_addchar(&b, *ILYA_PATH_SEP);
+      ilyaL_addlstring(&b, dftmark + 2, ct_diff2sz((path + len - 2) - dftmark));
     }
-    luaL_pushresult(&b);
+    ilyaL_pushresult(&b);
   }
   setprogdir(L);
   ilya_setfield(L, -3, fieldname);  /* package[fieldname] = path value */
@@ -328,7 +328,7 @@ static void addtoclib (ilya_State *L, const char *path, void *plib) {
   ilya_pushlightuserdata(L, plib);
   ilya_pushvalue(L, -1);
   ilya_setfield(L, -3, path);  /* CLIBS[path] = plib */
-  ilya_rawseti(L, -2, luaL_len(L, -2) + 1);  /* CLIBS[#CLIBS + 1] = plib */
+  ilya_rawseti(L, -2, ilyaL_len(L, -2) + 1);  /* CLIBS[#CLIBS + 1] = plib */
   ilya_pop(L, 1);  /* pop CLIBS table */
 }
 
@@ -338,7 +338,7 @@ static void addtoclib (ilya_State *L, const char *path, void *plib) {
 ** handles in list CLIBS
 */
 static int gctm (ilya_State *L) {
-  ilya_Integer n = luaL_len(L, 1);
+  ilya_Integer n = ilyaL_len(L, 1);
   for (; n >= 1; n--) {  /* for each handle, in reverse order */
     ilya_rawgeti(L, 1, n);  /* get handle CLIBS[n] */
     lsys_unloadlib(ilya_touserdata(L, -1));
@@ -386,13 +386,13 @@ static int lookforfunc (ilya_State *L, const char *path, const char *sym) {
 
 
 static int ll_loadlib (ilya_State *L) {
-  const char *path = luaL_checkstring(L, 1);
-  const char *init = luaL_checkstring(L, 2);
+  const char *path = ilyaL_checkstring(L, 1);
+  const char *init = ilyaL_checkstring(L, 2);
   int stat = lookforfunc(L, path, init);
   if (l_likely(stat == 0))  /* no errors? */
     return 1;  /* return the loaded fn */
   else {  /* error; error message is on stack top */
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
     ilya_insert(L, -2);
     ilya_pushstring(L, (stat == ERRLIB) ?  LIB_FAIL : "init");
     return 3;  /* return fail, error message, and where */
@@ -446,12 +446,12 @@ static const char *getnextfilename (char **path, char *end) {
 **	no file 'blublu.so'
 */
 static void pusherrornotfound (ilya_State *L, const char *path) {
-  luaL_Buffer b;
-  luaL_buffinit(L, &b);
-  luaL_addstring(&b, "no file '");
-  luaL_addgsub(&b, path, ILYA_PATH_SEP, "'\n\tno file '");
-  luaL_addstring(&b, "'");
-  luaL_pushresult(&b);
+  ilyaL_Buffer b;
+  ilyaL_buffinit(L, &b);
+  ilyaL_addstring(&b, "no file '");
+  ilyaL_addgsub(&b, path, ILYA_PATH_SEP, "'\n\tno file '");
+  ilyaL_addstring(&b, "'");
+  ilyaL_pushresult(&b);
 }
 
 
@@ -459,37 +459,37 @@ static const char *searchpath (ilya_State *L, const char *name,
                                              const char *path,
                                              const char *sep,
                                              const char *dirsep) {
-  luaL_Buffer buff;
+  ilyaL_Buffer buff;
   char *pathname;  /* path with name inserted */
   char *endpathname;  /* its end */
   const char *filename;
   /* separator is non-empty and appears in 'name'? */
   if (*sep != '\0' && strchr(name, *sep) != NULL)
-    name = luaL_gsub(L, name, sep, dirsep);  /* replace it by 'dirsep' */
-  luaL_buffinit(L, &buff);
+    name = ilyaL_gsub(L, name, sep, dirsep);  /* replace it by 'dirsep' */
+  ilyaL_buffinit(L, &buff);
   /* add path to the buffer, replacing marks ('?') with the file name */
-  luaL_addgsub(&buff, path, ILYA_PATH_MARK, name);
-  luaL_addchar(&buff, '\0');
-  pathname = luaL_buffaddr(&buff);  /* writable list of file names */
-  endpathname = pathname + luaL_bufflen(&buff) - 1;
+  ilyaL_addgsub(&buff, path, ILYA_PATH_MARK, name);
+  ilyaL_addchar(&buff, '\0');
+  pathname = ilyaL_buffaddr(&buff);  /* writable list of file names */
+  endpathname = pathname + ilyaL_bufflen(&buff) - 1;
   while ((filename = getnextfilename(&pathname, endpathname)) != NULL) {
     if (readable(filename))  /* does file exist and is readable? */
       return ilya_pushstring(L, filename);  /* save and return name */
   }
-  luaL_pushresult(&buff);  /* push path to create error message */
+  ilyaL_pushresult(&buff);  /* push path to create error message */
   pusherrornotfound(L, ilya_tostring(L, -1));  /* create error message */
   return NULL;  /* not found */
 }
 
 
 static int ll_searchpath (ilya_State *L) {
-  const char *f = searchpath(L, luaL_checkstring(L, 1),
-                                luaL_checkstring(L, 2),
-                                luaL_optstring(L, 3, "."),
-                                luaL_optstring(L, 4, ILYA_DIRSEP));
+  const char *f = searchpath(L, ilyaL_checkstring(L, 1),
+                                ilyaL_checkstring(L, 2),
+                                ilyaL_optstring(L, 3, "."),
+                                ilyaL_optstring(L, 4, ILYA_DIRSEP));
   if (f != NULL) return 1;
   else {  /* error message is on top of the stack */
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
     ilya_insert(L, -2);
     return 2;  /* return fail + error message */
   }
@@ -503,7 +503,7 @@ static const char *findfile (ilya_State *L, const char *name,
   ilya_getfield(L, ilya_upvalueindex(1), pname);
   path = ilya_tostring(L, -1);
   if (l_unlikely(path == NULL))
-    luaL_error(L, "'package.%s' must be a string", pname);
+    ilyaL_error(L, "'package.%s' must be a string", pname);
   return searchpath(L, name, path, ".", dirsep);
 }
 
@@ -514,17 +514,17 @@ static int checkload (ilya_State *L, int stat, const char *filename) {
     return 2;  /* return open fn and file name */
   }
   else
-    return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s",
+    return ilyaL_error(L, "error loading module '%s' from file '%s':\n\t%s",
                           ilya_tostring(L, 1), filename, ilya_tostring(L, -1));
 }
 
 
-static int searcher_Lua (ilya_State *L) {
+static int searcher_Ilya (ilya_State *L) {
   const char *filename;
-  const char *name = luaL_checkstring(L, 1);
+  const char *name = ilyaL_checkstring(L, 1);
   filename = findfile(L, name, "path", ILYA_LSUBSEP);
   if (filename == NULL) return 1;  /* module not found in this path */
-  return checkload(L, (luaL_loadfile(L, filename) == ILYA_OK), filename);
+  return checkload(L, (ilyaL_loadfile(L, filename) == ILYA_OK), filename);
 }
 
 
@@ -532,14 +532,14 @@ static int searcher_Lua (ilya_State *L) {
 ** Try to find a load fn for module 'modname' at file 'filename'.
 ** First, change '.' to '_' in 'modname'; then, if 'modname' has
 ** the form X-Y (that is, it has an "ignore mark"), build a fn
-** name "luaopen_X" and look for it. (For compatibility, if that
-** fails, it also tries "luaopen_Y".) If there is no ignore mark,
-** look for a fn named "luaopen_modname".
+** name "ilyaopen_X" and look for it. (For compatibility, if that
+** fails, it also tries "ilyaopen_Y".) If there is no ignore mark,
+** look for a fn named "ilyaopen_modname".
 */
 static int loadfunc (ilya_State *L, const char *filename, const char *modname) {
   const char *openfunc;
   const char *mark;
-  modname = luaL_gsub(L, modname, ".", ILYA_OFSEP);
+  modname = ilyaL_gsub(L, modname, ".", ILYA_OFSEP);
   mark = strchr(modname, *ILYA_IGMARK);
   if (mark) {
     int stat;
@@ -555,7 +555,7 @@ static int loadfunc (ilya_State *L, const char *filename, const char *modname) {
 
 
 static int searcher_C (ilya_State *L) {
-  const char *name = luaL_checkstring(L, 1);
+  const char *name = ilyaL_checkstring(L, 1);
   const char *filename = findfile(L, name, "cpath", ILYA_CSUBSEP);
   if (filename == NULL) return 1;  /* module not found in this path */
   return checkload(L, (loadfunc(L, filename, name) == 0), filename);
@@ -564,7 +564,7 @@ static int searcher_C (ilya_State *L) {
 
 static int searcher_Croot (ilya_State *L) {
   const char *filename;
-  const char *name = luaL_checkstring(L, 1);
+  const char *name = ilyaL_checkstring(L, 1);
   const char *p = strchr(name, '.');
   int stat;
   if (p == NULL) return 0;  /* is root */
@@ -585,7 +585,7 @@ static int searcher_Croot (ilya_State *L) {
 
 
 static int searcher_preload (ilya_State *L) {
-  const char *name = luaL_checkstring(L, 1);
+  const char *name = ilyaL_checkstring(L, 1);
   ilya_getfield(L, ILYA_REGISTRYINDEX, ILYA_PRELOAD_TABLE);
   if (ilya_getfield(L, -1, name) == ILYA_TNIL) {  /* not found? */
     ilya_pushfstring(L, "no field package.preload['%s']", name);
@@ -600,20 +600,20 @@ static int searcher_preload (ilya_State *L) {
 
 static void findloader (ilya_State *L, const char *name) {
   int i;
-  luaL_Buffer msg;  /* to build error message */
+  ilyaL_Buffer msg;  /* to build error message */
   /* push 'package.searchers' to index 3 in the stack */
   if (l_unlikely(ilya_getfield(L, ilya_upvalueindex(1), "searchers")
                  != ILYA_TTABLE))
-    luaL_error(L, "'package.searchers' must be a table");
-  luaL_buffinit(L, &msg);
-  luaL_addstring(&msg, "\n\t");  /* error-message prefix for first message */
+    ilyaL_error(L, "'package.searchers' must be a table");
+  ilyaL_buffinit(L, &msg);
+  ilyaL_addstring(&msg, "\n\t");  /* error-message prefix for first message */
   /*  iterate over available searchers to find a loader */
   for (i = 1; ; i++) {
     if (l_unlikely(ilya_rawgeti(L, 3, i) == ILYA_TNIL)) {  /* no more searchers? */
       ilya_pop(L, 1);  /* remove nil */
-      luaL_buffsub(&msg, 2);  /* remove last prefix */
-      luaL_pushresult(&msg);  /* create error message */
-      luaL_error(L, "module '%s' not found:%s", name, ilya_tostring(L, -1));
+      ilyaL_buffsub(&msg, 2);  /* remove last prefix */
+      ilyaL_pushresult(&msg);  /* create error message */
+      ilyaL_error(L, "module '%s' not found:%s", name, ilya_tostring(L, -1));
     }
     ilya_pushstring(L, name);
     ilya_call(L, 1, 2);  /* call it */
@@ -621,8 +621,8 @@ static void findloader (ilya_State *L, const char *name) {
       return;  /* module loader found */
     else if (ilya_isstring(L, -2)) {  /* searcher returned error message? */
       ilya_pop(L, 1);  /* remove extra return */
-      luaL_addvalue(&msg);  /* concatenate error message */
-      luaL_addstring(&msg, "\n\t");  /* prefix for next message */
+      ilyaL_addvalue(&msg);  /* concatenate error message */
+      ilyaL_addstring(&msg, "\n\t");  /* prefix for next message */
     }
     else  /* no error message */
       ilya_pop(L, 2);  /* remove both returns */
@@ -631,7 +631,7 @@ static void findloader (ilya_State *L, const char *name) {
 
 
 static int ll_require (ilya_State *L) {
-  const char *name = luaL_checkstring(L, 1);
+  const char *name = ilyaL_checkstring(L, 1);
   ilya_settop(L, 1);  /* LOADED table will be at index 2 */
   ilya_getfield(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
   ilya_getfield(L, 2, name);  /* LOADED[name] */
@@ -664,7 +664,7 @@ static int ll_require (ilya_State *L) {
 
 
 
-static const luaL_Reg pk_funcs[] = {
+static const ilyaL_Reg pk_funcs[] = {
   {"loadlib", ll_loadlib},
   {"searchpath", ll_searchpath},
   /* placeholders */
@@ -677,7 +677,7 @@ static const luaL_Reg pk_funcs[] = {
 };
 
 
-static const luaL_Reg ll_funcs[] = {
+static const ilyaL_Reg ll_funcs[] = {
   {"require", ll_require},
   {NULL, NULL}
 };
@@ -686,7 +686,7 @@ static const luaL_Reg ll_funcs[] = {
 static void createsearcherstable (ilya_State *L) {
   static const ilya_CFunction searchers[] = {
     searcher_preload,
-    searcher_Lua,
+    searcher_Ilya,
     searcher_C,
     searcher_Croot,
     NULL
@@ -709,7 +709,7 @@ static void createsearcherstable (ilya_State *L) {
 ** setting a finalizer to close all libraries when closing state.
 */
 static void createclibstable (ilya_State *L) {
-  luaL_getsubtable(L, ILYA_REGISTRYINDEX, CLIBS);  /* create CLIBS table */
+  ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, CLIBS);  /* create CLIBS table */
   ilya_createtable(L, 0, 1);  /* create metatable for CLIBS */
   ilya_pushcfunction(L, gctm);
   ilya_setfield(L, -2, "__gc");  /* set finalizer for CLIBS table */
@@ -717,9 +717,9 @@ static void createclibstable (ilya_State *L) {
 }
 
 
-LUAMOD_API int luaopen_package (ilya_State *L) {
+ILYAMOD_API int ilyaopen_package (ilya_State *L) {
   createclibstable(L);
-  luaL_newlib(L, pk_funcs);  /* create 'package' table */
+  ilyaL_newlib(L, pk_funcs);  /* create 'package' table */
   createsearcherstable(L);
   /* set paths */
   setpath(L, "path", ILYA_PATH_VAR, ILYA_PATH_DEFAULT);
@@ -729,14 +729,14 @@ LUAMOD_API int luaopen_package (ilya_State *L) {
                      ILYA_EXEC_DIR "\n" ILYA_IGMARK "\n");
   ilya_setfield(L, -2, "config");
   /* set field 'loaded' */
-  luaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
+  ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
   ilya_setfield(L, -2, "loaded");
   /* set field 'preload' */
-  luaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_PRELOAD_TABLE);
+  ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_PRELOAD_TABLE);
   ilya_setfield(L, -2, "preload");
   ilya_pushglobaltable(L);
   ilya_pushvalue(L, -2);  /* set 'package' as upvalue for next lib */
-  luaL_setfuncs(L, ll_funcs, 1);  /* open lib into global table */
+  ilyaL_setfuncs(L, ll_funcs, 1);  /* open lib into global table */
   ilya_pop(L, 1);  /* pop global table */
   return 1;  /* return 'package' table */
 }

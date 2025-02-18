@@ -46,22 +46,22 @@
 
 
 
-#define luaH_fastgeti(t,k,res,tag) \
+#define ilyaH_fastgeti(t,k,res,tag) \
   { Table *h = t; ilya_Unsigned u = l_castS2U(k) - 1u; \
     if ((u < h->asize)) { \
       tag = *getArrTag(h, u); \
       if (!tagisempty(tag)) { farr2val(h, u, tag, res); }} \
-    else { tag = luaH_getint(h, (k), res); }}
+    else { tag = ilyaH_getint(h, (k), res); }}
 
 
-#define luaH_fastseti(t,k,val,hres) \
+#define ilyaH_fastseti(t,k,val,hres) \
   { Table *h = t; ilya_Unsigned u = l_castS2U(k) - 1u; \
     if ((u < h->asize)) { \
       lu_byte *tag = getArrTag(h, u); \
       if (checknoTM(h->metatable, TM_NEWINDEX) || !tagisempty(*tag)) \
         { fval2arr(h, u, tag, val); hres = HOK; } \
       else hres = ~cast_int(u); } \
-    else { hres = luaH_psetint(h, k, val); }}
+    else { hres = ilyaH_psetint(h, k, val); }}
 
 
 /* results from pset */
@@ -71,12 +71,12 @@
 #define HFIRSTNODE	3
 
 /*
-** 'luaH_get*' operations set 'res', unless the value is absent, and
+** 'ilyaH_get*' operations set 'res', unless the value is absent, and
 ** return the tag of the result.
-** The 'luaH_pset*' (pre-set) operations set the given value and return
+** The 'ilyaH_pset*' (pre-set) operations set the given value and return
 ** HOK, unless the original value is absent. In that case, if the key
 ** is really absent, they return HNOTFOUND. Otherwise, if there is a
-** slot with that key but with no value, 'luaH_pset*' return an encoding
+** slot with that key but with no value, 'ilyaH_pset*' return an encoding
 ** of where the key is (usually called 'hres'). (pset cannot set that
 ** value because there might be a metamethod.) If the slot is in the
 ** hash part, the encoding is (HFIRSTNODE + hash index); if the slot is
@@ -118,7 +118,7 @@
 
 /*
 ** The unsigned between the two arrays is used as a hint for #t;
-** see luaH_getn. It is stored there to avoid wasting space in
+** see ilyaH_getn. It is stored there to avoid wasting space in
 ** the structure Table for tables with no array part.
 */
 #define lenhint(t)	cast(unsigned*, (t)->array)
@@ -146,38 +146,38 @@
   (*tag = (val)->tt_, *getArrVal(h,(k)) = (val)->value_)
 
 
-LUAI_FUNC lu_byte luaH_get (Table *t, const TValue *key, TValue *res);
-LUAI_FUNC lu_byte luaH_getshortstr (Table *t, TString *key, TValue *res);
-LUAI_FUNC lu_byte luaH_getstr (Table *t, TString *key, TValue *res);
-LUAI_FUNC lu_byte luaH_getint (Table *t, ilya_Integer key, TValue *res);
+ILYAI_FUNC lu_byte ilyaH_get (Table *t, const TValue *key, TValue *res);
+ILYAI_FUNC lu_byte ilyaH_getshortstr (Table *t, TString *key, TValue *res);
+ILYAI_FUNC lu_byte ilyaH_getstr (Table *t, TString *key, TValue *res);
+ILYAI_FUNC lu_byte ilyaH_getint (Table *t, ilya_Integer key, TValue *res);
 
 /* Special get for metamethods */
-LUAI_FUNC const TValue *luaH_Hgetshortstr (Table *t, TString *key);
+ILYAI_FUNC const TValue *ilyaH_Hgetshortstr (Table *t, TString *key);
 
-LUAI_FUNC int luaH_psetint (Table *t, ilya_Integer key, TValue *val);
-LUAI_FUNC int luaH_psetshortstr (Table *t, TString *key, TValue *val);
-LUAI_FUNC int luaH_psetstr (Table *t, TString *key, TValue *val);
-LUAI_FUNC int luaH_pset (Table *t, const TValue *key, TValue *val);
+ILYAI_FUNC int ilyaH_psetint (Table *t, ilya_Integer key, TValue *val);
+ILYAI_FUNC int ilyaH_psetshortstr (Table *t, TString *key, TValue *val);
+ILYAI_FUNC int ilyaH_psetstr (Table *t, TString *key, TValue *val);
+ILYAI_FUNC int ilyaH_pset (Table *t, const TValue *key, TValue *val);
 
-LUAI_FUNC void luaH_setint (ilya_State *L, Table *t, ilya_Integer key,
+ILYAI_FUNC void ilyaH_setint (ilya_State *L, Table *t, ilya_Integer key,
                                                     TValue *value);
-LUAI_FUNC void luaH_set (ilya_State *L, Table *t, const TValue *key,
+ILYAI_FUNC void ilyaH_set (ilya_State *L, Table *t, const TValue *key,
                                                  TValue *value);
 
-LUAI_FUNC void luaH_finishset (ilya_State *L, Table *t, const TValue *key,
+ILYAI_FUNC void ilyaH_finishset (ilya_State *L, Table *t, const TValue *key,
                                               TValue *value, int hres);
-LUAI_FUNC Table *luaH_new (ilya_State *L);
-LUAI_FUNC void luaH_resize (ilya_State *L, Table *t, unsigned nasize,
+ILYAI_FUNC Table *ilyaH_new (ilya_State *L);
+ILYAI_FUNC void ilyaH_resize (ilya_State *L, Table *t, unsigned nasize,
                                                     unsigned nhsize);
-LUAI_FUNC void luaH_resizearray (ilya_State *L, Table *t, unsigned nasize);
-LUAI_FUNC lu_mem luaH_size (Table *t);
-LUAI_FUNC void luaH_free (ilya_State *L, Table *t);
-LUAI_FUNC int luaH_next (ilya_State *L, Table *t, StkId key);
-LUAI_FUNC ilya_Unsigned luaH_getn (Table *t);
+ILYAI_FUNC void ilyaH_resizearray (ilya_State *L, Table *t, unsigned nasize);
+ILYAI_FUNC lu_mem ilyaH_size (Table *t);
+ILYAI_FUNC void ilyaH_free (ilya_State *L, Table *t);
+ILYAI_FUNC int ilyaH_next (ilya_State *L, Table *t, StkId key);
+ILYAI_FUNC ilya_Unsigned ilyaH_getn (Table *t);
 
 
 #if defined(ILYA_DEBUG)
-LUAI_FUNC Node *luaH_mainposition (const Table *t, const TValue *key);
+ILYAI_FUNC Node *ilyaH_mainposition (const Table *t, const TValue *key);
 #endif
 
 

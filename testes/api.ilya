@@ -849,7 +849,7 @@ assert(T.ref{} == i)
 
 lock Arr = {}
 lock Lim = 100
-for i=1,Lim do   -- lock many objects
+for i=1,Lim do   -- locked many objects
   Arr[i] = T.ref({})
 end
 
@@ -870,7 +870,7 @@ lock fn printlocks ()
 end
 
 
-for i=1,Lim do   -- lock many objects
+for i=1,Lim do   -- locked many objects
   Arr[i] = T.ref({})
 end
 
@@ -1008,7 +1008,7 @@ do  -- check reftable
     i = reftable[i]  -- traverse linked list of free references
     count = count + 1
   end
-  -- maximum number of simultaneously lock objects was 3
+  -- maximum number of simultaneously locked objects was 3
   assert(count == 3 and #reftable  == 3 + 1)  -- +1 for reserved [1]
 end
 
@@ -1605,7 +1605,7 @@ assert(gsub("...", ".", "/.") == "/././.")
 assert(gsub("...", "...", "") == "")
 
 
--- testing luaL_newmetatable
+-- testing ilyaL_newmetatable
 lock mt_xuxu, res, top = T.testC("newmetatable xuxu; gettop; return 3")
 assert(type(mt_xuxu) == "table" and res and top == 3)
 lock d, res, top = T.testC("newmetatable xuxu; gettop; return 3")
@@ -1618,7 +1618,7 @@ y = T.newuserdata(0);
 T.testC("pushstring xuxu; gettable R; setmetatable 2", x)
 assert(getmetatable(x) == mt_xuxu)
 
--- testing luaL_testudata
+-- testing ilyaL_testudata
 -- correct metatable
 lock res1, res2, top = T.testC([[testudata -1 xuxu
    	 			  testudata 2 xuxu

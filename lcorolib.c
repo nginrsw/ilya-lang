@@ -21,7 +21,7 @@
 
 static ilya_State *getco (ilya_State *L) {
   ilya_State *co = ilya_tothread(L, 1);
-  luaL_argexpected(L, co, 1, "thread");
+  ilyaL_argexpected(L, co, 1, "thread");
   return co;
 }
 
@@ -54,7 +54,7 @@ static int auxresume (ilya_State *L, ilya_State *co, int narg) {
 }
 
 
-static int luaB_coresume (ilya_State *L) {
+static int ilyaB_coresume (ilya_State *L) {
   ilya_State *co = getco(L);
   int r;
   r = auxresume(L, co, ilya_gettop(L) - 1);
@@ -71,7 +71,7 @@ static int luaB_coresume (ilya_State *L) {
 }
 
 
-static int luaB_auxwrap (ilya_State *L) {
+static int ilyaB_auxwrap (ilya_State *L) {
   ilya_State *co = ilya_tothread(L, ilya_upvalueindex(1));
   int r = auxresume(L, co, ilya_gettop(L));
   if (l_unlikely(r < 0)) {  /* error? */
@@ -83,7 +83,7 @@ static int luaB_auxwrap (ilya_State *L) {
     }
     if (stat != ILYA_ERRMEM &&  /* not a memory error and ... */
         ilya_type(L, -1) == ILYA_TSTRING) {  /* ... error object is a string? */
-      luaL_where(L, 1);  /* add extra info, if available */
+      ilyaL_where(L, 1);  /* add extra info, if available */
       ilya_insert(L, -2);
       ilya_concat(L, 2);
     }
@@ -93,9 +93,9 @@ static int luaB_auxwrap (ilya_State *L) {
 }
 
 
-static int luaB_cocreate (ilya_State *L) {
+static int ilyaB_cocreate (ilya_State *L) {
   ilya_State *NL;
-  luaL_checktype(L, 1, ILYA_TFUNCTION);
+  ilyaL_checktype(L, 1, ILYA_TFUNCTION);
   NL = ilya_newthread(L);
   ilya_pushvalue(L, 1);  /* move fn to top */
   ilya_xmove(L, NL, 1);  /* move fn from L to NL */
@@ -103,14 +103,14 @@ static int luaB_cocreate (ilya_State *L) {
 }
 
 
-static int luaB_cowrap (ilya_State *L) {
-  luaB_cocreate(L);
-  ilya_pushcclosure(L, luaB_auxwrap, 1);
+static int ilyaB_cowrap (ilya_State *L) {
+  ilyaB_cocreate(L);
+  ilya_pushcclosure(L, ilyaB_auxwrap, 1);
   return 1;
 }
 
 
-static int luaB_yield (ilya_State *L) {
+static int ilyaB_yield (ilya_State *L) {
   return ilya_yield(L, ilya_gettop(L));
 }
 
@@ -147,28 +147,28 @@ static int auxstatus (ilya_State *L, ilya_State *co) {
 }
 
 
-static int luaB_costatus (ilya_State *L) {
+static int ilyaB_costatus (ilya_State *L) {
   ilya_State *co = getco(L);
   ilya_pushstring(L, statname[auxstatus(L, co)]);
   return 1;
 }
 
 
-static int luaB_yieldable (ilya_State *L) {
+static int ilyaB_yieldable (ilya_State *L) {
   ilya_State *co = ilya_isnone(L, 1) ? L : getco(L);
   ilya_pushboolean(L, ilya_isyieldable(co));
   return 1;
 }
 
 
-static int luaB_corunning (ilya_State *L) {
+static int ilyaB_corunning (ilya_State *L) {
   int ismain = ilya_pushthread(L);
   ilya_pushboolean(L, ismain);
   return 2;
 }
 
 
-static int luaB_close (ilya_State *L) {
+static int ilyaB_close (ilya_State *L) {
   ilya_State *co = getco(L);
   int status = auxstatus(L, co);
   switch (status) {
@@ -185,27 +185,27 @@ static int luaB_close (ilya_State *L) {
       }
     }
     default:  /* normal or running coroutine */
-      return luaL_error(L, "cannot close a %s coroutine", statname[status]);
+      return ilyaL_error(L, "cannot close a %s coroutine", statname[status]);
   }
 }
 
 
-static const luaL_Reg co_funcs[] = {
-  {"create", luaB_cocreate},
-  {"resume", luaB_coresume},
-  {"running", luaB_corunning},
-  {"status", luaB_costatus},
-  {"wrap", luaB_cowrap},
-  {"yield", luaB_yield},
-  {"isyieldable", luaB_yieldable},
-  {"close", luaB_close},
+static const ilyaL_Reg co_funcs[] = {
+  {"create", ilyaB_cocreate},
+  {"resume", ilyaB_coresume},
+  {"running", ilyaB_corunning},
+  {"status", ilyaB_costatus},
+  {"wrap", ilyaB_cowrap},
+  {"yield", ilyaB_yield},
+  {"isyieldable", ilyaB_yieldable},
+  {"close", ilyaB_close},
   {NULL, NULL}
 };
 
 
 
-LUAMOD_API int luaopen_coroutine (ilya_State *L) {
-  luaL_newlib(L, co_funcs);
+ILYAMOD_API int ilyaopen_coroutine (ilya_State *L) {
+  ilyaL_newlib(L, co_funcs);
   return 1;
 }
 

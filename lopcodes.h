@@ -412,18 +412,18 @@ OP_EXTRAARG/*	Ax	extra (larger) argument for previous opcode	*/
 ** bit 7: instruction is an MM instruction (call a metamethod)
 */
 
-LUAI_DDEC(const lu_byte luaP_opmodes[NUM_OPCODES];)
+ILYAI_DDEC(const lu_byte ilyaP_opmodes[NUM_OPCODES];)
 
-#define getOpMode(m)	(cast(enum OpMode, luaP_opmodes[m] & 7))
-#define testAMode(m)	(luaP_opmodes[m] & (1 << 3))
-#define testTMode(m)	(luaP_opmodes[m] & (1 << 4))
-#define testITMode(m)	(luaP_opmodes[m] & (1 << 5))
-#define testOTMode(m)	(luaP_opmodes[m] & (1 << 6))
-#define testMMMode(m)	(luaP_opmodes[m] & (1 << 7))
+#define getOpMode(m)	(cast(enum OpMode, ilyaP_opmodes[m] & 7))
+#define testAMode(m)	(ilyaP_opmodes[m] & (1 << 3))
+#define testTMode(m)	(ilyaP_opmodes[m] & (1 << 4))
+#define testITMode(m)	(ilyaP_opmodes[m] & (1 << 5))
+#define testOTMode(m)	(ilyaP_opmodes[m] & (1 << 6))
+#define testMMMode(m)	(ilyaP_opmodes[m] & (1 << 7))
 
 
-LUAI_FUNC int luaP_isOT (Instruction i);
-LUAI_FUNC int luaP_isIT (Instruction i);
+ILYAI_FUNC int ilyaP_isOT (Instruction i);
+ILYAI_FUNC int ilyaP_isIT (Instruction i);
 
 
 #endif

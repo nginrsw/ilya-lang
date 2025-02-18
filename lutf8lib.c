@@ -88,18 +88,18 @@ static const char *utf8_decode (const char *s, l_uint32 *val, int strict) {
 static int utflen (ilya_State *L) {
   ilya_Integer n = 0;  /* counter for the number of characters */
   size_t len;  /* string length in bytes */
-  const char *s = luaL_checklstring(L, 1, &len);
-  ilya_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
-  ilya_Integer posj = u_posrelat(luaL_optinteger(L, 3, -1), len);
+  const char *s = ilyaL_checklstring(L, 1, &len);
+  ilya_Integer posi = u_posrelat(ilyaL_optinteger(L, 2, 1), len);
+  ilya_Integer posj = u_posrelat(ilyaL_optinteger(L, 3, -1), len);
   int lax = ilya_toboolean(L, 4);
-  luaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 2,
+  ilyaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 2,
                    "initial position out of bounds");
-  luaL_argcheck(L, --posj < (ilya_Integer)len, 3,
+  ilyaL_argcheck(L, --posj < (ilya_Integer)len, 3,
                    "final position out of bounds");
   while (posi <= posj) {
     const char *s1 = utf8_decode(s + posi, NULL, !lax);
     if (s1 == NULL) {  /* conversion error? */
-      luaL_pushfail(L);  /* return fail ... */
+      ilyaL_pushfail(L);  /* return fail ... */
       ilya_pushinteger(L, posi + 1);  /* ... and current position */
       return 2;
     }
@@ -117,26 +117,26 @@ static int utflen (ilya_State *L) {
 */
 static int codepoint (ilya_State *L) {
   size_t len;
-  const char *s = luaL_checklstring(L, 1, &len);
-  ilya_Integer posi = u_posrelat(luaL_optinteger(L, 2, 1), len);
-  ilya_Integer pose = u_posrelat(luaL_optinteger(L, 3, posi), len);
+  const char *s = ilyaL_checklstring(L, 1, &len);
+  ilya_Integer posi = u_posrelat(ilyaL_optinteger(L, 2, 1), len);
+  ilya_Integer pose = u_posrelat(ilyaL_optinteger(L, 3, posi), len);
   int lax = ilya_toboolean(L, 4);
   int n;
   const char *se;
-  luaL_argcheck(L, posi >= 1, 2, "out of bounds");
-  luaL_argcheck(L, pose <= (ilya_Integer)len, 3, "out of bounds");
+  ilyaL_argcheck(L, posi >= 1, 2, "out of bounds");
+  ilyaL_argcheck(L, pose <= (ilya_Integer)len, 3, "out of bounds");
   if (posi > pose) return 0;  /* empty interval; return no values */
   if (pose - posi >= INT_MAX)  /* (ilya_Integer -> int) overflow? */
-    return luaL_error(L, "string slice too long");
+    return ilyaL_error(L, "string slice too long");
   n = (int)(pose -  posi) + 1;  /* upper bound for number of returns */
-  luaL_checkstack(L, n, "string slice too long");
+  ilyaL_checkstack(L, n, "string slice too long");
   n = 0;  /* count the number of returns */
   se = s + pose;  /* string end */
   for (s += posi - 1; s < se;) {
     l_uint32 code;
     s = utf8_decode(s, &code, !lax);
     if (s == NULL)
-      return luaL_error(L, MSGInvalid);
+      return ilyaL_error(L, MSGInvalid);
     ilya_pushinteger(L, l_castU2S(code));
     n++;
   }
@@ -145,8 +145,8 @@ static int codepoint (ilya_State *L) {
 
 
 static void pushutfchar (ilya_State *L, int arg) {
-  ilya_Unsigned code = (ilya_Unsigned)luaL_checkinteger(L, arg);
-  luaL_argcheck(L, code <= MAXUTF, arg, "value out of range");
+  ilya_Unsigned code = (ilya_Unsigned)ilyaL_checkinteger(L, arg);
+  ilyaL_argcheck(L, code <= MAXUTF, arg, "value out of range");
   ilya_pushfstring(L, "%U", (long)code);
 }
 
@@ -160,13 +160,13 @@ static int utfchar (ilya_State *L) {
     pushutfchar(L, 1);
   else {
     int i;
-    luaL_Buffer b;
-    luaL_buffinit(L, &b);
+    ilyaL_Buffer b;
+    ilyaL_buffinit(L, &b);
     for (i = 1; i <= n; i++) {
       pushutfchar(L, i);
-      luaL_addvalue(&b);
+      ilyaL_addvalue(&b);
     }
-    luaL_pushresult(&b);
+    ilyaL_pushresult(&b);
   }
   return 1;
 }
@@ -178,11 +178,11 @@ static int utfchar (ilya_State *L) {
 */
 static int byteoffset (ilya_State *L) {
   size_t len;
-  const char *s = luaL_checklstring(L, 1, &len);
-  ilya_Integer n  = luaL_checkinteger(L, 2);
+  const char *s = ilyaL_checklstring(L, 1, &len);
+  ilya_Integer n  = ilyaL_checkinteger(L, 2);
   ilya_Integer posi = (n >= 0) ? 1 : cast_st2S(len) + 1;
-  posi = u_posrelat(luaL_optinteger(L, 3, posi), len);
-  luaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 3,
+  posi = u_posrelat(ilyaL_optinteger(L, 3, posi), len);
+  ilyaL_argcheck(L, 1 <= posi && --posi <= (ilya_Integer)len, 3,
                    "position out of bounds");
   if (n == 0) {
     /* find beginning of current byte sequence */
@@ -190,7 +190,7 @@ static int byteoffset (ilya_State *L) {
   }
   else {
     if (iscontp(s + posi))
-      return luaL_error(L, "initial position is a continuation byte");
+      return ilyaL_error(L, "initial position is a continuation byte");
     if (n < 0) {
       while (n < 0 && posi > 0) {  /* move back */
         do {  /* find beginning of previous character */
@@ -210,7 +210,7 @@ static int byteoffset (ilya_State *L) {
     }
   }
   if (n != 0) {  /* did not find given character? */
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
     return 1;
   }
   ilya_pushinteger(L, posi + 1);  /* initial position */
@@ -227,7 +227,7 @@ static int byteoffset (ilya_State *L) {
 
 static int iter_aux (ilya_State *L, int strict) {
   size_t len;
-  const char *s = luaL_checklstring(L, 1, &len);
+  const char *s = ilyaL_checklstring(L, 1, &len);
   ilya_Unsigned n = (ilya_Unsigned)ilya_tointeger(L, 2);
   if (n < len) {
     while (iscontp(s + n)) n++;  /* go to next character */
@@ -238,7 +238,7 @@ static int iter_aux (ilya_State *L, int strict) {
     l_uint32 code;
     const char *next = utf8_decode(s + n, &code, strict);
     if (next == NULL || iscontp(next))
-      return luaL_error(L, MSGInvalid);
+      return ilyaL_error(L, MSGInvalid);
     ilya_pushinteger(L, l_castU2S(n + 1));
     ilya_pushinteger(L, l_castU2S(code));
     return 2;
@@ -257,8 +257,8 @@ static int iter_auxlax (ilya_State *L) {
 
 static int iter_codes (ilya_State *L) {
   int lax = ilya_toboolean(L, 2);
-  const char *s = luaL_checkstring(L, 1);
-  luaL_argcheck(L, !iscontp(s), 1, MSGInvalid);
+  const char *s = ilyaL_checkstring(L, 1);
+  ilyaL_argcheck(L, !iscontp(s), 1, MSGInvalid);
   ilya_pushcfunction(L, lax ? iter_auxlax : iter_auxstrict);
   ilya_pushvalue(L, 1);
   ilya_pushinteger(L, 0);
@@ -270,7 +270,7 @@ static int iter_codes (ilya_State *L) {
 #define UTF8PATT	"[\0-\x7F\xC2-\xFD][\x80-\xBF]*"
 
 
-static const luaL_Reg funcs[] = {
+static const ilyaL_Reg funcs[] = {
   {"offset", byteoffset},
   {"codepoint", codepoint},
   {"char", utfchar},
@@ -282,8 +282,8 @@ static const luaL_Reg funcs[] = {
 };
 
 
-LUAMOD_API int luaopen_utf8 (ilya_State *L) {
-  luaL_newlib(L, funcs);
+ILYAMOD_API int ilyaopen_utf8 (ilya_State *L) {
+  ilyaL_newlib(L, funcs);
   ilya_pushlstring(L, UTF8PATT, sizeof(UTF8PATT)/sizeof(char) - 1);
   ilya_setfield(L, -2, "charpattern");
   return 1;

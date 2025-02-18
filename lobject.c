@@ -33,7 +33,7 @@
 /*
 ** Computes ceil(log2(x))
 */
-lu_byte luaO_ceillog2 (unsigned int x) {
+lu_byte ilyaO_ceillog2 (unsigned int x) {
   static const lu_byte log_2[256] = {  /* log_2[i - 1] = ceil(log2(i)) */
     0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
     6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
@@ -58,7 +58,7 @@ lu_byte luaO_ceillog2 (unsigned int x) {
 ** to signal that. So, the real value is (1xxxx) * 2^(eeee - 7 - 1) if
 ** eeee != 0, and (xxxx) * 2^-7 otherwise (subnormal numbers).
 */
-lu_byte luaO_codeparam (unsigned int p) {
+lu_byte ilyaO_codeparam (unsigned int p) {
   if (p >= (cast(lu_mem, 0x1F) << (0xF - 7 - 1)) * 100u)  /* overflow? */
     return 0xFF;  /* return maximum value */
   else {
@@ -69,7 +69,7 @@ lu_byte luaO_codeparam (unsigned int p) {
     }
     else {  /* p >= 0x10 implies ceil(log2(p + 1)) >= 5 */
       /* preserve 5 bits in 'p' */
-      unsigned log = luaO_ceillog2(p + 1) - 5u;
+      unsigned log = ilyaO_ceillog2(p + 1) - 5u;
       return cast_byte(((p >> log) - 0x10) | ((log + 1) << 4));
     }
   }
@@ -85,7 +85,7 @@ lu_byte luaO_codeparam (unsigned int p) {
 ** more significant bits, as long as the multiplication does not
 ** overflow, so we check which order is best.
 */
-l_mem luaO_applyparam (lu_byte p, l_mem x) {
+l_mem ilyaO_applyparam (lu_byte p, l_mem x) {
   unsigned int m = p & 0xF;  /* mantissa */
   int e = (p >> 4);  /* exponent */
   if (e > 0) {  /* normalized? */
@@ -117,13 +117,13 @@ static ilya_Integer intarith (ilya_State *L, int op, ilya_Integer v1,
     case ILYA_OPADD: return intop(+, v1, v2);
     case ILYA_OPSUB:return intop(-, v1, v2);
     case ILYA_OPMUL:return intop(*, v1, v2);
-    case ILYA_OPMOD: return luaV_mod(L, v1, v2);
-    case ILYA_OPIDIV: return luaV_idiv(L, v1, v2);
+    case ILYA_OPMOD: return ilyaV_mod(L, v1, v2);
+    case ILYA_OPIDIV: return ilyaV_idiv(L, v1, v2);
     case ILYA_OPBAND: return intop(&, v1, v2);
     case ILYA_OPBOR: return intop(|, v1, v2);
     case ILYA_OPBXOR: return intop(^, v1, v2);
-    case ILYA_OPSHL: return luaV_shiftl(v1, v2);
-    case ILYA_OPSHR: return luaV_shiftr(v1, v2);
+    case ILYA_OPSHL: return ilyaV_shiftl(v1, v2);
+    case ILYA_OPSHR: return ilyaV_shiftr(v1, v2);
     case ILYA_OPUNM: return intop(-, 0, v1);
     case ILYA_OPBNOT: return intop(^, ~l_castS2U(0), v1);
     default: ilya_assert(0); return 0;
@@ -134,20 +134,20 @@ static ilya_Integer intarith (ilya_State *L, int op, ilya_Integer v1,
 static ilya_Number numarith (ilya_State *L, int op, ilya_Number v1,
                                                   ilya_Number v2) {
   switch (op) {
-    case ILYA_OPADD: return luai_numadd(L, v1, v2);
-    case ILYA_OPSUB: return luai_numsub(L, v1, v2);
-    case ILYA_OPMUL: return luai_nummul(L, v1, v2);
-    case ILYA_OPDIV: return luai_numdiv(L, v1, v2);
-    case ILYA_OPPOW: return luai_numpow(L, v1, v2);
-    case ILYA_OPIDIV: return luai_numidiv(L, v1, v2);
-    case ILYA_OPUNM: return luai_numunm(L, v1);
-    case ILYA_OPMOD: return luaV_modf(L, v1, v2);
+    case ILYA_OPADD: return ilyai_numadd(L, v1, v2);
+    case ILYA_OPSUB: return ilyai_numsub(L, v1, v2);
+    case ILYA_OPMUL: return ilyai_nummul(L, v1, v2);
+    case ILYA_OPDIV: return ilyai_numdiv(L, v1, v2);
+    case ILYA_OPPOW: return ilyai_numpow(L, v1, v2);
+    case ILYA_OPIDIV: return ilyai_numidiv(L, v1, v2);
+    case ILYA_OPUNM: return ilyai_numunm(L, v1);
+    case ILYA_OPMOD: return ilyaV_modf(L, v1, v2);
     default: ilya_assert(0); return 0;
   }
 }
 
 
-int luaO_rawarith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
+int ilyaO_rawarith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
                    TValue *res) {
   switch (op) {
     case ILYA_OPBAND: case ILYA_OPBOR: case ILYA_OPBXOR:
@@ -184,16 +184,16 @@ int luaO_rawarith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
 }
 
 
-void luaO_arith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
+void ilyaO_arith (ilya_State *L, int op, const TValue *p1, const TValue *p2,
                  StkId res) {
-  if (!luaO_rawarith(L, op, p1, p2, s2v(res))) {
+  if (!ilyaO_rawarith(L, op, p1, p2, s2v(res))) {
     /* could not perform raw operation; try metamethod */
-    luaT_trybinTM(L, p1, p2, res, cast(TMS, (op - ILYA_OPADD) + TM_ADD));
+    ilyaT_trybinTM(L, p1, p2, res, cast(TMS, (op - ILYA_OPADD) + TM_ADD));
   }
 }
 
 
-lu_byte luaO_hexavalue (int c) {
+lu_byte ilyaO_hexavalue (int c) {
   ilya_assert(lisxdigit(c));
   if (lisdigit(c)) return cast_byte(c - '0');
   else return cast_byte((ltolower(c) - 'a') + 10);
@@ -246,7 +246,7 @@ static ilya_Number ilya_strx2number (const char *s, char **endptr) {
       if (sigdig == 0 && *s == '0')  /* non-significant digit (zero)? */
         nosigdig++;
       else if (++sigdig <= MAXSIGDIG)  /* can read it without overflow? */
-          r = (r * l_mathop(16.0)) + luaO_hexavalue(*s);
+          r = (r * l_mathop(16.0)) + ilyaO_hexavalue(*s);
       else e++; /* too many digits; ignore, but still count for exponent */
       if (hasdot) e--;  /* decimal digit? correct exponent */
     }
@@ -345,7 +345,7 @@ static const char *l_str2int (const char *s, ilya_Integer *result) {
       (s[1] == 'x' || s[1] == 'X')) {  /* hex? */
     s += 2;  /* skip '0x' */
     for (; lisxdigit(cast_uchar(*s)); s++) {
-      a = a * 16 + luaO_hexavalue(*s);
+      a = a * 16 + ilyaO_hexavalue(*s);
       empty = 0;
     }
   }
@@ -367,7 +367,7 @@ static const char *l_str2int (const char *s, ilya_Integer *result) {
 }
 
 
-size_t luaO_str2num (const char *s, TValue *o) {
+size_t ilyaO_str2num (const char *s, TValue *o) {
   ilya_Integer i; ilya_Number n;
   const char *e;
   if ((e = l_str2int(s, &i)) != NULL) {  /* try as an integer */
@@ -382,7 +382,7 @@ size_t luaO_str2num (const char *s, TValue *o) {
 }
 
 
-int luaO_utf8esc (char *buff, unsigned long x) {
+int ilyaO_utf8esc (char *buff, unsigned long x) {
   int n = 1;  /* number of bytes put in buffer (backwards) */
   ilya_assert(x <= 0x7FFFFFFFu);
   if (x < 0x80)  /* ascii? */
@@ -426,12 +426,12 @@ int luaO_utf8esc (char *buff, unsigned long x) {
 static int tostringbuffFloat (ilya_Number n, char *buff) {
   /* first conversion */
   int len = l_sprintf(buff, ILYA_N2SBUFFSZ, ILYA_NUMBER_FMT,
-                            (LUAI_UACNUMBER)n);
+                            (ILYAI_UACNUMBER)n);
   ilya_Number check = ilya_str2number(buff, NULL);  /* read it back */
   if (check != n) {  /* not enough precision? */
     /* convert again with more precision */
     len = l_sprintf(buff, ILYA_N2SBUFFSZ, ILYA_NUMBER_FMT_N,
-                          (LUAI_UACNUMBER)n);
+                          (ILYAI_UACNUMBER)n);
   }
   /* looks like an integer? */
   if (buff[strspn(buff, "-0123456789")] == '\0') {
@@ -445,7 +445,7 @@ static int tostringbuffFloat (ilya_Number n, char *buff) {
 /*
 ** Convert a number object to a string, adding it to a buffer.
 */
-unsigned luaO_tostringbuff (const TValue *obj, char *buff) {
+unsigned ilyaO_tostringbuff (const TValue *obj, char *buff) {
   int len;
   ilya_assert(ttisnumber(obj));
   if (ttisinteger(obj))
@@ -460,10 +460,10 @@ unsigned luaO_tostringbuff (const TValue *obj, char *buff) {
 /*
 ** Convert a number object to a Ilya string, replacing the value at 'obj'
 */
-void luaO_tostring (ilya_State *L, TValue *obj) {
+void ilyaO_tostring (ilya_State *L, TValue *obj) {
   char buff[ILYA_N2SBUFFSZ];
-  unsigned len = luaO_tostringbuff(obj, buff);
-  setsvalue(L, obj, luaS_newlstr(L, buff, len));
+  unsigned len = ilyaO_tostringbuff(obj, buff);
+  setsvalue(L, obj, ilyaS_newlstr(L, buff, len));
 }
 
 
@@ -471,19 +471,19 @@ void luaO_tostring (ilya_State *L, TValue *obj) {
 
 /*
 ** {==================================================================
-** 'luaO_pushvfstring'
+** 'ilyaO_pushvfstring'
 ** ===================================================================
 */
 
 /*
-** Size for buffer space used by 'luaO_pushvfstring'. It should be
+** Size for buffer space used by 'ilyaO_pushvfstring'. It should be
 ** (ILYA_IDSIZE + ILYA_N2SBUFFSZ) + a minimal space for basic messages,
-** so that 'luaG_addinfo' can work directly on the static buffer.
+** so that 'ilyaG_addinfo' can work directly on the static buffer.
 */
 #define BUFVFS		cast_uint(ILYA_IDSIZE + ILYA_N2SBUFFSZ + 95)
 
 /*
-** Buffer used by 'luaO_pushvfstring'. 'err' signals an error while
+** Buffer used by 'ilyaO_pushvfstring'. 'err' signals an error while
 ** building result (memory error [1] or buffer overflow [2]).
 */
 typedef struct BuffFS {
@@ -506,14 +506,14 @@ static void initbuff (ilya_State *L, BuffFS *buff) {
 
 
 /*
-** Push final result from 'luaO_pushvfstring'. This fn may raise
+** Push final result from 'ilyaO_pushvfstring'. This fn may raise
 ** errors explicitly or through memory errors, so it must run protected.
 */
 static void pushbuff (ilya_State *L, void *ud) {
   BuffFS *buff = cast(BuffFS*, ud);
   switch (buff->err) {
     case 1:
-      luaD_throw(L, ILYA_ERRMEM);
+      ilyaD_throw(L, ILYA_ERRMEM);
       break;
     case 2:  /* length overflow: Add "..." at the end of result */
       if (buff->buffsize - buff->blen < 3)
@@ -524,7 +524,7 @@ static void pushbuff (ilya_State *L, void *ud) {
       }
       /* FALLTHROUGH */
     default: {  /* no errors */
-      TString *ts = luaS_newlstr(L, buff->b, buff->blen);
+      TString *ts = ilyaS_newlstr(L, buff->b, buff->blen);
       setsvalue2s(L, L->top.p, ts);
       L->top.p++;
     }
@@ -535,12 +535,12 @@ static void pushbuff (ilya_State *L, void *ud) {
 static const char *clearbuff (BuffFS *buff) {
   ilya_State *L = buff->L;
   const char *res;
-  if (luaD_rawrunprotected(L, pushbuff, buff) != ILYA_OK)  /* errors? */
+  if (ilyaD_rawrunprotected(L, pushbuff, buff) != ILYA_OK)  /* errors? */
     res = NULL;  /* error message is on the top of the stack */
   else
     res = getstr(tsvalue(s2v(L->top.p - 1)));
   if (buff->b != buff->space)  /* using dynamic buffer? */
-    luaM_freearray(L, buff->b, buff->buffsize);  /* free it */
+    ilyaM_freearray(L, buff->b, buff->buffsize);  /* free it */
   return res;
 }
 
@@ -560,8 +560,8 @@ static void addstr2buff (BuffFS *buff, const char *str, size_t slen) {
       size_t newsize = buff->buffsize + slen;  /* limited to MAX_SIZE/2 */
       char *newb =
         (buff->b == buff->space)  /* still using static space? */
-        ? luaM_reallocvector(buff->L, NULL, 0, newsize, char)
-        : luaM_reallocvector(buff->L, buff->b, buff->buffsize, newsize,
+        ? ilyaM_reallocvector(buff->L, NULL, 0, newsize, char)
+        : ilyaM_reallocvector(buff->L, buff->b, buff->buffsize, newsize,
                                                                char);
       if (newb == NULL) {  /* allocation error? */
         buff->err = 1;  /* signal a memory error */
@@ -583,7 +583,7 @@ static void addstr2buff (BuffFS *buff, const char *str, size_t slen) {
 */
 static void addnum2buff (BuffFS *buff, TValue *num) {
   char numbuff[ILYA_N2SBUFFSZ];
-  unsigned len = luaO_tostringbuff(num, numbuff);
+  unsigned len = ilyaO_tostringbuff(num, numbuff);
   addstr2buff(buff, numbuff, len);
 }
 
@@ -592,7 +592,7 @@ static void addnum2buff (BuffFS *buff, TValue *num) {
 ** this fn handles only '%d', '%c', '%f', '%p', '%s', and '%%'
    conventional formats, plus Ilya-specific '%I' and '%U'
 */
-const char *luaO_pushvfstring (ilya_State *L, const char *fmt, va_list argp) {
+const char *ilyaO_pushvfstring (ilya_State *L, const char *fmt, va_list argp) {
   BuffFS buff;  /* holds last part of the result */
   const char *e;  /* points to next '%' */
   initbuff(L, &buff);
@@ -637,7 +637,7 @@ const char *luaO_pushvfstring (ilya_State *L, const char *fmt, va_list argp) {
       }
       case 'U': {  /* an 'unsigned long' as a UTF-8 sequence */
         char bf[UTF8BUFFSZ];
-        int len = luaO_utf8esc(bf, va_arg(argp, unsigned long));
+        int len = ilyaO_utf8esc(bf, va_arg(argp, unsigned long));
         addstr2buff(&buff, bf + UTF8BUFFSZ - len, cast_uint(len));
         break;
       }
@@ -657,14 +657,14 @@ const char *luaO_pushvfstring (ilya_State *L, const char *fmt, va_list argp) {
 }
 
 
-const char *luaO_pushfstring (ilya_State *L, const char *fmt, ...) {
+const char *ilyaO_pushfstring (ilya_State *L, const char *fmt, ...) {
   const char *msg;
   va_list argp;
   va_start(argp, fmt);
-  msg = luaO_pushvfstring(L, fmt, argp);
+  msg = ilyaO_pushvfstring(L, fmt, argp);
   va_end(argp);
   if (msg == NULL)  /* error? */
-    luaD_throw(L, ILYA_ERRMEM);
+    ilyaD_throw(L, ILYA_ERRMEM);
   return msg;
 }
 
@@ -677,7 +677,7 @@ const char *luaO_pushfstring (ilya_State *L, const char *fmt, ...) {
 
 #define addstr(a,b,l)	( memcpy(a,b,(l) * sizeof(char)), a += (l) )
 
-void luaO_chunkid (char *out, const char *source, size_t srclen) {
+void ilyaO_chunkid (char *out, const char *source, size_t srclen) {
   size_t bufflen = ILYA_IDSIZE;  /* free space in buffer */
   if (*source == '=') {  /* 'literal' source */
     if (srclen <= bufflen)  /* small enough? */

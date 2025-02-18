@@ -33,8 +33,8 @@
 
 
 const char ilya_ident[] =
-  "$LuaVersion: " ILYA_COPYRIGHT " $"
-  "$LuaAuthors: " ILYA_AUTHORS " $";
+  "$IlyaVersion: " ILYA_COPYRIGHT " $"
+  "$IlyaAuthors: " ILYA_AUTHORS " $";
 
 
 
@@ -115,7 +115,7 @@ ILYA_API int ilya_checkstack (ilya_State *L, int n) {
   if (L->stack_last.p - L->top.p > n)  /* stack large enough? */
     res = 1;  /* yes; check is OK */
   else  /* need to grow stack */
-    res = luaD_growstack(L, n, 0);
+    res = ilyaD_growstack(L, n, 0);
   if (res && ci->top.p < L->top.p + n)
     ci->top.p = L->top.p + n;  /* adjust frame top */
   ilya_unlock(L);
@@ -196,7 +196,7 @@ ILYA_API void ilya_settop (ilya_State *L, int idx) {
   newtop = L->top.p + diff;
   if (diff < 0 && L->tbclist.p >= newtop) {
     ilya_assert(ci->callstatus & CIST_TBC);
-    newtop = luaF_close(L, newtop, CLOSEKTOP, 0);
+    newtop = ilyaF_close(L, newtop, CLOSEKTOP, 0);
   }
   L->top.p = newtop;  /* correct top only after closing any upvalue */
   ilya_unlock(L);
@@ -209,7 +209,7 @@ ILYA_API void ilya_closeslot (ilya_State *L, int idx) {
   level = index2stack(L, idx);
   api_check(L, (L->ci->callstatus & CIST_TBC) && (L->tbclist.p == level),
      "no variable to close at given level");
-  level = luaF_close(L, level, CLOSEKTOP, 0);
+  level = ilyaF_close(L, level, CLOSEKTOP, 0);
   setnilvalue(s2v(level));
   ilya_unlock(L);
 }
@@ -258,7 +258,7 @@ ILYA_API void ilya_copy (ilya_State *L, int fromidx, int toidx) {
   api_check(L, isvalid(L, to), "invalid index");
   setobj(L, to, fr);
   if (isupvalue(toidx))  /* fn upvalue? */
-    luaC_barrier(L, clCvalue(s2v(L->ci->func.p)), fr);
+    ilyaC_barrier(L, clCvalue(s2v(L->ci->func.p)), fr);
   /* ILYA_REGISTRYINDEX does not need gc barrier
      (collector revisits it before finishing collection) */
   ilya_unlock(L);
@@ -326,7 +326,7 @@ ILYA_API int ilya_isuserdata (ilya_State *L, int idx) {
 ILYA_API int ilya_rawequal (ilya_State *L, int index1, int index2) {
   const TValue *o1 = index2value(L, index1);
   const TValue *o2 = index2value(L, index2);
-  return (isvalid(L, o1) && isvalid(L, o2)) ? luaV_rawequalobj(o1, o2) : 0;
+  return (isvalid(L, o1) && isvalid(L, o2)) ? ilyaV_rawequalobj(o1, o2) : 0;
 }
 
 
@@ -340,7 +340,7 @@ ILYA_API void ilya_arith (ilya_State *L, int op) {
     api_incr_top(L);
   }
   /* first operand at top - 2, second at top - 1; result go to top - 2 */
-  luaO_arith(L, op, s2v(L->top.p - 2), s2v(L->top.p - 1), L->top.p - 2);
+  ilyaO_arith(L, op, s2v(L->top.p - 2), s2v(L->top.p - 1), L->top.p - 2);
   L->top.p--;  /* pop second operand */
   ilya_unlock(L);
 }
@@ -355,9 +355,9 @@ ILYA_API int ilya_compare (ilya_State *L, int index1, int index2, int op) {
   o2 = index2value(L, index2);
   if (isvalid(L, o1) && isvalid(L, o2)) {
     switch (op) {
-      case ILYA_OPEQ: i = luaV_equalobj(L, o1, o2); break;
-      case ILYA_OPLT: i = luaV_lessthan(L, o1, o2); break;
-      case ILYA_OPLE: i = luaV_lessequal(L, o1, o2); break;
+      case ILYA_OPEQ: i = ilyaV_equalobj(L, o1, o2); break;
+      case ILYA_OPLT: i = ilyaV_lessthan(L, o1, o2); break;
+      case ILYA_OPLE: i = ilyaV_lessequal(L, o1, o2); break;
       default: api_check(L, 0, "invalid option");
     }
   }
@@ -369,7 +369,7 @@ ILYA_API int ilya_compare (ilya_State *L, int index1, int index2, int op) {
 ILYA_API unsigned (ilya_numbertocstring) (ilya_State *L, int idx, char *buff) {
   const TValue *o = index2value(L, idx);
   if (ttisnumber(o)) {
-    unsigned len = luaO_tostringbuff(o, buff);
+    unsigned len = ilyaO_tostringbuff(o, buff);
     buff[len++] = '\0';  /* add final zero */
     return len;
   }
@@ -379,7 +379,7 @@ ILYA_API unsigned (ilya_numbertocstring) (ilya_State *L, int idx, char *buff) {
 
 
 ILYA_API size_t ilya_stringtonumber (ilya_State *L, const char *s) {
-  size_t sz = luaO_str2num(s, s2v(L->top.p));
+  size_t sz = ilyaO_str2num(s, s2v(L->top.p));
   if (sz != 0)
     api_incr_top(L);
   return sz;
@@ -422,8 +422,8 @@ ILYA_API const char *ilya_tolstring (ilya_State *L, int idx, size_t *len) {
       ilya_unlock(L);
       return NULL;
     }
-    luaO_tostring(L, o);
-    luaC_checkGC(L);
+    ilyaO_tostring(L, o);
+    ilyaC_checkGC(L);
     o = index2value(L, idx);  /* previous call may reallocate the stack */
   }
   ilya_unlock(L);
@@ -440,7 +440,7 @@ ILYA_API ilya_Unsigned ilya_rawlen (ilya_State *L, int idx) {
     case ILYA_VSHRSTR: return cast(ilya_Unsigned, tsvalue(o)->shrlen);
     case ILYA_VLNGSTR: return cast(ilya_Unsigned, tsvalue(o)->u.lnglen);
     case ILYA_VUSERDATA: return cast(ilya_Unsigned, uvalue(o)->len);
-    case ILYA_VTABLE: return luaH_getn(hvalue(o));
+    case ILYA_VTABLE: return ilyaH_getn(hvalue(o));
     default: return 0;
   }
 }
@@ -537,10 +537,10 @@ ILYA_API void ilya_pushinteger (ilya_State *L, ilya_Integer n) {
 ILYA_API const char *ilya_pushlstring (ilya_State *L, const char *s, size_t len) {
   TString *ts;
   ilya_lock(L);
-  ts = (len == 0) ? luaS_new(L, "") : luaS_newlstr(L, s, len);
+  ts = (len == 0) ? ilyaS_new(L, "") : ilyaS_newlstr(L, s, len);
   setsvalue2s(L, L->top.p, ts);
   api_incr_top(L);
-  luaC_checkGC(L);
+  ilyaC_checkGC(L);
   ilya_unlock(L);
   return getstr(ts);
 }
@@ -552,10 +552,10 @@ ILYA_API const char *ilya_pushexternalstring (ilya_State *L,
   ilya_lock(L);
   api_check(L, len <= MAX_SIZE, "string too large");
   api_check(L, s[len] == '\0', "string not ending with zero");
-  ts = luaS_newextlstr (L, s, len, falloc, ud);
+  ts = ilyaS_newextlstr (L, s, len, falloc, ud);
   setsvalue2s(L, L->top.p, ts);
   api_incr_top(L);
-  luaC_checkGC(L);
+  ilyaC_checkGC(L);
   ilya_unlock(L);
   return getstr(ts);
 }
@@ -567,12 +567,12 @@ ILYA_API const char *ilya_pushstring (ilya_State *L, const char *s) {
     setnilvalue(s2v(L->top.p));
   else {
     TString *ts;
-    ts = luaS_new(L, s);
+    ts = ilyaS_new(L, s);
     setsvalue2s(L, L->top.p, ts);
     s = getstr(ts);  /* internal copy's address */
   }
   api_incr_top(L);
-  luaC_checkGC(L);
+  ilyaC_checkGC(L);
   ilya_unlock(L);
   return s;
 }
@@ -582,8 +582,8 @@ ILYA_API const char *ilya_pushvfstring (ilya_State *L, const char *fmt,
                                       va_list argp) {
   const char *ret;
   ilya_lock(L);
-  ret = luaO_pushvfstring(L, fmt, argp);
-  luaC_checkGC(L);
+  ret = ilyaO_pushvfstring(L, fmt, argp);
+  ilyaC_checkGC(L);
   ilya_unlock(L);
   return ret;
 }
@@ -594,11 +594,11 @@ ILYA_API const char *ilya_pushfstring (ilya_State *L, const char *fmt, ...) {
   va_list argp;
   ilya_lock(L);
   va_start(argp, fmt);
-  ret = luaO_pushvfstring(L, fmt, argp);
+  ret = ilyaO_pushvfstring(L, fmt, argp);
   va_end(argp);
-  luaC_checkGC(L);
+  ilyaC_checkGC(L);
   if (ret == NULL)  /* error? */
-    luaD_throw(L, ILYA_ERRMEM);
+    ilyaD_throw(L, ILYA_ERRMEM);
   ilya_unlock(L);
   return ret;
 }
@@ -615,7 +615,7 @@ ILYA_API void ilya_pushcclosure (ilya_State *L, ilya_CFunction fn, int n) {
     CClosure *cl;
     api_checkpop(L, n);
     api_check(L, n <= MAXUPVAL, "upvalue index too large");
-    cl = luaF_newCclosure(L, n);
+    cl = ilyaF_newCclosure(L, n);
     cl->f = fn;
     for (i = 0; i < n; i++) {
       setobj2n(L, &cl->upvalue[i], s2v(L->top.p - n + i));
@@ -625,7 +625,7 @@ ILYA_API void ilya_pushcclosure (ilya_State *L, ilya_CFunction fn, int n) {
     L->top.p -= n;
     setclCvalue(L, s2v(L->top.p), cl);
     api_incr_top(L);
-    luaC_checkGC(L);
+    ilyaC_checkGC(L);
   }
   ilya_unlock(L);
 }
@@ -667,14 +667,14 @@ ILYA_API int ilya_pushthread (ilya_State *L) {
 
 static int auxgetstr (ilya_State *L, const TValue *t, const char *k) {
   lu_byte tag;
-  TString *str = luaS_new(L, k);
-  luaV_fastget(t, str, s2v(L->top.p), luaH_getstr, tag);
+  TString *str = ilyaS_new(L, k);
+  ilyaV_fastget(t, str, s2v(L->top.p), ilyaH_getstr, tag);
   if (!tagisempty(tag))
     api_incr_top(L);
   else {
     setsvalue2s(L, L->top.p, str);
     api_incr_top(L);
-    tag = luaV_finishget(L, t, s2v(L->top.p - 1), L->top.p - 1, tag);
+    tag = ilyaV_finishget(L, t, s2v(L->top.p - 1), L->top.p - 1, tag);
   }
   ilya_unlock(L);
   return novariant(tag);
@@ -683,7 +683,7 @@ static int auxgetstr (ilya_State *L, const TValue *t, const char *k) {
 
 static void getGlobalTable (ilya_State *L, TValue *gt) {
   Table *registry = hvalue(&G(L)->l_registry);
-  lu_byte tag = luaH_getint(registry, ILYA_RIDX_GLOBALS, gt);
+  lu_byte tag = ilyaH_getint(registry, ILYA_RIDX_GLOBALS, gt);
   (void)tag;  /* avoid not-used warnings when checks are off */
   api_check(L, novariant(tag) == ILYA_TTABLE, "global table must exist");
 }
@@ -703,9 +703,9 @@ ILYA_API int ilya_gettable (ilya_State *L, int idx) {
   ilya_lock(L);
   api_checkpop(L, 1);
   t = index2value(L, idx);
-  luaV_fastget(t, s2v(L->top.p - 1), s2v(L->top.p - 1), luaH_get, tag);
+  ilyaV_fastget(t, s2v(L->top.p - 1), s2v(L->top.p - 1), ilyaH_get, tag);
   if (tagisempty(tag))
-    tag = luaV_finishget(L, t, s2v(L->top.p - 1), L->top.p - 1, tag);
+    tag = ilyaV_finishget(L, t, s2v(L->top.p - 1), L->top.p - 1, tag);
   ilya_unlock(L);
   return novariant(tag);
 }
@@ -722,11 +722,11 @@ ILYA_API int ilya_geti (ilya_State *L, int idx, ilya_Integer n) {
   lu_byte tag;
   ilya_lock(L);
   t = index2value(L, idx);
-  luaV_fastgeti(t, n, s2v(L->top.p), tag);
+  ilyaV_fastgeti(t, n, s2v(L->top.p), tag);
   if (tagisempty(tag)) {
     TValue key;
     setivalue(&key, n);
-    tag = luaV_finishget(L, t, &key, L->top.p, tag);
+    tag = ilyaV_finishget(L, t, &key, L->top.p, tag);
   }
   api_incr_top(L);
   ilya_unlock(L);
@@ -756,7 +756,7 @@ ILYA_API int ilya_rawget (ilya_State *L, int idx) {
   ilya_lock(L);
   api_checkpop(L, 1);
   t = gettable(L, idx);
-  tag = luaH_get(t, s2v(L->top.p - 1), s2v(L->top.p - 1));
+  tag = ilyaH_get(t, s2v(L->top.p - 1), s2v(L->top.p - 1));
   L->top.p--;  /* pop key */
   return finishrawget(L, tag);
 }
@@ -767,7 +767,7 @@ ILYA_API int ilya_rawgeti (ilya_State *L, int idx, ilya_Integer n) {
   lu_byte tag;
   ilya_lock(L);
   t = gettable(L, idx);
-  luaH_fastgeti(t, n, s2v(L->top.p), tag);
+  ilyaH_fastgeti(t, n, s2v(L->top.p), tag);
   return finishrawget(L, tag);
 }
 
@@ -778,19 +778,19 @@ ILYA_API int ilya_rawgetp (ilya_State *L, int idx, const void *p) {
   ilya_lock(L);
   t = gettable(L, idx);
   setpvalue(&k, cast_voidp(p));
-  return finishrawget(L, luaH_get(t, &k, s2v(L->top.p)));
+  return finishrawget(L, ilyaH_get(t, &k, s2v(L->top.p)));
 }
 
 
 ILYA_API void ilya_createtable (ilya_State *L, int narray, int nrec) {
   Table *t;
   ilya_lock(L);
-  t = luaH_new(L);
+  t = ilyaH_new(L);
   sethvalue2s(L, L->top.p, t);
   api_incr_top(L);
   if (narray > 0 || nrec > 0)
-    luaH_resize(L, t, cast_uint(narray), cast_uint(nrec));
-  luaC_checkGC(L);
+    ilyaH_resize(L, t, cast_uint(narray), cast_uint(nrec));
+  ilyaC_checkGC(L);
   ilya_unlock(L);
 }
 
@@ -851,20 +851,20 @@ ILYA_API int ilya_getiuservalue (ilya_State *L, int idx, int n) {
 */
 static void auxsetstr (ilya_State *L, const TValue *t, const char *k) {
   int hres;
-  TString *str = luaS_new(L, k);
+  TString *str = ilyaS_new(L, k);
   api_checkpop(L, 1);
-  luaV_fastset(t, str, s2v(L->top.p - 1), hres, luaH_psetstr);
+  ilyaV_fastset(t, str, s2v(L->top.p - 1), hres, ilyaH_psetstr);
   if (hres == HOK) {
-    luaV_finishfastset(L, t, s2v(L->top.p - 1));
+    ilyaV_finishfastset(L, t, s2v(L->top.p - 1));
     L->top.p--;  /* pop value */
   }
   else {
     setsvalue2s(L, L->top.p, str);  /* push 'str' (to make it a TValue) */
     api_incr_top(L);
-    luaV_finishset(L, t, s2v(L->top.p - 1), s2v(L->top.p - 2), hres);
+    ilyaV_finishset(L, t, s2v(L->top.p - 1), s2v(L->top.p - 2), hres);
     L->top.p -= 2;  /* pop value and key */
   }
-  ilya_unlock(L);  /* lock done by caller */
+  ilya_unlock(L);  /* locked done by caller */
 }
 
 
@@ -882,12 +882,12 @@ ILYA_API void ilya_settable (ilya_State *L, int idx) {
   ilya_lock(L);
   api_checkpop(L, 2);
   t = index2value(L, idx);
-  luaV_fastset(t, s2v(L->top.p - 2), s2v(L->top.p - 1), hres, luaH_pset);
+  ilyaV_fastset(t, s2v(L->top.p - 2), s2v(L->top.p - 1), hres, ilyaH_pset);
   if (hres == HOK) {
-    luaV_finishfastset(L, t, s2v(L->top.p - 1));
+    ilyaV_finishfastset(L, t, s2v(L->top.p - 1));
   }
   else
-    luaV_finishset(L, t, s2v(L->top.p - 2), s2v(L->top.p - 1), hres);
+    ilyaV_finishset(L, t, s2v(L->top.p - 2), s2v(L->top.p - 1), hres);
   L->top.p -= 2;  /* pop index and value */
   ilya_unlock(L);
 }
@@ -905,13 +905,13 @@ ILYA_API void ilya_seti (ilya_State *L, int idx, ilya_Integer n) {
   ilya_lock(L);
   api_checkpop(L, 1);
   t = index2value(L, idx);
-  luaV_fastseti(t, n, s2v(L->top.p - 1), hres);
+  ilyaV_fastseti(t, n, s2v(L->top.p - 1), hres);
   if (hres == HOK)
-    luaV_finishfastset(L, t, s2v(L->top.p - 1));
+    ilyaV_finishfastset(L, t, s2v(L->top.p - 1));
   else {
     TValue temp;
     setivalue(&temp, n);
-    luaV_finishset(L, t, &temp, s2v(L->top.p - 1), hres);
+    ilyaV_finishset(L, t, &temp, s2v(L->top.p - 1), hres);
   }
   L->top.p--;  /* pop value */
   ilya_unlock(L);
@@ -923,9 +923,9 @@ static void aux_rawset (ilya_State *L, int idx, TValue *key, int n) {
   ilya_lock(L);
   api_checkpop(L, n);
   t = gettable(L, idx);
-  luaH_set(L, t, key, s2v(L->top.p - 1));
+  ilyaH_set(L, t, key, s2v(L->top.p - 1));
   invalidateTMcache(t);
-  luaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
+  ilyaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
   L->top.p -= n;
   ilya_unlock(L);
 }
@@ -948,8 +948,8 @@ ILYA_API void ilya_rawseti (ilya_State *L, int idx, ilya_Integer n) {
   ilya_lock(L);
   api_checkpop(L, 1);
   t = gettable(L, idx);
-  luaH_setint(L, t, n, s2v(L->top.p - 1));
-  luaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
+  ilyaH_setint(L, t, n, s2v(L->top.p - 1));
+  ilyaC_barrierback(L, obj2gco(t), s2v(L->top.p - 1));
   L->top.p--;
   ilya_unlock(L);
 }
@@ -971,16 +971,16 @@ ILYA_API int ilya_setmetatable (ilya_State *L, int objindex) {
     case ILYA_TTABLE: {
       hvalue(obj)->metatable = mt;
       if (mt) {
-        luaC_objbarrier(L, gcvalue(obj), mt);
-        luaC_checkfinalizer(L, gcvalue(obj), mt);
+        ilyaC_objbarrier(L, gcvalue(obj), mt);
+        ilyaC_checkfinalizer(L, gcvalue(obj), mt);
       }
       break;
     }
     case ILYA_TUSERDATA: {
       uvalue(obj)->metatable = mt;
       if (mt) {
-        luaC_objbarrier(L, uvalue(obj), mt);
-        luaC_checkfinalizer(L, gcvalue(obj), mt);
+        ilyaC_objbarrier(L, uvalue(obj), mt);
+        ilyaC_checkfinalizer(L, gcvalue(obj), mt);
       }
       break;
     }
@@ -1006,7 +1006,7 @@ ILYA_API int ilya_setiuservalue (ilya_State *L, int idx, int n) {
     res = 0;  /* 'n' not in [1, uvalue(o)->nuvalue] */
   else {
     setobj(L, &uvalue(o)->uv[n - 1].uv, s2v(L->top.p - 1));
-    luaC_barrierback(L, gcvalue(o), s2v(L->top.p - 1));
+    ilyaC_barrierback(L, gcvalue(o), s2v(L->top.p - 1));
     res = 1;
   }
   L->top.p--;
@@ -1032,7 +1032,7 @@ ILYA_API void ilya_callk (ilya_State *L, int nargs, int nresults,
                         ilya_KContext ctx, ilya_KFunction k) {
   StkId func;
   ilya_lock(L);
-  api_check(L, k == NULL || !isLua(L->ci),
+  api_check(L, k == NULL || !isIlya(L->ci),
     "cannot use continuations inside hooks");
   api_checkpop(L, nargs + 1);
   api_check(L, L->status == ILYA_OK, "cannot do calls on non-normal thread");
@@ -1041,10 +1041,10 @@ ILYA_API void ilya_callk (ilya_State *L, int nargs, int nresults,
   if (k != NULL && yieldable(L)) {  /* need to prepare continuation? */
     L->ci->u.c.k = k;  /* save continuation */
     L->ci->u.c.ctx = ctx;  /* save context */
-    luaD_call(L, func, nresults);  /* do the call */
+    ilyaD_call(L, func, nresults);  /* do the call */
   }
   else  /* no continuation or no yieldable */
-    luaD_callnoyield(L, func, nresults);  /* just do the call */
+    ilyaD_callnoyield(L, func, nresults);  /* just do the call */
   adjustresults(L, nresults);
   ilya_unlock(L);
 }
@@ -1062,7 +1062,7 @@ struct CallS {  /* data to 'f_call' */
 
 static void f_call (ilya_State *L, void *ud) {
   struct CallS *c = cast(struct CallS *, ud);
-  luaD_callnoyield(L, c->func, c->nresults);
+  ilyaD_callnoyield(L, c->func, c->nresults);
 }
 
 
@@ -1073,7 +1073,7 @@ ILYA_API int ilya_pcallk (ilya_State *L, int nargs, int nresults, int errfunc,
   int status;
   ptrdiff_t func;
   ilya_lock(L);
-  api_check(L, k == NULL || !isLua(L->ci),
+  api_check(L, k == NULL || !isIlya(L->ci),
     "cannot use continuations inside hooks");
   api_checkpop(L, nargs + 1);
   api_check(L, L->status == ILYA_OK, "cannot do calls on non-normal thread");
@@ -1088,7 +1088,7 @@ ILYA_API int ilya_pcallk (ilya_State *L, int nargs, int nresults, int errfunc,
   c.func = L->top.p - (nargs+1);  /* fn to be called */
   if (k == NULL || !yieldable(L)) {  /* no continuation or no yieldable? */
     c.nresults = nresults;  /* do a 'conventional' protected call */
-    status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);
+    status = ilyaD_pcall(L, f_call, &c, savestack(L, c.func), func);
   }
   else {  /* prepare continuation (call is already protected by 'resume') */
     CallInfo *ci = L->ci;
@@ -1100,7 +1100,7 @@ ILYA_API int ilya_pcallk (ilya_State *L, int nargs, int nresults, int errfunc,
     L->errfunc = func;
     setoah(ci, L->allowhook);  /* save value of 'allowhook' */
     ci->callstatus |= CIST_YPCALL;  /* fn can do error recovery */
-    luaD_call(L, c.func, nresults);  /* do the call */
+    ilyaD_call(L, c.func, nresults);  /* do the call */
     ci->callstatus &= ~CIST_YPCALL;
     L->errfunc = ci->u.c.old_errfunc;
     status = ILYA_OK;  /* if it is here, there were no errors */
@@ -1117,8 +1117,8 @@ ILYA_API int ilya_load (ilya_State *L, ilya_Reader reader, void *data,
   int status;
   ilya_lock(L);
   if (!chunkname) chunkname = "?";
-  luaZ_init(L, &z, reader, data);
-  status = luaD_protectedparser(L, &z, chunkname, mode);
+  ilyaZ_init(L, &z, reader, data);
+  status = ilyaD_protectedparser(L, &z, chunkname, mode);
   if (status == ILYA_OK) {  /* no errors? */
     LClosure *f = clLvalue(s2v(L->top.p - 1));  /* get new fn */
     if (f->nupvalues >= 1) {  /* does it have an upvalue? */
@@ -1127,7 +1127,7 @@ ILYA_API int ilya_load (ilya_State *L, ilya_Reader reader, void *data,
       getGlobalTable(L, &gt);
       /* set global table as 1st upvalue of 'f' (may be ILYA_ENV) */
       setobj(L, f->upvals[0]->v.p, &gt);
-      luaC_barrier(L, f->upvals[0], &gt);
+      ilyaC_barrier(L, f->upvals[0], &gt);
     }
   }
   ilya_unlock(L);
@@ -1146,7 +1146,7 @@ ILYA_API int ilya_dump (ilya_State *L, ilya_Writer writer, void *data, int strip
   ilya_lock(L);
   api_checkpop(L, 1);
   api_check(L, isLfunction(f), "Ilya fn expected");
-  status = luaU_dump(L, clLvalue(f)->p, writer, data, strip);
+  status = ilyaU_dump(L, clLvalue(f)->p, writer, data, strip);
   L->top.p = restorestack(L, otop);  /* restore top */
   ilya_unlock(L);
   return status;
@@ -1175,12 +1175,12 @@ ILYA_API int ilya_gc (ilya_State *L, int what, ...) {
       break;
     }
     case ILYA_GCRESTART: {
-      luaE_setdebt(g, 0);
+      ilyaE_setdebt(g, 0);
       g->gcstp = 0;  /* (other bits must be zero here) */
       break;
     }
     case ILYA_GCCOLLECT: {
-      luaC_fullgc(L, 0);
+      ilyaC_fullgc(L, 0);
       break;
     }
     case ILYA_GCCOUNT: {
@@ -1199,8 +1199,8 @@ ILYA_API int ilya_gc (ilya_State *L, int what, ...) {
       g->gcstp = 0;  /* allow GC to run (other bits must be zero here) */
       if (n <= 0)
         n = g->GCdebt;  /* force to run one basic step */
-      luaE_setdebt(g, g->GCdebt - n);
-      luaC_condGC(L, (void)0, work = 1);
+      ilyaE_setdebt(g, g->GCdebt - n);
+      ilyaC_condGC(L, (void)0, work = 1);
       if (work && g->gcstate == GCSpause)  /* end of cycle? */
         res = 1;  /* signal it */
       g->gcstp = oldstp;  /* restore previous state */
@@ -1212,21 +1212,21 @@ ILYA_API int ilya_gc (ilya_State *L, int what, ...) {
     }
     case ILYA_GCGEN: {
       res = (g->gckind == KGC_INC) ? ILYA_GCINC : ILYA_GCGEN;
-      luaC_changemode(L, KGC_GENMINOR);
+      ilyaC_changemode(L, KGC_GENMINOR);
       break;
     }
     case ILYA_GCINC: {
       res = (g->gckind == KGC_INC) ? ILYA_GCINC : ILYA_GCGEN;
-      luaC_changemode(L, KGC_INC);
+      ilyaC_changemode(L, KGC_INC);
       break;
     }
     case ILYA_GCPARAM: {
       int param = va_arg(argp, int);
       int value = va_arg(argp, int);
       api_check(L, 0 <= param && param < ILYA_GCPN, "invalid parameter");
-      res = cast_int(luaO_applyparam(g->gcparams[param], 100));
+      res = cast_int(ilyaO_applyparam(g->gcparams[param], 100));
       if (value >= 0)
-        g->gcparams[param] = luaO_codeparam(cast_uint(value));
+        g->gcparams[param] = ilyaO_codeparam(cast_uint(value));
       break;
     }
     default: res = -1;  /* invalid option */
@@ -1250,9 +1250,9 @@ ILYA_API int ilya_error (ilya_State *L) {
   api_checkpop(L, 1);
   /* error object is the memory error message? */
   if (ttisshrstring(errobj) && eqshrstr(tsvalue(errobj), G(L)->memerrmsg))
-    luaM_error(L);  /* raise a memory error */
+    ilyaM_error(L);  /* raise a memory error */
   else
-    luaG_errormsg(L);  /* raise a regular error */
+    ilyaG_errormsg(L);  /* raise a regular error */
   /* code unreachable; will unlock when control actually leaves the kernel */
   return 0;  /* to avoid warnings */
 }
@@ -1264,7 +1264,7 @@ ILYA_API int ilya_next (ilya_State *L, int idx) {
   ilya_lock(L);
   api_checkpop(L, 1);
   t = gettable(L, idx);
-  more = luaH_next(L, t, L->top.p - 1);
+  more = ilyaH_next(L, t, L->top.p - 1);
   if (more)
     api_incr_top(L);
   else  /* no more elements */
@@ -1279,7 +1279,7 @@ ILYA_API void ilya_toclose (ilya_State *L, int idx) {
   ilya_lock(L);
   o = index2stack(L, idx);
   api_check(L, L->tbclist.p < o, "given index below or equal a marked one");
-  luaF_newtbcupval(L, o);  /* create new to-be-closed upvalue */
+  ilyaF_newtbcupval(L, o);  /* create new to-be-closed upvalue */
   L->ci->callstatus |= CIST_TBC;  /* mark that fn has TBC slots */
   ilya_unlock(L);
 }
@@ -1289,11 +1289,11 @@ ILYA_API void ilya_concat (ilya_State *L, int n) {
   ilya_lock(L);
   api_checknelems(L, n);
   if (n > 0) {
-    luaV_concat(L, n);
-    luaC_checkGC(L);
+    ilyaV_concat(L, n);
+    ilyaC_checkGC(L);
   }
   else {  /* nothing to concatenate */
-    setsvalue2s(L, L->top.p, luaS_newlstr(L, "", 0));  /* push empty string */
+    setsvalue2s(L, L->top.p, ilyaS_newlstr(L, "", 0));  /* push empty string */
     api_incr_top(L);
   }
   ilya_unlock(L);
@@ -1304,7 +1304,7 @@ ILYA_API void ilya_len (ilya_State *L, int idx) {
   TValue *t;
   ilya_lock(L);
   t = index2value(L, idx);
-  luaV_objlen(L, L->top.p, t);
+  ilyaV_objlen(L, L->top.p, t);
   api_incr_top(L);
   ilya_unlock(L);
 }
@@ -1338,7 +1338,7 @@ void ilya_setwarnf (ilya_State *L, ilya_WarnFunction f, void *ud) {
 
 void ilya_warning (ilya_State *L, const char *msg, int tocont) {
   ilya_lock(L);
-  luaE_warning(L, msg, tocont);
+  ilyaE_warning(L, msg, tocont);
   ilya_unlock(L);
 }
 
@@ -1348,10 +1348,10 @@ ILYA_API void *ilya_newuserdatauv (ilya_State *L, size_t size, int nuvalue) {
   Udata *u;
   ilya_lock(L);
   api_check(L, 0 <= nuvalue && nuvalue < SHRT_MAX, "invalid value");
-  u = luaS_newudata(L, size, cast(unsigned short, nuvalue));
+  u = ilyaS_newudata(L, size, cast(unsigned short, nuvalue));
   setuvalue(L, s2v(L->top.p), u);
   api_incr_top(L);
-  luaC_checkGC(L);
+  ilyaC_checkGC(L);
   ilya_unlock(L);
   return getudatamem(u);
 }
@@ -1411,7 +1411,7 @@ ILYA_API const char *ilya_setupvalue (ilya_State *L, int funcindex, int n) {
   if (name) {
     L->top.p--;
     setobj(L, val, s2v(L->top.p));
-    luaC_barrier(L, owner, val);
+    ilyaC_barrier(L, owner, val);
   }
   ilya_unlock(L);
   return name;
@@ -1461,7 +1461,7 @@ ILYA_API void ilya_upvaluejoin (ilya_State *L, int fidx1, int n1,
   UpVal **up2 = getupvalref(L, fidx2, n2, NULL);
   api_check(L, *up1 != NULL && *up2 != NULL, "invalid upvalue index");
   *up1 = *up2;
-  luaC_objbarrier(L, f1, *up1);
+  ilyaC_objbarrier(L, f1, *up1);
 }
 
 

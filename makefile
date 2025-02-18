@@ -42,7 +42,7 @@ CWARNSC= -Wdeclaration-after-statement \
 CWARNS= $(CWARNSCPP) $(CWARNSC) $(CWARNGCC)
 
 # Some useful compiler options for internal tests:
-# -DLUAI_ASSERT turns on all assertions inside Ilya.
+# -DILYAI_ASSERT turns on all assertions inside Ilya.
 # -DHARDSTACKTESTS forces a reallocation of the stack at every point where
 # the stack can be reallocated.
 # -DHARDMEMTESTS forces a full collection at all points where the collector
@@ -51,10 +51,10 @@ CWARNS= $(CWARNSCPP) $(CWARNSC) $(CWARNGCC)
 # -DEXTERNMEMCHECK removes internal consistency checking of blocks being
 # deallocated (useful when an external tool like valgrind does the check).
 # -DMAXINDEXRK=k limits range of constants in RK instruction operands.
-# -DLUA_COMPAT_5_3
+# -DILYA_COMPAT_5_3
 
 # -pg -malign-double
-# -DLUA_USE_CTYPE -DLUA_USE_APICHECK
+# -DILYA_USE_CTYPE -DILYA_USE_APICHECK
 
 # The following options help detect "undefined behavior"s that seldom
 # create problems; some are only available in newer gcc versions. To
@@ -62,16 +62,16 @@ CWARNS= $(CWARNSCPP) $(CWARNSC) $(CWARNGCC)
 # ASAN_OPTIONS="detect_invalid_pointer_pairs=2".
 # -fsanitize=undefined
 # -fsanitize=pointer-subtract -fsanitize=address -fsanitize=pointer-compare
-# TESTS= -DLUA_USER_H='"ltests.h"' -Og -g
+# TESTS= -DILYA_USER_H='"ltests.h"' -Og -g
 
 
 LOCAL = $(TESTS) $(CWARNS)
 
 
-# To enable Linux goodies, -DLUA_USE_LINUX
-# For C89, "-std=c89 -DLUA_USE_C89"
+# To enable Linux goodies, -DILYA_USE_LINUX
+# For C89, "-std=c89 -DILYA_USE_C89"
 # Note that Linux/Posix options are not compatible with C89
-MYCFLAGS= $(LOCAL) -std=c99 -DLUA_USE_LINUX
+MYCFLAGS= $(LOCAL) -std=c99 -DILYA_USE_LINUX
 MYLDFLAGS= $(LOCAL) -Wl,-E
 MYLIBS= -ldl
 
@@ -89,7 +89,7 @@ RM= rm -f
 
 LIBS = -lm
 
-CORE_T=	liblua.a
+CORE_T=	libilya.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 	lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o \
 	ltm.o lundump.o lvm.o lzio.o ltests.o

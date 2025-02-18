@@ -31,7 +31,7 @@
 #define TAB_RW	(TAB_R | TAB_W)		/* read/write */
 
 
-#define aux_getn(L,n,w)	(checktab(L, n, (w) | TAB_L), luaL_len(L, n))
+#define aux_getn(L,n,w)	(checktab(L, n, (w) | TAB_L), ilyaL_len(L, n))
 
 
 static int checkfield (ilya_State *L, const char *key, int n) {
@@ -54,16 +54,16 @@ static void checktab (ilya_State *L, int arg, int what) {
       ilya_pop(L, n);  /* pop metatable and tested metamethods */
     }
     else
-      luaL_checktype(L, arg, ILYA_TTABLE);  /* force an error */
+      ilyaL_checktype(L, arg, ILYA_TTABLE);  /* force an error */
   }
 }
 
 
 static int tcreate (ilya_State *L) {
-  ilya_Unsigned sizeseq = (ilya_Unsigned)luaL_checkinteger(L, 1);
-  ilya_Unsigned sizerest = (ilya_Unsigned)luaL_optinteger(L, 2, 0);
-  luaL_argcheck(L, sizeseq <= cast_uint(INT_MAX), 1, "out of range");
-  luaL_argcheck(L, sizerest <= cast_uint(INT_MAX), 2, "out of range");
+  ilya_Unsigned sizeseq = (ilya_Unsigned)ilyaL_checkinteger(L, 1);
+  ilya_Unsigned sizerest = (ilya_Unsigned)ilyaL_optinteger(L, 2, 0);
+  ilyaL_argcheck(L, sizeseq <= cast_uint(INT_MAX), 1, "out of range");
+  ilyaL_argcheck(L, sizerest <= cast_uint(INT_MAX), 2, "out of range");
   ilya_createtable(L, cast_int(sizeseq), cast_int(sizerest));
   return 1;
 }
@@ -72,7 +72,7 @@ static int tcreate (ilya_State *L) {
 static int tinsert (ilya_State *L) {
   ilya_Integer pos;  /* where to insert new element */
   ilya_Integer e = aux_getn(L, 1, TAB_RW);
-  e = luaL_intop(+, e, 1);  /* first empty element */
+  e = ilyaL_intop(+, e, 1);  /* first empty element */
   switch (ilya_gettop(L)) {
     case 2: {  /* called with only 2 arguments */
       pos = e;  /* insert new element at the end */
@@ -80,9 +80,9 @@ static int tinsert (ilya_State *L) {
     }
     case 3: {
       ilya_Integer i;
-      pos = luaL_checkinteger(L, 2);  /* 2nd argument is the position */
+      pos = ilyaL_checkinteger(L, 2);  /* 2nd argument is the position */
       /* check whether 'pos' is in [1, e] */
-      luaL_argcheck(L, (ilya_Unsigned)pos - 1u < (ilya_Unsigned)e, 2,
+      ilyaL_argcheck(L, (ilya_Unsigned)pos - 1u < (ilya_Unsigned)e, 2,
                        "position out of bounds");
       for (i = e; i > pos; i--) {  /* move up elements */
         ilya_geti(L, 1, i - 1);
@@ -91,7 +91,7 @@ static int tinsert (ilya_State *L) {
       break;
     }
     default: {
-      return luaL_error(L, "wrong number of arguments to 'insert'");
+      return ilyaL_error(L, "wrong number of arguments to 'insert'");
     }
   }
   ilya_seti(L, 1, pos);  /* t[pos] = v */
@@ -101,10 +101,10 @@ static int tinsert (ilya_State *L) {
 
 static int tremove (ilya_State *L) {
   ilya_Integer size = aux_getn(L, 1, TAB_RW);
-  ilya_Integer pos = luaL_optinteger(L, 2, size);
+  ilya_Integer pos = ilyaL_optinteger(L, 2, size);
   if (pos != size)  /* validate 'pos' if given */
     /* check whether 'pos' is in [1, size + 1] */
-    luaL_argcheck(L, (ilya_Unsigned)pos - 1u <= (ilya_Unsigned)size, 2,
+    ilyaL_argcheck(L, (ilya_Unsigned)pos - 1u <= (ilya_Unsigned)size, 2,
                      "position out of bounds");
   ilya_geti(L, 1, pos);  /* result = t[pos] */
   for ( ; pos < size; pos++) {
@@ -124,18 +124,18 @@ static int tremove (ilya_State *L) {
 ** than origin, or copying to another table.
 */
 static int tmove (ilya_State *L) {
-  ilya_Integer f = luaL_checkinteger(L, 2);
-  ilya_Integer e = luaL_checkinteger(L, 3);
-  ilya_Integer t = luaL_checkinteger(L, 4);
+  ilya_Integer f = ilyaL_checkinteger(L, 2);
+  ilya_Integer e = ilyaL_checkinteger(L, 3);
+  ilya_Integer t = ilyaL_checkinteger(L, 4);
   int tt = !ilya_isnoneornil(L, 5) ? 5 : 1;  /* destination table */
   checktab(L, 1, TAB_R);
   checktab(L, tt, TAB_W);
   if (e >= f) {  /* otherwise, nothing to move */
     ilya_Integer n, i;
-    luaL_argcheck(L, f > 0 || e < ILYA_MAXINTEGER + f, 3,
+    ilyaL_argcheck(L, f > 0 || e < ILYA_MAXINTEGER + f, 3,
                   "too many elements to move");
     n = e - f + 1;  /* number of elements to move */
-    luaL_argcheck(L, t <= ILYA_MAXINTEGER - n + 1, 4,
+    ilyaL_argcheck(L, t <= ILYA_MAXINTEGER - n + 1, 4,
                   "destination wrap around");
     if (t > e || t <= f || (tt != 1 && !ilya_compare(L, 1, tt, ILYA_OPEQ))) {
       for (i = 0; i < n; i++) {
@@ -155,30 +155,30 @@ static int tmove (ilya_State *L) {
 }
 
 
-static void addfield (ilya_State *L, luaL_Buffer *b, ilya_Integer i) {
+static void addfield (ilya_State *L, ilyaL_Buffer *b, ilya_Integer i) {
   ilya_geti(L, 1, i);
   if (l_unlikely(!ilya_isstring(L, -1)))
-    luaL_error(L, "invalid value (%s) at index %I in table for 'concat'",
-                  luaL_typename(L, -1), (LUAI_UACINT)i);
-  luaL_addvalue(b);
+    ilyaL_error(L, "invalid value (%s) at index %I in table for 'concat'",
+                  ilyaL_typename(L, -1), (ILYAI_UACINT)i);
+  ilyaL_addvalue(b);
 }
 
 
 static int tconcat (ilya_State *L) {
-  luaL_Buffer b;
+  ilyaL_Buffer b;
   ilya_Integer last = aux_getn(L, 1, TAB_R);
   size_t lsep;
-  const char *sep = luaL_optlstring(L, 2, "", &lsep);
-  ilya_Integer i = luaL_optinteger(L, 3, 1);
-  last = luaL_optinteger(L, 4, last);
-  luaL_buffinit(L, &b);
+  const char *sep = ilyaL_optlstring(L, 2, "", &lsep);
+  ilya_Integer i = ilyaL_optinteger(L, 3, 1);
+  last = ilyaL_optinteger(L, 4, last);
+  ilyaL_buffinit(L, &b);
   for (; i < last; i++) {
     addfield(L, &b, i);
-    luaL_addlstring(&b, sep, lsep);
+    ilyaL_addlstring(&b, sep, lsep);
   }
   if (i == last)  /* add last value (if interval was not empty) */
     addfield(L, &b, i);
-  luaL_pushresult(&b);
+  ilyaL_pushresult(&b);
   return 1;
 }
 
@@ -204,13 +204,13 @@ static int tpack (ilya_State *L) {
 
 static int tunpack (ilya_State *L) {
   ilya_Unsigned n;
-  ilya_Integer i = luaL_optinteger(L, 2, 1);
-  ilya_Integer e = luaL_opt(L, luaL_checkinteger, 3, luaL_len(L, 1));
+  ilya_Integer i = ilyaL_optinteger(L, 2, 1);
+  ilya_Integer e = ilyaL_opt(L, ilyaL_checkinteger, 3, ilyaL_len(L, 1));
   if (i > e) return 0;  /* empty range */
   n = l_castS2U(e) - l_castS2U(i);  /* number of elements minus 1 */
   if (l_unlikely(n >= (unsigned int)INT_MAX  ||
                  !ilya_checkstack(L, (int)(++n))))
-    return luaL_error(L, "too many results to unpack");
+    return ilyaL_error(L, "too many results to unpack");
   for (; i < e; i++) {  /* push arg[i..e - 1] (to avoid overflows) */
     ilya_geti(L, 1, i);
   }
@@ -250,7 +250,7 @@ typedef unsigned int IdxT;
 ** good choice.)
 */
 #if !defined(l_randomizePivot)
-#define l_randomizePivot(L)	luaL_makeseed(L)
+#define l_randomizePivot(L)	ilyaL_makeseed(L)
 #endif					/* } */
 
 
@@ -299,14 +299,14 @@ static IdxT partition (ilya_State *L, IdxT lo, IdxT up) {
     /* next loop: repeat ++i while a[i] < P */
     while ((void)geti(L, 1, ++i), sort_comp(L, -1, -2)) {
       if (l_unlikely(i == up - 1))  /* a[up - 1] < P == a[up - 1] */
-        luaL_error(L, "invalid order fn for sorting");
+        ilyaL_error(L, "invalid order fn for sorting");
       ilya_pop(L, 1);  /* remove a[i] */
     }
     /* after the loop, a[i] >= P and a[lo .. i - 1] < P  (a) */
     /* next loop: repeat --j while P < a[j] */
     while ((void)geti(L, 1, --j), sort_comp(L, -3, -1)) {
       if (l_unlikely(j < i))  /* j <= i - 1 and a[j] > P, contradicts (a) */
-        luaL_error(L, "invalid order fn for sorting");
+        ilyaL_error(L, "invalid order fn for sorting");
       ilya_pop(L, 1);  /* remove a[j] */
     }
     /* after the loop, a[j] <= P and a[j + 1 .. up] >= P */
@@ -394,9 +394,9 @@ static void auxsort (ilya_State *L, IdxT lo, IdxT up, unsigned rnd) {
 static int sort (ilya_State *L) {
   ilya_Integer n = aux_getn(L, 1, TAB_RW);
   if (n > 1) {  /* non-trivial interval? */
-    luaL_argcheck(L, n < INT_MAX, 1, "array too big");
+    ilyaL_argcheck(L, n < INT_MAX, 1, "array too big");
     if (!ilya_isnoneornil(L, 2))  /* is there a 2nd argument? */
-      luaL_checktype(L, 2, ILYA_TFUNCTION);  /* must be a fn */
+      ilyaL_checktype(L, 2, ILYA_TFUNCTION);  /* must be a fn */
     ilya_settop(L, 2);  /* make sure there are two arguments */
     auxsort(L, 1, (IdxT)n, 0);
   }
@@ -406,7 +406,7 @@ static int sort (ilya_State *L) {
 /* }====================================================== */
 
 
-static const luaL_Reg tab_funcs[] = {
+static const ilyaL_Reg tab_funcs[] = {
   {"concat", tconcat},
   {"create", tcreate},
   {"insert", tinsert},
@@ -419,8 +419,8 @@ static const luaL_Reg tab_funcs[] = {
 };
 
 
-LUAMOD_API int luaopen_table (ilya_State *L) {
-  luaL_newlib(L, tab_funcs);
+ILYAMOD_API int ilyaopen_table (ilya_State *L) {
+  ilyaL_newlib(L, tab_funcs);
   return 1;
 }
 

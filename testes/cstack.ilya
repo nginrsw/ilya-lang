@@ -8,7 +8,7 @@ print"testing stack overflow detection"
 
 -- Segmentation faults in these tests probably result from a C-stack
 -- overflow. To avoid these errors, you should set a smaller limit for
--- the use of C stack by Ilya, by changing the constant 'LUAI_MAXCCALLS'.
+-- the use of C stack by Ilya, by changing the constant 'ILYAI_MAXCCALLS'.
 -- Alternatively, you can ensure a larger stack for the program.
 
 

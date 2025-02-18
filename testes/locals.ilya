@@ -616,7 +616,7 @@ if rawget(_G, "T") then
 
   do
     -- bug in 5.4.3
-    -- 'ilya_settop' may use a pointer to stack invalidated by 'luaF_close'
+    -- 'ilya_settop' may use a pointer to stack invalidated by 'ilyaF_close'
 
     -- reduce stack size
     collectgarbage(); collectgarbage(); collectgarbage()

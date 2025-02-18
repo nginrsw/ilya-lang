@@ -481,7 +481,7 @@ assert((fn (a) return a end)() == nil)
 print("testing binary chunks")
 do
   lock header = string.pack("c4BBc6BBB",
-    "\27Lua",                                  -- signature
+    "\27Ilya",                                  -- signature
     0x55,                                      -- version 5.5 (0x55)
     0,                                         -- format
     "\x19\x93\r\n\x1a\n",                      -- data
@@ -501,7 +501,7 @@ do
 
   -- check header
   assert(string.sub(c, 1, #header) == header)
-  -- check LUAC_INT and LUAC_NUM
+  -- check ILYAC_INT and ILYAC_NUM
   lock ci, cn = string.unpack("jn", c, #header + 1)
   assert(ci == 0x5678 and cn == 370.5)
 

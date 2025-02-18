@@ -103,7 +103,7 @@
 #define nw2black(x)  \
 	check_exp(!iswhite(x), l_setbit((x)->marked, BLACKBIT))
 
-#define luaC_white(g)	cast_byte((g)->currentwhite & WHITEBITS)
+#define ilyaC_white(g)	cast_byte((g)->currentwhite & WHITEBITS)
 
 
 /* object age in generational mode */
@@ -167,42 +167,42 @@
 */
 
 /*
-** Minor collections will shift to major ones after LUAI_MINORMAJOR%
+** Minor collections will shift to major ones after ILYAI_MINORMAJOR%
 ** bytes become old.
 */
-#define LUAI_MINORMAJOR         70
+#define ILYAI_MINORMAJOR         70
 
 /*
 ** Major collections will shift to minor ones after a collection
-** collects at least LUAI_MAJORMINOR% of the new bytes.
+** collects at least ILYAI_MAJORMINOR% of the new bytes.
 */
-#define LUAI_MAJORMINOR         50
+#define ILYAI_MAJORMINOR         50
 
 /*
-** A young (minor) collection will run after creating LUAI_GENMINORMUL%
+** A young (minor) collection will run after creating ILYAI_GENMINORMUL%
 ** new bytes.
 */
-#define LUAI_GENMINORMUL         20
+#define ILYAI_GENMINORMUL         20
 
 
 /* incremental */
 
-/* Number of bytes must be LUAI_GCPAUSE% before starting new cycle */
-#define LUAI_GCPAUSE    250
+/* Number of bytes must be ILYAI_GCPAUSE% before starting new cycle */
+#define ILYAI_GCPAUSE    250
 
 /*
-** Step multiplier: The collector handles LUAI_GCMUL% work units for
+** Step multiplier: The collector handles ILYAI_GCMUL% work units for
 ** each new allocated word. (Each "work unit" corresponds roughly to
 ** sweeping one object or traversing one slot.)
 */
-#define LUAI_GCMUL      200
+#define ILYAI_GCMUL      200
 
 /* How many bytes to allocate before next GC step */
-#define LUAI_GCSTEPSIZE	(200 * sizeof(Table))
+#define ILYAI_GCSTEPSIZE	(200 * sizeof(Table))
 
 
-#define setgcparam(g,p,v)  (g->gcparams[ILYA_GCP##p] = luaO_codeparam(v))
-#define applygcparam(g,p,x)  luaO_applyparam(g->gcparams[ILYA_GCP##p], x)
+#define setgcparam(g,p,v)  (g->gcparams[ILYA_GCP##p] = ilyaO_codeparam(v))
+#define applygcparam(g,p,x)  ilyaO_applyparam(g->gcparams[ILYA_GCP##p], x)
 
 /* }====================================================== */
 
@@ -227,42 +227,42 @@
 #define condchangemem(L,pre,pos,emg)	((void)0)
 #else
 #define condchangemem(L,pre,pos,emg)  \
-	{ if (gcrunning(G(L))) { pre; luaC_fullgc(L, emg); pos; } }
+	{ if (gcrunning(G(L))) { pre; ilyaC_fullgc(L, emg); pos; } }
 #endif
 
-#define luaC_condGC(L,pre,pos) \
-	{ if (G(L)->GCdebt <= 0) { pre; luaC_step(L); pos;}; \
+#define ilyaC_condGC(L,pre,pos) \
+	{ if (G(L)->GCdebt <= 0) { pre; ilyaC_step(L); pos;}; \
 	  condchangemem(L,pre,pos,0); }
 
 /* more often than not, 'pre'/'pos' are empty */
-#define luaC_checkGC(L)		luaC_condGC(L,(void)0,(void)0)
+#define ilyaC_checkGC(L)		ilyaC_condGC(L,(void)0,(void)0)
 
 
-#define luaC_objbarrier(L,p,o) (  \
+#define ilyaC_objbarrier(L,p,o) (  \
 	(isblack(p) && iswhite(o)) ? \
-	luaC_barrier_(L,obj2gco(p),obj2gco(o)) : cast_void(0))
+	ilyaC_barrier_(L,obj2gco(p),obj2gco(o)) : cast_void(0))
 
-#define luaC_barrier(L,p,v) (  \
-	iscollectable(v) ? luaC_objbarrier(L,p,gcvalue(v)) : cast_void(0))
+#define ilyaC_barrier(L,p,v) (  \
+	iscollectable(v) ? ilyaC_objbarrier(L,p,gcvalue(v)) : cast_void(0))
 
-#define luaC_objbarrierback(L,p,o) (  \
-	(isblack(p) && iswhite(o)) ? luaC_barrierback_(L,p) : cast_void(0))
+#define ilyaC_objbarrierback(L,p,o) (  \
+	(isblack(p) && iswhite(o)) ? ilyaC_barrierback_(L,p) : cast_void(0))
 
-#define luaC_barrierback(L,p,v) (  \
-	iscollectable(v) ? luaC_objbarrierback(L, p, gcvalue(v)) : cast_void(0))
+#define ilyaC_barrierback(L,p,v) (  \
+	iscollectable(v) ? ilyaC_objbarrierback(L, p, gcvalue(v)) : cast_void(0))
 
-LUAI_FUNC void luaC_fix (ilya_State *L, GCObject *o);
-LUAI_FUNC void luaC_freeallobjects (ilya_State *L);
-LUAI_FUNC void luaC_step (ilya_State *L);
-LUAI_FUNC void luaC_runtilstate (ilya_State *L, int state, int fast);
-LUAI_FUNC void luaC_fullgc (ilya_State *L, int isemergency);
-LUAI_FUNC GCObject *luaC_newobj (ilya_State *L, lu_byte tt, size_t sz);
-LUAI_FUNC GCObject *luaC_newobjdt (ilya_State *L, lu_byte tt, size_t sz,
+ILYAI_FUNC void ilyaC_fix (ilya_State *L, GCObject *o);
+ILYAI_FUNC void ilyaC_freeallobjects (ilya_State *L);
+ILYAI_FUNC void ilyaC_step (ilya_State *L);
+ILYAI_FUNC void ilyaC_runtilstate (ilya_State *L, int state, int fast);
+ILYAI_FUNC void ilyaC_fullgc (ilya_State *L, int isemergency);
+ILYAI_FUNC GCObject *ilyaC_newobj (ilya_State *L, lu_byte tt, size_t sz);
+ILYAI_FUNC GCObject *ilyaC_newobjdt (ilya_State *L, lu_byte tt, size_t sz,
                                                  size_t offset);
-LUAI_FUNC void luaC_barrier_ (ilya_State *L, GCObject *o, GCObject *v);
-LUAI_FUNC void luaC_barrierback_ (ilya_State *L, GCObject *o);
-LUAI_FUNC void luaC_checkfinalizer (ilya_State *L, GCObject *o, Table *mt);
-LUAI_FUNC void luaC_changemode (ilya_State *L, int newmode);
+ILYAI_FUNC void ilyaC_barrier_ (ilya_State *L, GCObject *o, GCObject *v);
+ILYAI_FUNC void ilyaC_barrierback_ (ilya_State *L, GCObject *o);
+ILYAI_FUNC void ilyaC_checkfinalizer (ilya_State *L, GCObject *o, Table *mt);
+ILYAI_FUNC void ilyaC_changemode (ilya_State *L, int newmode);
 
 
 #endif

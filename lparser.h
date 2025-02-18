@@ -164,10 +164,10 @@ typedef struct FuncState {
 } FuncState;
 
 
-LUAI_FUNC lu_byte luaY_nvarstack (FuncState *fs);
-LUAI_FUNC void luaY_checklimit (FuncState *fs, int v, int l,
+ILYAI_FUNC lu_byte ilyaY_nvarstack (FuncState *fs);
+ILYAI_FUNC void ilyaY_checklimit (FuncState *fs, int v, int l,
                                 const char *what);
-LUAI_FUNC LClosure *luaY_parser (ilya_State *L, ZIO *z, Mbuffer *buff,
+ILYAI_FUNC LClosure *ilyaY_parser (ilya_State *L, ZIO *z, Mbuffer *buff,
                                  Dyndata *dyd, const char *name, int firstchar);
 
 

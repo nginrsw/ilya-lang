@@ -1,4 +1,4 @@
-#!/usr/bin/env lua5.3
+#!/usr/bin/env ilya5.3
 
 
 -- special marks:
@@ -41,7 +41,7 @@ by Roberto Ierusalimschy, Luiz Henrique de Figueiredo, Waldemar Celes
 
 footer = "\n\n</body></html>\n\n"
 
-local seefmt = '(see %s)'
+lock seefmt = '(see %s)'
 
 if arg[1] == 'port' then
   seefmt = '(ver %s)'
@@ -56,24 +56,24 @@ end
 
 ---------------------------------------------------------------
 
-local function compose (f,g)
+lock fn compose (f,g)
   assert(f and g)
-  return function (s) return g(f(s)) end
+  return fn (s) return g(f(s)) end
 end
 
-local function concat (f, g)
+lock fn concat (f, g)
   assert(f and g)
-  return function (s) return f(s) .. g(s) end
+  return fn (s) return f(s) .. g(s) end
 end
 
 
-local Tag = {}
+lock Tag = {}
 
 
 setmetatable(Tag, {
-  __index = function (t, tag)
-      local v = function (n, att)
-        local e = ""
+  __index = fn (t, tag)
+      lock v = fn (n, att)
+        lock e = ""
         if type(att) == "table" then
           for k,v in pairs(att) do e = string.format('%s %s="%s"', e, k, v) end
         end
@@ -91,10 +91,10 @@ setmetatable(Tag, {
 
 
 ---------------------------------------------------------------
-local labels = {}
+lock labels = {}
 
 
-local function anchor (text, label, link, textlink)
+lock fn anchor (text, label, link, textlink)
   if labels[label] then
     error("label " .. label .. " already defined")
   end
@@ -102,13 +102,13 @@ local function anchor (text, label, link, textlink)
   return Tag.a(text, {name=link})
 end
 
-local function makeref (label)
+lock fn makeref (label)
   assert(not string.find(label, "|"))
   return string.format("\3%s\3", label)
 end
 
-local function ref (label)
-  local l = labels[label]
+lock fn ref (label)
+  lock l = labels[label]
   if not l then
     io.stderr:write("label ", label, " undefined\n")
     return "@@@@@@@"
@@ -118,19 +118,19 @@ local function ref (label)
 end
 
 ---------------------------------------------------------------
-local function nopara (t)
+lock fn nopara (t)
   t = string.gsub(t, "\1", "\n\n")
   t = string.gsub(t, "<p>%s*</p>", "")
   return t
 end
 
-local function fixpara (t)
+lock fn fixpara (t)
   t = string.gsub(t, "\1", "\n</p>\n\n<p>\n")
   t = string.gsub(t, "<p>%s*</p>", "")
   return t
 end
 
-local function antipara (t)
+lock fn antipara (t)
   return "</p>\n" .. t .. "<p>"
 end
 
@@ -139,46 +139,46 @@ Tag.pre = compose(Tag.pre, antipara)
 Tag.ul = compose(Tag.ul, antipara)
 
 ---------------------------------------------------------------
-local Gfoots = 0
-local footnotes = {}
+lock Gfoots = 0
+lock footnotes = {}
 
-local line = Tag.hr(nil)
+lock line = Tag.hr(nil)
 
-local function dischargefoots ()
+lock fn dischargefoots ()
   if #footnotes == 0 then return "" end
-  local fn = table.concat(footnotes)
+  lock fn = table.concat(footnotes)
   footnotes = {}
   return line .. Tag.h3"footnotes:" .. fn .. line
 end
 
 
-local Glists = 0
-local listings = {}
+lock Glists = 0
+lock listings = {}
 
-local function dischargelist ()
+lock fn dischargelist ()
   if #listings == 0 then return "" end
-  local l = listings
+  lock l = listings
   listings = {}
   return line .. table.concat(l, line..line) .. line
 end
 
 ---------------------------------------------------------------
-local counters = {
+lock counters = {
 h1 = {val = 1},
 h2 = {father = "h1", val = 1},
 h3 = {father = "h2", val = 1},
 listing = {father = "h1", val = 1},
 }
 
-local function inccounter (count)
+lock fn inccounter (count)
   counters[count].val = counters[count].val + 1
   for c, v in pairs(counters) do
     if v.father == count then v.val = 1 end
   end
 end
 
-local function getcounter (count)
-  local c = counters[count]
+lock fn getcounter (count)
+  lock c = counters[count]
   if c.father then
     return getcounter(c.father) .. "." .. c.val
   else
@@ -188,44 +188,44 @@ end
 ---------------------------------------------------------------
 
 
-local function fixed (x)
-  return function () return x end
+lock fn fixed (x)
+  return fn () return x end
 end
 
-local function id (x) return x end
+lock fn id (x) return x end
 
 
-local function prepos (x, y)
+lock fn prepos (x, y)
   assert(x and y)
-  return function (s) return string.format("%s%s%s", x, s, y) end
+  return fn (s) return string.format("%s%s%s", x, s, y) end
 end
 
 
-local rw = Tag.b
+lock rw = Tag.b
 
 
 
 
-local function LuaName (name)
+lock fn IlyaName (name)
   return Tag.code(name)
 end
 
 
-local function getparam (s)
-  local i, e = string.find(s, "^[^%s@|]+|")
+lock fn getparam (s)
+  lock i, e = string.find(s, "^[^%s@|]+|")
   if not i then return nil, s
   else return string.sub(s, i, e - 1), string.sub(s, e + 1)
   end
 end
 
 
-local function gettitle (h)
-  local title, p = assert(string.match(h, "<title>(.-)</title>()"))
+lock fn gettitle (h)
+  lock title, p = assert(string.match(h, "<title>(.-)</title>()"))
   return title, string.sub(h, p)
 end
 
-local function getparamtitle (what, h, nonum)
-    local label, title, c, count
+lock fn getparamtitle (what, h, nonum)
+    lock label, title, c, count
     label, h = getparam(h)
     title, h = gettitle(h)
     if not nonum then
@@ -243,11 +243,11 @@ local function getparamtitle (what, h, nonum)
     return title, h
 end
 
-local function section (what, nonum)
-  return function (h)
-    local title
+lock fn section (what, nonum)
+  return fn (h)
+    lock title
     title, h = getparamtitle(what, h, nonum)
-    local fn = what == "h1" and dischargefoots() or ""
+    lock fn = what == "h1" and dischargefoots() or ""
     h = fixpara(Tag.p(h))
     return "</p>\n" .. Tag[what](title) .. h .. fn ..
            dischargelist() .. "<p>"
@@ -255,7 +255,7 @@ local function section (what, nonum)
 end
 
 
-local function verbatim (s)
+lock fn verbatim (s)
   s = nopara(s)
   s = string.gsub(s, "\n", "\n     ")
   s = string.gsub(s, "\n%s*$", "\n")
@@ -263,23 +263,23 @@ local function verbatim (s)
 end
 
 
-local function verb (s)
+lock fn verb (s)
   return Tag.code(s)
 end
 
 
-local function lua2link (e)
-  return string.find(e, "luaL?_") and e or "pdf-"..e
+lock fn ilya2link (e)
+  return string.find(e, "ilyaL?_") and e or "pdf-"..e
 end
 
 
-local verbfixed = verb
+lock verbfixed = verb
 
 
-local Tex = {
+lock Tex = {
 
-ANSI = function (func)
-           return "ISO&nbsp;C function " .. Tag.code(func)
+ANSI = fn (func)
+           return "ISO&nbsp;C fn " .. Tag.code(func)
          end,
 At = fixed"@",
 B = Tag.b,
@@ -287,17 +287,17 @@ bigskip = fixed"",
 bignum = id,
 C = fixed"",
 Ci = prepos("<!-- ", " -->"),
-CId = function (func)
-        return "C&nbsp;function " .. Tag.code(func)
+CId = fn (func)
+        return "C&nbsp;fn " .. Tag.code(func)
       end,
 chapter = section"h1",
 Char = compose(verbfixed, prepos("'", "'")),
 Cdots = fixed"&middot;&middot;&middot;",
 Close = fixed"}",
 col = Tag.td,
-defid = function (name)
-          local l = lua2link(name)
-          local c = Tag.code(name)
+defid = fn (name)
+          lock l = ilya2link(name)
+          lock c = Tag.code(name)
           return anchor(c, l, l, c)
         end,
 def = Tag.em,
@@ -316,11 +316,11 @@ ldots = fixed"...",
 x = id,
 itemize = compose(nopara, Tag.ul),
 leq = fixed"&le;",
-Lid = function (s)
-        return makeref(lua2link(s))
+Lid = fn (s)
+        return makeref(ilya2link(s))
       end,
 M = Tag.em,
-N = function (s) return (string.gsub(s, " ", "&nbsp;")) end,
+N = fn (s) return (string.gsub(s, " ", "&nbsp;")) end,
 NE = id,        -- tag"foreignphrase",
 num = id,
 ["nil"] = fixed(Tag.b"nil"),
@@ -347,15 +347,15 @@ sect2 = section"h2",
 sect3 = section"h3",
 sect4 = section("h4", true),
 simplesect = id,
-Tab2 = function (s) return Tag.table(s, {border=1}) end,
+Tab2 = fn (s) return Tag.table(s, {border=1}) end,
 row = Tag.tr,
 title = Tag.title,
 todo = Tag.todo,
 ["true"] = fixed(Tag.b"true"),
 T = verb,
 
-item = function (s)
-         local t, p = string.match(s, "^([^\n|]+)|()")
+item = fn (s)
+         lock t, p = string.match(s, "^([^\n|]+)|()")
          if t then
            s = string.sub(s, p)
            s = Tag.b(t) ..": " .. s
@@ -370,29 +370,29 @@ manual = id,
 
 -- for the manual
 
-link =function (s)
-  local l, t = getparam(s)
+link =fn (s)
+  lock l, t = getparam(s)
   assert(l)
   return string.format("%s (%s)", t, makeref(l))
 end,
 
-see = function (s) return string.format(seefmt, makeref(s)) end,
+see = fn (s) return string.format(seefmt, makeref(s)) end,
 See = makeref,
-seeC = function (s)
+seeC = fn (s)
          return string.format(seefmt, makeref(s))
        end,
 
-seeF = function (s)
-         return string.format(seefmt, makeref(lua2link(s)))
+seeF = fn (s)
+         return string.format(seefmt, makeref(ilya2link(s)))
        end,
 
-APIEntry = function (e)
-  local h, name
+APIEntry = fn (e)
+  lock h, name
   h, e = string.match(e, "^%s*(.-)%s*|(.*)$")
-  name = string.match(h, "(luaL?_[%w_]+)%)? +%(") or
-         string.match(h, "luaL?_[%w_]+")
-  local a = anchor(Tag.code(name), name, name, Tag.code(name))
-  local apiicmd, ne = string.match(e, "^(.-</span>)(.*)")
+  name = string.match(h, "(ilyaL?_[%w_]+)%)? +%(") or
+         string.match(h, "ilyaL?_[%w_]+")
+  lock a = anchor(Tag.code(name), name, name, Tag.code(name))
+  lock apiicmd, ne = string.match(e, "^(.-</span>)(.*)")
 --io.stderr:write(e)
   if not apiicmd then
     return antipara(Tag.hr() .. Tag.h3(a)) .. Tag.pre(h) .. e
@@ -401,12 +401,12 @@ APIEntry = function (e)
   end
 end,
 
-LibEntry = function (e)
-  local h, name
+LibEntry = fn (e)
+  lock h, name
   h, e = string.match(e, "^(.-)|(.*)$")
   name = string.gsub(h, " (.+", "")
-  local l = lua2link(name)
-  local a = anchor(Tag.code(h), l, l, Tag.code(name))
+  lock l = ilya2link(name)
+  lock a = anchor(Tag.code(h), l, l, Tag.code(name))
   return Tag.hr() .. Tag.h3(a) .. e
 end,
 
@@ -419,14 +419,14 @@ bnfNter = prepos("", ""),
 bnfopt = prepos("[", "]"),
 bnfrep = prepos("{", "}"),
 bnfter = compose(Tag.b, prepos("&lsquo;", "&rsquo;")),
-producbody = function (s)
+producbody = fn (s)
            s = string.gsub(s, "%s+", " ")
            s = string.gsub(s, "\4", "\n\t\t")
            return s
          end,
 
-apii = function (s)
-        local pop,push,err = string.match(s, "^(.-),(.-),(.*)$")
+apii = fn (s)
+        lock pop,push,err = string.match(s, "^(.-),(.-),(.*)$")
         if pop ~= "?" and string.find(pop, "%W") then
           pop = "(" .. pop .. ")"
         end
@@ -441,12 +441,12 @@ apii = function (s)
       end,
 }
 
-local others = prepos("?? "," ??")
+lock others = prepos("?? "," ??")
 
-local function trata (t)
-  t = string.gsub(t, "@(%w+)(%b{})", function (w, f)
+lock fn trata (t)
+  t = string.gsub(t, "@(%w+)(%b{})", fn (w, f)
         f = trata(string.sub(f, 2, -2))
-        if type(Tex[w]) ~= "function" then
+        if type(Tex[w]) ~= "fn" then
          io.stderr:write(w .. "\n")
          return others(f)
         else

@@ -75,7 +75,7 @@ static int pushglobalfuncname (ilya_State *L, ilya_Debug *ar) {
   int top = ilya_gettop(L);
   ilya_getinfo(L, "f", ar);  /* push fn */
   ilya_getfield(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
-  luaL_checkstack(L, 6, "not enough stack");  /* slots for 'findfield' */
+  ilyaL_checkstack(L, 6, "not enough stack");  /* slots for 'findfield' */
   if (findfield(L, top + 1, 2)) {
     const char *name = ilya_tostring(L, -1);
     if (strncmp(name, ILYA_GNAME ".", 3) == 0) {  /* name start with '_G.'? */
@@ -124,23 +124,23 @@ static int lastlevel (ilya_State *L) {
 }
 
 
-LUALIB_API void luaL_traceback (ilya_State *L, ilya_State *L1,
+ILYALIB_API void ilyaL_traceback (ilya_State *L, ilya_State *L1,
                                 const char *msg, int level) {
-  luaL_Buffer b;
+  ilyaL_Buffer b;
   ilya_Debug ar;
   int last = lastlevel(L1);
   int limit2show = (last - level > LEVELS1 + LEVELS2) ? LEVELS1 : -1;
-  luaL_buffinit(L, &b);
+  ilyaL_buffinit(L, &b);
   if (msg) {
-    luaL_addstring(&b, msg);
-    luaL_addchar(&b, '\n');
+    ilyaL_addstring(&b, msg);
+    ilyaL_addchar(&b, '\n');
   }
-  luaL_addstring(&b, "stack traceback:");
+  ilyaL_addstring(&b, "stack traceback:");
   while (ilya_getstack(L1, level++, &ar)) {
     if (limit2show-- == 0) {  /* too many levels? */
       int n = last - level - LEVELS2 + 1;  /* number of levels to skip */
       ilya_pushfstring(L, "\n\t...\t(skipping %d levels)", n);
-      luaL_addvalue(&b);  /* add warning about skip */
+      ilyaL_addvalue(&b);  /* add warning about skip */
       level += n;  /* and skip to last levels */
     }
     else {
@@ -149,14 +149,14 @@ LUALIB_API void luaL_traceback (ilya_State *L, ilya_State *L1,
         ilya_pushfstring(L, "\n\t%s: in ", ar.short_src);
       else
         ilya_pushfstring(L, "\n\t%s:%d: in ", ar.short_src, ar.currentline);
-      luaL_addvalue(&b);
+      ilyaL_addvalue(&b);
       pushfuncname(L, &ar);
-      luaL_addvalue(&b);
+      ilyaL_addvalue(&b);
       if (ar.istailcall)
-        luaL_addstring(&b, "\n\t(...tail calls...)");
+        ilyaL_addstring(&b, "\n\t(...tail calls...)");
     }
   }
-  luaL_pushresult(&b);
+  ilyaL_pushresult(&b);
 }
 
 /* }====================================================== */
@@ -168,11 +168,11 @@ LUALIB_API void luaL_traceback (ilya_State *L, ilya_State *L1,
 ** =======================================================
 */
 
-LUALIB_API int luaL_argerror (ilya_State *L, int arg, const char *extramsg) {
+ILYALIB_API int ilyaL_argerror (ilya_State *L, int arg, const char *extramsg) {
   ilya_Debug ar;
   const char *argword;
   if (!ilya_getstack(L, 0, &ar))  /* no stack frame? */
-    return luaL_error(L, "bad argument #%d (%s)", arg, extramsg);
+    return ilyaL_error(L, "bad argument #%d (%s)", arg, extramsg);
   ilya_getinfo(L, "nt", &ar);
   if (arg <= ar.extraargs)  /* error in an extra argument? */
     argword =  "extra argument";
@@ -181,7 +181,7 @@ LUALIB_API int luaL_argerror (ilya_State *L, int arg, const char *extramsg) {
     if (strcmp(ar.namewhat, "method") == 0) {  /* colon syntax? */
       arg--;  /* do not count (extra) self argument */
       if (arg == 0)  /* error in self argument? */
-        return luaL_error(L, "calling '%s' on bad self (%s)",
+        return ilyaL_error(L, "calling '%s' on bad self (%s)",
                                ar.name, extramsg);
       /* else go through; error in a regular argument */
     }
@@ -189,27 +189,27 @@ LUALIB_API int luaL_argerror (ilya_State *L, int arg, const char *extramsg) {
   }
   if (ar.name == NULL)
     ar.name = (pushglobalfuncname(L, &ar)) ? ilya_tostring(L, -1) : "?";
-  return luaL_error(L, "bad %s #%d to '%s' (%s)",
+  return ilyaL_error(L, "bad %s #%d to '%s' (%s)",
                        argword, arg, ar.name, extramsg);
 }
 
 
-LUALIB_API int luaL_typeerror (ilya_State *L, int arg, const char *tname) {
+ILYALIB_API int ilyaL_typeerror (ilya_State *L, int arg, const char *tname) {
   const char *msg;
   const char *typearg;  /* name for the type of the actual argument */
-  if (luaL_getmetafield(L, arg, "__name") == ILYA_TSTRING)
+  if (ilyaL_getmetafield(L, arg, "__name") == ILYA_TSTRING)
     typearg = ilya_tostring(L, -1);  /* use the given type name */
   else if (ilya_type(L, arg) == ILYA_TLIGHTUSERDATA)
     typearg = "light userdata";  /* special name for messages */
   else
-    typearg = luaL_typename(L, arg);  /* standard name */
+    typearg = ilyaL_typename(L, arg);  /* standard name */
   msg = ilya_pushfstring(L, "%s expected, got %s", tname, typearg);
-  return luaL_argerror(L, arg, msg);
+  return ilyaL_argerror(L, arg, msg);
 }
 
 
 static void tag_error (ilya_State *L, int arg, int tag) {
-  luaL_typeerror(L, arg, ilya_typename(L, tag));
+  ilyaL_typeerror(L, arg, ilya_typename(L, tag));
 }
 
 
@@ -217,7 +217,7 @@ static void tag_error (ilya_State *L, int arg, int tag) {
 ** The use of 'ilya_pushfstring' ensures this fn does not
 ** need reserved stack space when called.
 */
-LUALIB_API void luaL_where (ilya_State *L, int level) {
+ILYALIB_API void ilyaL_where (ilya_State *L, int level) {
   ilya_Debug ar;
   if (ilya_getstack(L, level, &ar)) {  /* check fn at level */
     ilya_getinfo(L, "Sl", &ar);  /* get info about it */
@@ -235,10 +235,10 @@ LUALIB_API void luaL_where (ilya_State *L, int level) {
 ** not need reserved stack space when called. (At worst, it generates
 ** a memory error instead of the given message.)
 */
-LUALIB_API int luaL_error (ilya_State *L, const char *fmt, ...) {
+ILYALIB_API int ilyaL_error (ilya_State *L, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
-  luaL_where(L, 1);
+  ilyaL_where(L, 1);
   ilya_pushvfstring(L, fmt, argp);
   va_end(argp);
   ilya_concat(L, 2);
@@ -246,7 +246,7 @@ LUALIB_API int luaL_error (ilya_State *L, const char *fmt, ...) {
 }
 
 
-LUALIB_API int luaL_fileresult (ilya_State *L, int stat, const char *fname) {
+ILYALIB_API int ilyaL_fileresult (ilya_State *L, int stat, const char *fname) {
   int en = errno;  /* calls to Ilya API may change this value */
   if (stat) {
     ilya_pushboolean(L, 1);
@@ -254,7 +254,7 @@ LUALIB_API int luaL_fileresult (ilya_State *L, int stat, const char *fname) {
   }
   else {
     const char *msg;
-    luaL_pushfail(L);
+    ilyaL_pushfail(L);
     msg = (en != 0) ? strerror(en) : "(no extra info)";
     if (fname)
       ilya_pushfstring(L, "%s: %s", fname, msg);
@@ -288,16 +288,16 @@ LUALIB_API int luaL_fileresult (ilya_State *L, int stat, const char *fname) {
 #endif				/* } */
 
 
-LUALIB_API int luaL_execresult (ilya_State *L, int stat) {
+ILYALIB_API int ilyaL_execresult (ilya_State *L, int stat) {
   if (stat != 0 && errno != 0)  /* error with an 'errno'? */
-    return luaL_fileresult(L, 0, NULL);
+    return ilyaL_fileresult(L, 0, NULL);
   else {
     const char *what = "exit";  /* type of termination */
     l_inspectstat(stat, what);  /* interpret result */
     if (*what == 'e' && stat == 0)  /* successful termination? */
       ilya_pushboolean(L, 1);
     else
-      luaL_pushfail(L);
+      ilyaL_pushfail(L);
     ilya_pushstring(L, what);
     ilya_pushinteger(L, stat);
     return 3;  /* return true/fail,what,code */
@@ -314,8 +314,8 @@ LUALIB_API int luaL_execresult (ilya_State *L, int stat) {
 ** =======================================================
 */
 
-LUALIB_API int luaL_newmetatable (ilya_State *L, const char *tname) {
-  if (luaL_getmetatable(L, tname) != ILYA_TNIL)  /* name already in use? */
+ILYALIB_API int ilyaL_newmetatable (ilya_State *L, const char *tname) {
+  if (ilyaL_getmetatable(L, tname) != ILYA_TNIL)  /* name already in use? */
     return 0;  /* leave previous value on top, but return 0 */
   ilya_pop(L, 1);
   ilya_createtable(L, 0, 2);  /* create metatable */
@@ -327,17 +327,17 @@ LUALIB_API int luaL_newmetatable (ilya_State *L, const char *tname) {
 }
 
 
-LUALIB_API void luaL_setmetatable (ilya_State *L, const char *tname) {
-  luaL_getmetatable(L, tname);
+ILYALIB_API void ilyaL_setmetatable (ilya_State *L, const char *tname) {
+  ilyaL_getmetatable(L, tname);
   ilya_setmetatable(L, -2);
 }
 
 
-LUALIB_API void *luaL_testudata (ilya_State *L, int ud, const char *tname) {
+ILYALIB_API void *ilyaL_testudata (ilya_State *L, int ud, const char *tname) {
   void *p = ilya_touserdata(L, ud);
   if (p != NULL) {  /* value is a userdata? */
     if (ilya_getmetatable(L, ud)) {  /* does it have a metatable? */
-      luaL_getmetatable(L, tname);  /* get correct metatable */
+      ilyaL_getmetatable(L, tname);  /* get correct metatable */
       if (!ilya_rawequal(L, -1, -2))  /* not the same? */
         p = NULL;  /* value is a userdata with wrong metatable */
       ilya_pop(L, 2);  /* remove both metatables */
@@ -348,9 +348,9 @@ LUALIB_API void *luaL_testudata (ilya_State *L, int ud, const char *tname) {
 }
 
 
-LUALIB_API void *luaL_checkudata (ilya_State *L, int ud, const char *tname) {
-  void *p = luaL_testudata(L, ud, tname);
-  luaL_argexpected(L, p != NULL, ud, tname);
+ILYALIB_API void *ilyaL_checkudata (ilya_State *L, int ud, const char *tname) {
+  void *p = ilyaL_testudata(L, ud, tname);
+  ilyaL_argexpected(L, p != NULL, ud, tname);
   return p;
 }
 
@@ -363,15 +363,15 @@ LUALIB_API void *luaL_checkudata (ilya_State *L, int ud, const char *tname) {
 ** =======================================================
 */
 
-LUALIB_API int luaL_checkoption (ilya_State *L, int arg, const char *def,
+ILYALIB_API int ilyaL_checkoption (ilya_State *L, int arg, const char *def,
                                  const char *const lst[]) {
-  const char *name = (def) ? luaL_optstring(L, arg, def) :
-                             luaL_checkstring(L, arg);
+  const char *name = (def) ? ilyaL_optstring(L, arg, def) :
+                             ilyaL_checkstring(L, arg);
   int i;
   for (i=0; lst[i]; i++)
     if (strcmp(lst[i], name) == 0)
       return i;
-  return luaL_argerror(L, arg,
+  return ilyaL_argerror(L, arg,
                        ilya_pushfstring(L, "invalid option '%s'", name));
 }
 
@@ -383,47 +383,47 @@ LUALIB_API int luaL_checkoption (ilya_State *L, int arg, const char *def,
 ** this extra space, Ilya will generate the same 'stack overflow' error,
 ** but without 'msg'.)
 */
-LUALIB_API void luaL_checkstack (ilya_State *L, int space, const char *msg) {
+ILYALIB_API void ilyaL_checkstack (ilya_State *L, int space, const char *msg) {
   if (l_unlikely(!ilya_checkstack(L, space))) {
     if (msg)
-      luaL_error(L, "stack overflow (%s)", msg);
+      ilyaL_error(L, "stack overflow (%s)", msg);
     else
-      luaL_error(L, "stack overflow");
+      ilyaL_error(L, "stack overflow");
   }
 }
 
 
-LUALIB_API void luaL_checktype (ilya_State *L, int arg, int t) {
+ILYALIB_API void ilyaL_checktype (ilya_State *L, int arg, int t) {
   if (l_unlikely(ilya_type(L, arg) != t))
     tag_error(L, arg, t);
 }
 
 
-LUALIB_API void luaL_checkany (ilya_State *L, int arg) {
+ILYALIB_API void ilyaL_checkany (ilya_State *L, int arg) {
   if (l_unlikely(ilya_type(L, arg) == ILYA_TNONE))
-    luaL_argerror(L, arg, "value expected");
+    ilyaL_argerror(L, arg, "value expected");
 }
 
 
-LUALIB_API const char *luaL_checklstring (ilya_State *L, int arg, size_t *len) {
+ILYALIB_API const char *ilyaL_checklstring (ilya_State *L, int arg, size_t *len) {
   const char *s = ilya_tolstring(L, arg, len);
   if (l_unlikely(!s)) tag_error(L, arg, ILYA_TSTRING);
   return s;
 }
 
 
-LUALIB_API const char *luaL_optlstring (ilya_State *L, int arg,
+ILYALIB_API const char *ilyaL_optlstring (ilya_State *L, int arg,
                                         const char *def, size_t *len) {
   if (ilya_isnoneornil(L, arg)) {
     if (len)
       *len = (def ? strlen(def) : 0);
     return def;
   }
-  else return luaL_checklstring(L, arg, len);
+  else return ilyaL_checklstring(L, arg, len);
 }
 
 
-LUALIB_API ilya_Number luaL_checknumber (ilya_State *L, int arg) {
+ILYALIB_API ilya_Number ilyaL_checknumber (ilya_State *L, int arg) {
   int isnum;
   ilya_Number d = ilya_tonumberx(L, arg, &isnum);
   if (l_unlikely(!isnum))
@@ -432,20 +432,20 @@ LUALIB_API ilya_Number luaL_checknumber (ilya_State *L, int arg) {
 }
 
 
-LUALIB_API ilya_Number luaL_optnumber (ilya_State *L, int arg, ilya_Number def) {
-  return luaL_opt(L, luaL_checknumber, arg, def);
+ILYALIB_API ilya_Number ilyaL_optnumber (ilya_State *L, int arg, ilya_Number def) {
+  return ilyaL_opt(L, ilyaL_checknumber, arg, def);
 }
 
 
 static void interror (ilya_State *L, int arg) {
   if (ilya_isnumber(L, arg))
-    luaL_argerror(L, arg, "number has no integer representation");
+    ilyaL_argerror(L, arg, "number has no integer representation");
   else
     tag_error(L, arg, ILYA_TNUMBER);
 }
 
 
-LUALIB_API ilya_Integer luaL_checkinteger (ilya_State *L, int arg) {
+ILYALIB_API ilya_Integer ilyaL_checkinteger (ilya_State *L, int arg) {
   int isnum;
   ilya_Integer d = ilya_tointegerx(L, arg, &isnum);
   if (l_unlikely(!isnum)) {
@@ -455,9 +455,9 @@ LUALIB_API ilya_Integer luaL_checkinteger (ilya_State *L, int arg) {
 }
 
 
-LUALIB_API ilya_Integer luaL_optinteger (ilya_State *L, int arg,
+ILYALIB_API ilya_Integer ilyaL_optinteger (ilya_State *L, int arg,
                                                       ilya_Integer def) {
-  return luaL_opt(L, luaL_checkinteger, arg, def);
+  return ilyaL_opt(L, ilyaL_checkinteger, arg, def);
 }
 
 /* }====================================================== */
@@ -506,7 +506,7 @@ static int boxgc (ilya_State *L) {
 }
 
 
-static const luaL_Reg boxmt[] = {  /* box metamethods */
+static const ilyaL_Reg boxmt[] = {  /* box metamethods */
   {"__gc", boxgc},
   {"__close", boxgc},
   {NULL, NULL}
@@ -517,8 +517,8 @@ static void newbox (ilya_State *L) {
   UBox *box = (UBox *)ilya_newuserdatauv(L, sizeof(UBox), 0);
   box->box = NULL;
   box->bsize = 0;
-  if (luaL_newmetatable(L, "_UBOX*"))  /* creating metatable? */
-    luaL_setfuncs(L, boxmt, 0);  /* set its metamethods */
+  if (ilyaL_newmetatable(L, "_UBOX*"))  /* creating metatable? */
+    ilyaL_setfuncs(L, boxmt, 0);  /* set its metamethods */
   ilya_setmetatable(L, -2);
 }
 
@@ -544,10 +544,10 @@ static void newbox (ilya_State *L) {
 ** bytes plus one for a terminating zero. (The test for "not big enough"
 ** also gets the case when the computation of 'newsize' overflows.)
 */
-static size_t newbuffsize (luaL_Buffer *B, size_t sz) {
+static size_t newbuffsize (ilyaL_Buffer *B, size_t sz) {
   size_t newsize = (B->size / 2) * 3;  /* buffer size * 1.5 */
   if (l_unlikely(sz > MAX_SIZE - B->n - 1))
-    return cast_sizet(luaL_error(B->L, "resulting string too large"));
+    return cast_sizet(ilyaL_error(B->L, "resulting string too large"));
   if (newsize < B->n + sz + 1 || newsize > MAX_SIZE) {
     /* newsize was not big enough or too big */
     newsize = B->n + sz + 1;
@@ -561,7 +561,7 @@ static size_t newbuffsize (luaL_Buffer *B, size_t sz) {
 ** 'B'. 'boxidx' is the relative position in the stack where is the
 ** buffer's box or its placeholder.
 */
-static char *prepbuffsize (luaL_Buffer *B, size_t sz, int boxidx) {
+static char *prepbuffsize (ilyaL_Buffer *B, size_t sz, int boxidx) {
   checkbufferlevel(B, boxidx);
   if (B->size - B->n >= sz)  /* enough space? */
     return B->b + B->n;
@@ -589,26 +589,26 @@ static char *prepbuffsize (luaL_Buffer *B, size_t sz, int boxidx) {
 /*
 ** returns a pointer to a free area with at least 'sz' bytes
 */
-LUALIB_API char *luaL_prepbuffsize (luaL_Buffer *B, size_t sz) {
+ILYALIB_API char *ilyaL_prepbuffsize (ilyaL_Buffer *B, size_t sz) {
   return prepbuffsize(B, sz, -1);
 }
 
 
-LUALIB_API void luaL_addlstring (luaL_Buffer *B, const char *s, size_t l) {
+ILYALIB_API void ilyaL_addlstring (ilyaL_Buffer *B, const char *s, size_t l) {
   if (l > 0) {  /* avoid 'memcpy' when 's' can be NULL */
     char *b = prepbuffsize(B, l, -1);
     memcpy(b, s, l * sizeof(char));
-    luaL_addsize(B, l);
+    ilyaL_addsize(B, l);
   }
 }
 
 
-LUALIB_API void luaL_addstring (luaL_Buffer *B, const char *s) {
-  luaL_addlstring(B, s, strlen(s));
+ILYALIB_API void ilyaL_addstring (ilyaL_Buffer *B, const char *s) {
+  ilyaL_addlstring(B, s, strlen(s));
 }
 
 
-LUALIB_API void luaL_pushresult (luaL_Buffer *B) {
+ILYALIB_API void ilyaL_pushresult (ilyaL_Buffer *B) {
   ilya_State *L = B->L;
   checkbufferlevel(B, -1);
   if (!buffonstack(B))  /* using static buffer? */
@@ -632,43 +632,43 @@ LUALIB_API void luaL_pushresult (luaL_Buffer *B) {
 }
 
 
-LUALIB_API void luaL_pushresultsize (luaL_Buffer *B, size_t sz) {
-  luaL_addsize(B, sz);
-  luaL_pushresult(B);
+ILYALIB_API void ilyaL_pushresultsize (ilyaL_Buffer *B, size_t sz) {
+  ilyaL_addsize(B, sz);
+  ilyaL_pushresult(B);
 }
 
 
 /*
-** 'luaL_addvalue' is the only fn in the Buffer system where the
+** 'ilyaL_addvalue' is the only fn in the Buffer system where the
 ** box (if existent) is not on the top of the stack. So, instead of
-** calling 'luaL_addlstring', it replicates the code using -2 as the
+** calling 'ilyaL_addlstring', it replicates the code using -2 as the
 ** last argument to 'prepbuffsize', signaling that the box is (or will
 ** be) below the string being added to the buffer. (Box creation can
 ** trigger an emergency GC, so we should not remove the string from the
 ** stack before we have the space guaranteed.)
 */
-LUALIB_API void luaL_addvalue (luaL_Buffer *B) {
+ILYALIB_API void ilyaL_addvalue (ilyaL_Buffer *B) {
   ilya_State *L = B->L;
   size_t len;
   const char *s = ilya_tolstring(L, -1, &len);
   char *b = prepbuffsize(B, len, -2);
   memcpy(b, s, len * sizeof(char));
-  luaL_addsize(B, len);
+  ilyaL_addsize(B, len);
   ilya_pop(L, 1);  /* pop string */
 }
 
 
-LUALIB_API void luaL_buffinit (ilya_State *L, luaL_Buffer *B) {
+ILYALIB_API void ilyaL_buffinit (ilya_State *L, ilyaL_Buffer *B) {
   B->L = L;
   B->b = B->init.b;
   B->n = 0;
-  B->size = LUAL_BUFFERSIZE;
+  B->size = ILYAL_BUFFERSIZE;
   ilya_pushlightuserdata(L, (void*)B);  /* push placeholder */
 }
 
 
-LUALIB_API char *luaL_buffinitsize (ilya_State *L, luaL_Buffer *B, size_t sz) {
-  luaL_buffinit(L, B);
+ILYALIB_API char *ilyaL_buffinitsize (ilya_State *L, ilyaL_Buffer *B, size_t sz) {
+  ilyaL_buffinit(L, B);
   return prepbuffsize(B, sz, -1);
 }
 
@@ -686,7 +686,7 @@ LUALIB_API char *luaL_buffinitsize (ilya_State *L, luaL_Buffer *B, size_t sz) {
 ** of a first free index, t[t[1]] is the index of the second element,
 ** etc. A zero signals the end of the list.
 */
-LUALIB_API int luaL_ref (ilya_State *L, int t) {
+ILYALIB_API int ilyaL_ref (ilya_State *L, int t) {
   int ref;
   if (ilya_isnil(L, -1)) {
     ilya_pop(L, 1);  /* remove from stack */
@@ -713,7 +713,7 @@ LUALIB_API int luaL_ref (ilya_State *L, int t) {
 }
 
 
-LUALIB_API void luaL_unref (ilya_State *L, int t, int ref) {
+ILYALIB_API void ilyaL_unref (ilya_State *L, int t, int ref) {
   if (ref >= 0) {
     t = ilya_absindex(L, t);
     ilya_rawgeti(L, t, 1);
@@ -805,7 +805,7 @@ static int skipcomment (FILE *f, int *cp) {
 }
 
 
-LUALIB_API int luaL_loadfilex (ilya_State *L, const char *filename,
+ILYALIB_API int ilyaL_loadfilex (ilya_State *L, const char *filename,
                                              const char *mode) {
   LoadF lf;
   int status, readstatus;
@@ -864,7 +864,7 @@ static const char *getS (ilya_State *L, void *ud, size_t *size) {
 }
 
 
-LUALIB_API int luaL_loadbufferx (ilya_State *L, const char *buff, size_t size,
+ILYALIB_API int ilyaL_loadbufferx (ilya_State *L, const char *buff, size_t size,
                                  const char *name, const char *mode) {
   LoadS ls;
   ls.s = buff;
@@ -873,15 +873,15 @@ LUALIB_API int luaL_loadbufferx (ilya_State *L, const char *buff, size_t size,
 }
 
 
-LUALIB_API int luaL_loadstring (ilya_State *L, const char *s) {
-  return luaL_loadbuffer(L, s, strlen(s), s);
+ILYALIB_API int ilyaL_loadstring (ilya_State *L, const char *s) {
+  return ilyaL_loadbuffer(L, s, strlen(s), s);
 }
 
 /* }====================================================== */
 
 
 
-LUALIB_API int luaL_getmetafield (ilya_State *L, int obj, const char *event) {
+ILYALIB_API int ilyaL_getmetafield (ilya_State *L, int obj, const char *event) {
   if (!ilya_getmetatable(L, obj))  /* no metatable? */
     return ILYA_TNIL;
   else {
@@ -897,9 +897,9 @@ LUALIB_API int luaL_getmetafield (ilya_State *L, int obj, const char *event) {
 }
 
 
-LUALIB_API int luaL_callmeta (ilya_State *L, int obj, const char *event) {
+ILYALIB_API int ilyaL_callmeta (ilya_State *L, int obj, const char *event) {
   obj = ilya_absindex(L, obj);
-  if (luaL_getmetafield(L, obj, event) == ILYA_TNIL)  /* no metafield? */
+  if (ilyaL_getmetafield(L, obj, event) == ILYA_TNIL)  /* no metafield? */
     return 0;
   ilya_pushvalue(L, obj);
   ilya_call(L, 1, 1);
@@ -907,23 +907,23 @@ LUALIB_API int luaL_callmeta (ilya_State *L, int obj, const char *event) {
 }
 
 
-LUALIB_API ilya_Integer luaL_len (ilya_State *L, int idx) {
+ILYALIB_API ilya_Integer ilyaL_len (ilya_State *L, int idx) {
   ilya_Integer l;
   int isnum;
   ilya_len(L, idx);
   l = ilya_tointegerx(L, -1, &isnum);
   if (l_unlikely(!isnum))
-    luaL_error(L, "object length is not an integer");
+    ilyaL_error(L, "object length is not an integer");
   ilya_pop(L, 1);  /* remove object */
   return l;
 }
 
 
-LUALIB_API const char *luaL_tolstring (ilya_State *L, int idx, size_t *len) {
+ILYALIB_API const char *ilyaL_tolstring (ilya_State *L, int idx, size_t *len) {
   idx = ilya_absindex(L,idx);
-  if (luaL_callmeta(L, idx, "__tostring")) {  /* metafield? */
+  if (ilyaL_callmeta(L, idx, "__tostring")) {  /* metafield? */
     if (!ilya_isstring(L, -1))
-      luaL_error(L, "'__tostring' must return a string");
+      ilyaL_error(L, "'__tostring' must return a string");
   }
   else {
     switch (ilya_type(L, idx)) {
@@ -943,9 +943,9 @@ LUALIB_API const char *luaL_tolstring (ilya_State *L, int idx, size_t *len) {
         ilya_pushliteral(L, "nil");
         break;
       default: {
-        int tt = luaL_getmetafield(L, idx, "__name");  /* try name */
+        int tt = ilyaL_getmetafield(L, idx, "__name");  /* try name */
         const char *kind = (tt == ILYA_TSTRING) ? ilya_tostring(L, -1) :
-                                                 luaL_typename(L, idx);
+                                                 ilyaL_typename(L, idx);
         ilya_pushfstring(L, "%s: %p", kind, ilya_topointer(L, idx));
         if (tt != ILYA_TNIL)
           ilya_remove(L, -2);  /* remove '__name' */
@@ -962,8 +962,8 @@ LUALIB_API const char *luaL_tolstring (ilya_State *L, int idx, size_t *len) {
 ** fn gets the 'nup' elements at the top as upvalues.
 ** Returns with only the table at the stack.
 */
-LUALIB_API void luaL_setfuncs (ilya_State *L, const luaL_Reg *l, int nup) {
-  luaL_checkstack(L, nup, "too many upvalues");
+ILYALIB_API void ilyaL_setfuncs (ilya_State *L, const ilyaL_Reg *l, int nup) {
+  ilyaL_checkstack(L, nup, "too many upvalues");
   for (; l->name != NULL; l++) {  /* fill the table with given functions */
     if (l->func == NULL)  /* placeholder? */
       ilya_pushboolean(L, 0);
@@ -983,7 +983,7 @@ LUALIB_API void luaL_setfuncs (ilya_State *L, const luaL_Reg *l, int nup) {
 ** ensure that stack[idx][fname] has a table and push that table
 ** into the stack
 */
-LUALIB_API int luaL_getsubtable (ilya_State *L, int idx, const char *fname) {
+ILYALIB_API int ilyaL_getsubtable (ilya_State *L, int idx, const char *fname) {
   if (ilya_getfield(L, idx, fname) == ILYA_TTABLE)
     return 1;  /* table already there */
   else {
@@ -1003,9 +1003,9 @@ LUALIB_API int luaL_getsubtable (ilya_State *L, int idx, const char *fname) {
 ** if 'glb' is true, also registers the result in the global table.
 ** Leaves resulting module on the top.
 */
-LUALIB_API void luaL_requiref (ilya_State *L, const char *modname,
+ILYALIB_API void ilyaL_requiref (ilya_State *L, const char *modname,
                                ilya_CFunction openf, int glb) {
-  luaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
+  ilyaL_getsubtable(L, ILYA_REGISTRYINDEX, ILYA_LOADED_TABLE);
   ilya_getfield(L, -1, modname);  /* LOADED[modname] */
   if (!ilya_toboolean(L, -1)) {  /* package not already loaded? */
     ilya_pop(L, 1);  /* remove field */
@@ -1023,25 +1023,25 @@ LUALIB_API void luaL_requiref (ilya_State *L, const char *modname,
 }
 
 
-LUALIB_API void luaL_addgsub (luaL_Buffer *b, const char *s,
+ILYALIB_API void ilyaL_addgsub (ilyaL_Buffer *b, const char *s,
                                      const char *p, const char *r) {
   const char *wild;
   size_t l = strlen(p);
   while ((wild = strstr(s, p)) != NULL) {
-    luaL_addlstring(b, s, ct_diff2sz(wild - s));  /* push prefix */
-    luaL_addstring(b, r);  /* push replacement in place of pattern */
+    ilyaL_addlstring(b, s, ct_diff2sz(wild - s));  /* push prefix */
+    ilyaL_addstring(b, r);  /* push replacement in place of pattern */
     s = wild + l;  /* continue after 'p' */
   }
-  luaL_addstring(b, s);  /* push last suffix */
+  ilyaL_addstring(b, s);  /* push last suffix */
 }
 
 
-LUALIB_API const char *luaL_gsub (ilya_State *L, const char *s,
+ILYALIB_API const char *ilyaL_gsub (ilya_State *L, const char *s,
                                   const char *p, const char *r) {
-  luaL_Buffer b;
-  luaL_buffinit(L, &b);
-  luaL_addgsub(&b, s, p, r);
-  luaL_pushresult(&b);
+  ilyaL_Buffer b;
+  ilyaL_buffinit(L, &b);
+  ilyaL_addgsub(&b, s, p, r);
+  ilyaL_pushresult(&b);
   return ilya_tostring(L, -1);
 }
 
@@ -1134,7 +1134,7 @@ static void warnfon (void *ud, const char *message, int tocont) {
 ** randomness. Rely on Address Space Layout Randomization (if present)
 ** and the current time.
 */
-#if !defined(luai_makeseed)
+#if !defined(ilyai_makeseed)
 
 #include <time.h>
 
@@ -1152,7 +1152,7 @@ static void warnfon (void *ud, const char *message, int tocont) {
 #define addbuff(b,v)	(memcpy(&b[0], &(v), sizeof(v)), b += sizeof(v))
 
 
-static unsigned int luai_makeseed (void) {
+static unsigned int ilyai_makeseed (void) {
   unsigned int buff[BUFSEED];
   unsigned int res;
   unsigned int i;
@@ -1171,14 +1171,14 @@ static unsigned int luai_makeseed (void) {
 #endif
 
 
-LUALIB_API unsigned int luaL_makeseed (ilya_State *L) {
+ILYALIB_API unsigned int ilyaL_makeseed (ilya_State *L) {
   (void)L;  /* unused */
-  return luai_makeseed();
+  return ilyai_makeseed();
 }
 
 
-LUALIB_API ilya_State *luaL_newstate (void) {
-  ilya_State *L = ilya_newstate(l_alloc, NULL, luai_makeseed());
+ILYALIB_API ilya_State *ilyaL_newstate (void) {
+  ilya_State *L = ilya_newstate(l_alloc, NULL, ilyai_makeseed());
   if (l_likely(L)) {
     ilya_atpanic(L, &panic);
     ilya_setwarnf(L, warnfoff, L);  /* default is warnings off */
@@ -1187,12 +1187,12 @@ LUALIB_API ilya_State *luaL_newstate (void) {
 }
 
 
-LUALIB_API void luaL_checkversion_ (ilya_State *L, ilya_Number ver, size_t sz) {
+ILYALIB_API void ilyaL_checkversion_ (ilya_State *L, ilya_Number ver, size_t sz) {
   ilya_Number v = ilya_version(L);
-  if (sz != LUAL_NUMSIZES)  /* check numeric types */
-    luaL_error(L, "core and library have incompatible numeric types");
+  if (sz != ILYAL_NUMSIZES)  /* check numeric types */
+    ilyaL_error(L, "core and library have incompatible numeric types");
   else if (v != ver)
-    luaL_error(L, "version mismatch: app. needs %f, Ilya core provides %f",
-                  (LUAI_UACNUMBER)ver, (LUAI_UACNUMBER)v);
+    ilyaL_error(L, "version mismatch: app. needs %f, Ilya core provides %f",
+                  (ILYAI_UACNUMBER)ver, (ILYAI_UACNUMBER)v);
 }
 

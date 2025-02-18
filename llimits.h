@@ -21,10 +21,10 @@
 ** computations.)  Usually, 'ptrdiff_t' should work, but we use 'long'
 ** for 16-bit machines.
 */
-#if defined(LUAI_MEM)		/* { external definitions? */
-typedef LUAI_MEM l_mem;
-typedef LUAI_UMEM lu_mem;
-#elif LUAI_IS32INT	/* }{ */
+#if defined(ILYAI_MEM)		/* { external definitions? */
+typedef ILYAI_MEM l_mem;
+typedef ILYAI_UMEM lu_mem;
+#elif ILYAI_IS32INT	/* }{ */
 typedef ptrdiff_t l_mem;
 typedef size_t lu_mem;
 #else  /* 16-bit ints */	/* }{ */
@@ -91,14 +91,14 @@ typedef signed char ls_byte;
 
 
 /* types of 'usual argument conversions' for ilya_Number and ilya_Integer */
-typedef LUAI_UACNUMBER l_uacNumber;
-typedef LUAI_UACINT l_uacInt;
+typedef ILYAI_UACNUMBER l_uacNumber;
+typedef ILYAI_UACINT l_uacInt;
 
 
 /*
 ** Internal assertions for in-house debugging
 */
-#if defined LUAI_ASSERT
+#if defined ILYAI_ASSERT
 #undef NDEBUG
 #include <assert.h>
 #define ilya_assert(c)           assert(c)
@@ -218,7 +218,7 @@ typedef void (*voidf)(void);
 /*
 ** An unsigned with (at least) 4 bytes
 */
-#if LUAI_IS32INT
+#if ILYAI_IS32INT
 typedef unsigned int l_uint32;
 #else
 typedef unsigned long l_uint32;
@@ -226,17 +226,17 @@ typedef unsigned long l_uint32;
 
 
 /*
-** The luai_num* macros define the primitive operations over numbers.
+** The ilyai_num* macros define the primitive operations over numbers.
 */
 
 /* floor division (defined as 'floor(a/b)') */
-#if !defined(luai_numidiv)
-#define luai_numidiv(L,a,b)     ((void)L, l_floor(luai_numdiv(L,a,b)))
+#if !defined(ilyai_numidiv)
+#define ilyai_numidiv(L,a,b)     ((void)L, l_floor(ilyai_numdiv(L,a,b)))
 #endif
 
 /* float division */
-#if !defined(luai_numdiv)
-#define luai_numdiv(L,a,b)      ((a)/(b))
+#if !defined(ilyai_numdiv)
+#define ilyai_numdiv(L,a,b)      ((a)/(b))
 #endif
 
 /*
@@ -250,30 +250,30 @@ typedef unsigned long l_uint32;
 ** 'b' with different signs, or 'm' and 'b' with different signs
 ** (as the result 'm' of 'fmod' has the same sign of 'a').
 */
-#if !defined(luai_nummod)
-#define luai_nummod(L,a,b,m)  \
+#if !defined(ilyai_nummod)
+#define ilyai_nummod(L,a,b,m)  \
   { (void)L; (m) = l_mathop(fmod)(a,b); \
     if (((m) > 0) ? (b) < 0 : ((m) < 0 && (b) > 0)) (m) += (b); }
 #endif
 
 /* exponentiation */
-#if !defined(luai_numpow)
-#define luai_numpow(L,a,b)  \
+#if !defined(ilyai_numpow)
+#define ilyai_numpow(L,a,b)  \
   ((void)L, (b == 2) ? (a)*(a) : l_mathop(pow)(a,b))
 #endif
 
 /* the others are quite standard operations */
-#if !defined(luai_numadd)
-#define luai_numadd(L,a,b)      ((a)+(b))
-#define luai_numsub(L,a,b)      ((a)-(b))
-#define luai_nummul(L,a,b)      ((a)*(b))
-#define luai_numunm(L,a)        (-(a))
-#define luai_numeq(a,b)         ((a)==(b))
-#define luai_numlt(a,b)         ((a)<(b))
-#define luai_numle(a,b)         ((a)<=(b))
-#define luai_numgt(a,b)         ((a)>(b))
-#define luai_numge(a,b)         ((a)>=(b))
-#define luai_numisnan(a)        (!luai_numeq((a), (a)))
+#if !defined(ilyai_numadd)
+#define ilyai_numadd(L,a,b)      ((a)+(b))
+#define ilyai_numsub(L,a,b)      ((a)-(b))
+#define ilyai_nummul(L,a,b)      ((a)*(b))
+#define ilyai_numunm(L,a)        (-(a))
+#define ilyai_numeq(a,b)         ((a)==(b))
+#define ilyai_numlt(a,b)         ((a)<(b))
+#define ilyai_numle(a,b)         ((a)<=(b))
+#define ilyai_numgt(a,b)         ((a)>(b))
+#define ilyai_numge(a,b)         ((a)>=(b))
+#define ilyai_numisnan(a)        (!ilyai_numeq((a), (a)))
 #endif
 
 

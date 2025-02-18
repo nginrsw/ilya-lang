@@ -24,16 +24,16 @@
 
 
 
-CClosure *luaF_newCclosure (ilya_State *L, int nupvals) {
-  GCObject *o = luaC_newobj(L, ILYA_VCCL, sizeCclosure(nupvals));
+CClosure *ilyaF_newCclosure (ilya_State *L, int nupvals) {
+  GCObject *o = ilyaC_newobj(L, ILYA_VCCL, sizeCclosure(nupvals));
   CClosure *c = gco2ccl(o);
   c->nupvalues = cast_byte(nupvals);
   return c;
 }
 
 
-LClosure *luaF_newLclosure (ilya_State *L, int nupvals) {
-  GCObject *o = luaC_newobj(L, ILYA_VLCL, sizeLclosure(nupvals));
+LClosure *ilyaF_newLclosure (ilya_State *L, int nupvals) {
+  GCObject *o = ilyaC_newobj(L, ILYA_VLCL, sizeLclosure(nupvals));
   LClosure *c = gco2lcl(o);
   c->p = NULL;
   c->nupvalues = cast_byte(nupvals);
@@ -45,15 +45,15 @@ LClosure *luaF_newLclosure (ilya_State *L, int nupvals) {
 /*
 ** fill a closure with new closed upvalues
 */
-void luaF_initupvals (ilya_State *L, LClosure *cl) {
+void ilyaF_initupvals (ilya_State *L, LClosure *cl) {
   int i;
   for (i = 0; i < cl->nupvalues; i++) {
-    GCObject *o = luaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
+    GCObject *o = ilyaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
     UpVal *uv = gco2upv(o);
     uv->v.p = &uv->u.value;  /* make it closed */
     setnilvalue(uv->v.p);
     cl->upvals[i] = uv;
-    luaC_objbarrier(L, cl, uv);
+    ilyaC_objbarrier(L, cl, uv);
   }
 }
 
@@ -63,7 +63,7 @@ void luaF_initupvals (ilya_State *L, LClosure *cl) {
 ** open upvalues of 'L' after entry 'prev'.
 **/
 static UpVal *newupval (ilya_State *L, StkId level, UpVal **prev) {
-  GCObject *o = luaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
+  GCObject *o = ilyaC_newobj(L, ILYA_VUPVAL, sizeof(UpVal));
   UpVal *uv = gco2upv(o);
   UpVal *next = *prev;
   uv->v.p = s2v(level);  /* current value lives in the stack */
@@ -84,7 +84,7 @@ static UpVal *newupval (ilya_State *L, StkId level, UpVal **prev) {
 ** Find and reuse, or create if it does not exist, an upvalue
 ** at the given level.
 */
-UpVal *luaF_findupval (ilya_State *L, StkId level) {
+UpVal *ilyaF_findupval (ilya_State *L, StkId level) {
   UpVal **pp = &L->openupval;
   UpVal *p;
   ilya_assert(isintwups(L) || L->openupval == NULL);
@@ -106,15 +106,15 @@ UpVal *luaF_findupval (ilya_State *L, StkId level) {
 */
 static void callclosemethod (ilya_State *L, TValue *obj, TValue *err, int yy) {
   StkId top = L->top.p;
-  const TValue *tm = luaT_gettmbyobj(L, obj, TM_CLOSE);
+  const TValue *tm = ilyaT_gettmbyobj(L, obj, TM_CLOSE);
   setobj2s(L, top, tm);  /* will call metamethod... */
   setobj2s(L, top + 1, obj);  /* with 'self' as the 1st argument */
   setobj2s(L, top + 2, err);  /* and error msg. as 2nd argument */
   L->top.p = top + 3;  /* add fn and arguments */
   if (yy)
-    luaD_call(L, top, 0);
+    ilyaD_call(L, top, 0);
   else
-    luaD_callnoyield(L, top, 0);
+    ilyaD_callnoyield(L, top, 0);
 }
 
 
@@ -123,12 +123,12 @@ static void callclosemethod (ilya_State *L, TValue *obj, TValue *err, int yy) {
 ** an error if not.
 */
 static void checkclosemth (ilya_State *L, StkId level) {
-  const TValue *tm = luaT_gettmbyobj(L, s2v(level), TM_CLOSE);
+  const TValue *tm = ilyaT_gettmbyobj(L, s2v(level), TM_CLOSE);
   if (ttisnil(tm)) {  /* no metamethod? */
     int idx = cast_int(level - L->ci->func.p);  /* variable index */
-    const char *vname = luaG_findlocal(L, L->ci, idx, NULL);
+    const char *vname = ilyaG_findlocal(L, L->ci, idx, NULL);
     if (vname == NULL) vname = "?";
-    luaG_runerror(L, "variable '%s' got a non-closable value", vname);
+    ilyaG_runerror(L, "variable '%s' got a non-closable value", vname);
   }
 }
 
@@ -145,9 +145,9 @@ static void prepcallclosemth (ilya_State *L, StkId level, int status, int yy) {
   TValue *errobj;
   if (status == CLOSEKTOP)
     errobj = &G(L)->nilvalue;  /* error object is nil */
-  else {  /* 'luaD_seterrorobj' will set top to level + 2 */
+  else {  /* 'ilyaD_seterrorobj' will set top to level + 2 */
     errobj = s2v(level + 1);  /* error object goes after 'uv' */
-    luaD_seterrorobj(L, status, level + 1);  /* set error object */
+    ilyaD_seterrorobj(L, status, level + 1);  /* set error object */
   }
   callclosemethod(L, uv, errobj, yy);
 }
@@ -165,7 +165,7 @@ static void prepcallclosemth (ilya_State *L, StkId level, int status, int yy) {
 /*
 ** Insert a variable in the list of to-be-closed variables.
 */
-void luaF_newtbcupval (ilya_State *L, StkId level) {
+void ilyaF_newtbcupval (ilya_State *L, StkId level) {
   ilya_assert(level > L->tbclist.p);
   if (l_isfalse(s2v(level)))
     return;  /* false doesn't need to be closed */
@@ -179,7 +179,7 @@ void luaF_newtbcupval (ilya_State *L, StkId level) {
 }
 
 
-void luaF_unlinkupval (UpVal *uv) {
+void ilyaF_unlinkupval (UpVal *uv) {
   ilya_assert(upisopen(uv));
   *uv->u.open.previous = uv->u.open.next;
   if (uv->u.open.next)
@@ -190,18 +190,18 @@ void luaF_unlinkupval (UpVal *uv) {
 /*
 ** Close all upvalues up to the given stack level.
 */
-void luaF_closeupval (ilya_State *L, StkId level) {
+void ilyaF_closeupval (ilya_State *L, StkId level) {
   UpVal *uv;
   StkId upl;  /* stack index pointed by 'uv' */
   while ((uv = L->openupval) != NULL && (upl = uplevel(uv)) >= level) {
     TValue *slot = &uv->u.value;  /* new position for value */
     ilya_assert(uplevel(uv) < L->top.p);
-    luaF_unlinkupval(uv);  /* remove upvalue from 'openupval' list */
+    ilyaF_unlinkupval(uv);  /* remove upvalue from 'openupval' list */
     setobj(L, slot, uv->v.p);  /* move value to upvalue slot */
     uv->v.p = slot;  /* now current value lives here */
     if (!iswhite(uv)) {  /* neither white nor dead? */
       nw2black(uv);  /* closed upvalues cannot be gray */
-      luaC_barrier(L, uv, slot);
+      ilyaC_barrier(L, uv, slot);
     }
   }
 }
@@ -224,9 +224,9 @@ static void poptbclist (ilya_State *L) {
 ** Close all upvalues and to-be-closed variables up to the given stack
 ** level. Return restored 'level'.
 */
-StkId luaF_close (ilya_State *L, StkId level, int status, int yy) {
+StkId ilyaF_close (ilya_State *L, StkId level, int status, int yy) {
   ptrdiff_t levelrel = savestack(L, level);
-  luaF_closeupval(L, level);  /* first, close the upvalues */
+  ilyaF_closeupval(L, level);  /* first, close the upvalues */
   while (L->tbclist.p >= level) {  /* traverse tbc's down to that level */
     StkId tbc = L->tbclist.p;  /* get variable index */
     poptbclist(L);  /* remove it from list */
@@ -237,8 +237,8 @@ StkId luaF_close (ilya_State *L, StkId level, int status, int yy) {
 }
 
 
-Proto *luaF_newproto (ilya_State *L) {
-  GCObject *o = luaC_newobj(L, ILYA_VPROTO, sizeof(Proto));
+Proto *ilyaF_newproto (ilya_State *L) {
+  GCObject *o = ilyaC_newobj(L, ILYA_VPROTO, sizeof(Proto));
   Proto *f = gco2p(o);
   f->k = NULL;
   f->sizek = 0;
@@ -264,7 +264,7 @@ Proto *luaF_newproto (ilya_State *L) {
 }
 
 
-lu_mem luaF_protosize (Proto *p) {
+lu_mem ilyaF_protosize (Proto *p) {
   lu_mem sz = cast(lu_mem, sizeof(Proto))
             + cast_uint(p->sizep) * sizeof(Proto*)
             + cast_uint(p->sizek) * sizeof(TValue)
@@ -279,17 +279,17 @@ lu_mem luaF_protosize (Proto *p) {
 }
 
 
-void luaF_freeproto (ilya_State *L, Proto *f) {
+void ilyaF_freeproto (ilya_State *L, Proto *f) {
   if (!(f->flag & PF_FIXED)) {
-    luaM_freearray(L, f->code, cast_sizet(f->sizecode));
-    luaM_freearray(L, f->lineinfo, cast_sizet(f->sizelineinfo));
-    luaM_freearray(L, f->abslineinfo, cast_sizet(f->sizeabslineinfo));
+    ilyaM_freearray(L, f->code, cast_sizet(f->sizecode));
+    ilyaM_freearray(L, f->lineinfo, cast_sizet(f->sizelineinfo));
+    ilyaM_freearray(L, f->abslineinfo, cast_sizet(f->sizeabslineinfo));
   }
-  luaM_freearray(L, f->p, cast_sizet(f->sizep));
-  luaM_freearray(L, f->k, cast_sizet(f->sizek));
-  luaM_freearray(L, f->locvars, cast_sizet(f->sizelocvars));
-  luaM_freearray(L, f->upvalues, cast_sizet(f->sizeupvalues));
-  luaM_free(L, f);
+  ilyaM_freearray(L, f->p, cast_sizet(f->sizep));
+  ilyaM_freearray(L, f->k, cast_sizet(f->sizek));
+  ilyaM_freearray(L, f->locvars, cast_sizet(f->sizelocvars));
+  ilyaM_freearray(L, f->upvalues, cast_sizet(f->sizeupvalues));
+  ilyaM_free(L, f);
 }
 
 
@@ -297,7 +297,7 @@ void luaF_freeproto (ilya_State *L, Proto *f) {
 ** Look for n-th lock variable at line 'line' in fn 'func'.
 ** Returns NULL if not found.
 */
-const char *luaF_getlocalname (const Proto *f, int local_number, int pc) {
+const char *ilyaF_getlocalname (const Proto *f, int local_number, int pc) {
   int i;
   for (i = 0; i<f->sizelocvars && f->locvars[i].startpc <= pc; i++) {
     if (pc < f->locvars[i].endpc) {  /* is variable active? */

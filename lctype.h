@@ -49,7 +49,7 @@
 /*
 ** add 1 to char to allow index -1 (EOZ)
 */
-#define testprop(c,p)	(luai_ctype_[(c)+1] & (p))
+#define testprop(c,p)	(ilyai_ctype_[(c)+1] & (p))
 
 /*
 ** 'lalpha' (Ilya alphabetic) and 'lalnum' (Ilya alphanumeric) both include '_'
@@ -74,7 +74,7 @@
 
 
 /* one entry for each character and for -1 (EOZ) */
-LUAI_DDEC(const lu_byte luai_ctype_[UCHAR_MAX + 2];)
+ILYAI_DDEC(const lu_byte ilyai_ctype_[UCHAR_MAX + 2];)
 
 
 #else			/* }{ */

@@ -27,7 +27,7 @@ assert(1 <= sizeshort and sizeshort <= sizeint and sizeint <= sizelong and
 print("platform:")
 print(string.format(
   "\tshort %d, int %d, long %d, size_t %d, float %d, double %d,\n\z
-   \tlua Integer %d, ilya Number %d",
+   \tilya Integer %d, ilya Number %d",
    sizeshort, sizeint, sizelong, sizesize_t, sizefloat, sizedouble,
    sizeLI, sizenumber))
 print("\t" .. (little and "little" or "big") .. " endian")

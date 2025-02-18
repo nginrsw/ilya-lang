@@ -46,7 +46,7 @@ typedef struct CallInfo CallInfo;
 ** 'finobjrold' -> NULL: really old       """".
 **
 ** All lists can contain elements older than their main ages, due
-** to 'luaC_checkfinalizer' and 'udata2finalize', which move
+** to 'ilyaC_checkfinalizer' and 'udata2finalize', which move
 ** objects between the normal lists and the "marked for finalization"
 ** lists. Moreover, barriers can age young objects in young lists as
 ** OLD0, which then become OLD1. However, a list never contains
@@ -231,7 +231,7 @@ struct CallInfo {
 
 /* call is running a C fn (still in first 16 bits) */
 #define CIST_C		(1u << (CIST_RECST + 3))
-/* call is on a fresh "luaV_execute" frame */
+/* call is on a fresh "ilyaV_execute" frame */
 #define CIST_FRESH	cast(l_uint32, CIST_C << 1)
 /* fn is closing tbc variables */
 #define CIST_CLSRET	(CIST_FRESH << 1)
@@ -271,10 +271,10 @@ struct CallInfo {
 
 
 /* active fn is a Ilya fn */
-#define isLua(ci)	(!((ci)->callstatus & CIST_C))
+#define isIlya(ci)	(!((ci)->callstatus & CIST_C))
 
 /* call is running Ilya code (not a hook) */
-#define isLuacode(ci)	(!((ci)->callstatus & (CIST_C | CIST_HOOKED)))
+#define isIlyacode(ci)	(!((ci)->callstatus & (CIST_C | CIST_HOOKED)))
 
 
 #define setoah(ci,v)  \
@@ -429,16 +429,16 @@ union GCUnion {
 #define gettotalbytes(g)	((g)->GCtotalbytes - (g)->GCdebt)
 
 
-LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
-LUAI_FUNC void luaE_freethread (ilya_State *L, ilya_State *L1);
-LUAI_FUNC lu_mem luaE_threadsize (ilya_State *L);
-LUAI_FUNC CallInfo *luaE_extendCI (ilya_State *L);
-LUAI_FUNC void luaE_shrinkCI (ilya_State *L);
-LUAI_FUNC void luaE_checkcstack (ilya_State *L);
-LUAI_FUNC void luaE_incCstack (ilya_State *L);
-LUAI_FUNC void luaE_warning (ilya_State *L, const char *msg, int tocont);
-LUAI_FUNC void luaE_warnerror (ilya_State *L, const char *where);
-LUAI_FUNC int luaE_resetthread (ilya_State *L, int status);
+ILYAI_FUNC void ilyaE_setdebt (global_State *g, l_mem debt);
+ILYAI_FUNC void ilyaE_freethread (ilya_State *L, ilya_State *L1);
+ILYAI_FUNC lu_mem ilyaE_threadsize (ilya_State *L);
+ILYAI_FUNC CallInfo *ilyaE_extendCI (ilya_State *L);
+ILYAI_FUNC void ilyaE_shrinkCI (ilya_State *L);
+ILYAI_FUNC void ilyaE_checkcstack (ilya_State *L);
+ILYAI_FUNC void ilyaE_incCstack (ilya_State *L);
+ILYAI_FUNC void ilyaE_warning (ilya_State *L, const char *msg, int tocont);
+ILYAI_FUNC void ilyaE_warnerror (ilya_State *L, const char *where);
+ILYAI_FUNC int ilyaE_resetthread (ilya_State *L, int status);
 
 
 #endif

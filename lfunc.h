@@ -47,18 +47,18 @@
 #define CLOSEKTOP	(-1)
 
 
-LUAI_FUNC Proto *luaF_newproto (ilya_State *L);
-LUAI_FUNC CClosure *luaF_newCclosure (ilya_State *L, int nupvals);
-LUAI_FUNC LClosure *luaF_newLclosure (ilya_State *L, int nupvals);
-LUAI_FUNC void luaF_initupvals (ilya_State *L, LClosure *cl);
-LUAI_FUNC UpVal *luaF_findupval (ilya_State *L, StkId level);
-LUAI_FUNC void luaF_newtbcupval (ilya_State *L, StkId level);
-LUAI_FUNC void luaF_closeupval (ilya_State *L, StkId level);
-LUAI_FUNC StkId luaF_close (ilya_State *L, StkId level, int status, int yy);
-LUAI_FUNC void luaF_unlinkupval (UpVal *uv);
-LUAI_FUNC lu_mem luaF_protosize (Proto *p);
-LUAI_FUNC void luaF_freeproto (ilya_State *L, Proto *f);
-LUAI_FUNC const char *luaF_getlocalname (const Proto *func, int local_number,
+ILYAI_FUNC Proto *ilyaF_newproto (ilya_State *L);
+ILYAI_FUNC CClosure *ilyaF_newCclosure (ilya_State *L, int nupvals);
+ILYAI_FUNC LClosure *ilyaF_newLclosure (ilya_State *L, int nupvals);
+ILYAI_FUNC void ilyaF_initupvals (ilya_State *L, LClosure *cl);
+ILYAI_FUNC UpVal *ilyaF_findupval (ilya_State *L, StkId level);
+ILYAI_FUNC void ilyaF_newtbcupval (ilya_State *L, StkId level);
+ILYAI_FUNC void ilyaF_closeupval (ilya_State *L, StkId level);
+ILYAI_FUNC StkId ilyaF_close (ilya_State *L, StkId level, int status, int yy);
+ILYAI_FUNC void ilyaF_unlinkupval (UpVal *uv);
+ILYAI_FUNC lu_mem ilyaF_protosize (Proto *p);
+ILYAI_FUNC void ilyaF_freeproto (ilya_State *L, Proto *f);
+ILYAI_FUNC const char *ilyaF_getlocalname (const Proto *func, int local_number,
                                          int pc);
 
 

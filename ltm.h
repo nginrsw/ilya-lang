@@ -63,41 +63,41 @@ typedef enum {
 #define checknoTM(mt,e)	((mt) == NULL || (mt)->flags & (1u<<(e)))
 
 #define gfasttm(g,mt,e)  \
-  (checknoTM(mt, e) ? NULL : luaT_gettm(mt, e, (g)->tmname[e]))
+  (checknoTM(mt, e) ? NULL : ilyaT_gettm(mt, e, (g)->tmname[e]))
 
 #define fasttm(l,mt,e)	gfasttm(G(l), mt, e)
 
-#define ttypename(x)	luaT_typenames_[(x) + 1]
+#define ttypename(x)	ilyaT_typenames_[(x) + 1]
 
-LUAI_DDEC(const char *const luaT_typenames_[ILYA_TOTALTYPES];)
+ILYAI_DDEC(const char *const ilyaT_typenames_[ILYA_TOTALTYPES];)
 
 
-LUAI_FUNC const char *luaT_objtypename (ilya_State *L, const TValue *o);
+ILYAI_FUNC const char *ilyaT_objtypename (ilya_State *L, const TValue *o);
 
-LUAI_FUNC const TValue *luaT_gettm (Table *events, TMS event, TString *ename);
-LUAI_FUNC const TValue *luaT_gettmbyobj (ilya_State *L, const TValue *o,
+ILYAI_FUNC const TValue *ilyaT_gettm (Table *events, TMS event, TString *ename);
+ILYAI_FUNC const TValue *ilyaT_gettmbyobj (ilya_State *L, const TValue *o,
                                                        TMS event);
-LUAI_FUNC void luaT_init (ilya_State *L);
+ILYAI_FUNC void ilyaT_init (ilya_State *L);
 
-LUAI_FUNC void luaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
+ILYAI_FUNC void ilyaT_callTM (ilya_State *L, const TValue *f, const TValue *p1,
                             const TValue *p2, const TValue *p3);
-LUAI_FUNC lu_byte luaT_callTMres (ilya_State *L, const TValue *f,
+ILYAI_FUNC lu_byte ilyaT_callTMres (ilya_State *L, const TValue *f,
                                const TValue *p1, const TValue *p2, StkId p3);
-LUAI_FUNC void luaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
+ILYAI_FUNC void ilyaT_trybinTM (ilya_State *L, const TValue *p1, const TValue *p2,
                               StkId res, TMS event);
-LUAI_FUNC void luaT_tryconcatTM (ilya_State *L);
-LUAI_FUNC void luaT_trybinassocTM (ilya_State *L, const TValue *p1,
+ILYAI_FUNC void ilyaT_tryconcatTM (ilya_State *L);
+ILYAI_FUNC void ilyaT_trybinassocTM (ilya_State *L, const TValue *p1,
        const TValue *p2, int inv, StkId res, TMS event);
-LUAI_FUNC void luaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
+ILYAI_FUNC void ilyaT_trybiniTM (ilya_State *L, const TValue *p1, ilya_Integer i2,
                                int inv, StkId res, TMS event);
-LUAI_FUNC int luaT_callorderTM (ilya_State *L, const TValue *p1,
+ILYAI_FUNC int ilyaT_callorderTM (ilya_State *L, const TValue *p1,
                                 const TValue *p2, TMS event);
-LUAI_FUNC int luaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
+ILYAI_FUNC int ilyaT_callorderiTM (ilya_State *L, const TValue *p1, int v2,
                                  int inv, int isfloat, TMS event);
 
-LUAI_FUNC void luaT_adjustvarargs (ilya_State *L, int nfixparams,
+ILYAI_FUNC void ilyaT_adjustvarargs (ilya_State *L, int nfixparams,
                                    struct CallInfo *ci, const Proto *p);
-LUAI_FUNC void luaT_getvarargs (ilya_State *L, struct CallInfo *ci,
+ILYAI_FUNC void ilyaT_getvarargs (ilya_State *L, struct CallInfo *ci,
                                               StkId where, int wanted);
 
 

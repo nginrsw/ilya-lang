@@ -134,7 +134,7 @@ static void dumpString (DumpState *D, TString *ts) {
     dumpSize(D, 0);
   else {
     TValue idx;
-    int tag = luaH_getstr(D->h, ts, &idx);
+    int tag = ilyaH_getstr(D->h, ts, &idx);
     if (!tagisempty(tag)) {  /* string already saved? */
       dumpSize(D, 1);  /* reuse a saved string */
       dumpSize(D, cast_sizet(ivalue(&idx)));  /* index of saved string */
@@ -148,7 +148,7 @@ static void dumpString (DumpState *D, TString *ts) {
       D->nstr++;  /* one more saved string */
       setsvalue(D->L, &key, ts);  /* the string is the key */
       setivalue(&value, D->nstr);  /* its index is the value */
-      luaH_set(D->L, D->h, &key, &value);  /* h[ts] = nstr */
+      ilyaH_set(D->L, D->h, &key, &value);  /* h[ts] = nstr */
       /* integer value does not need barrier */
     }
   }
@@ -255,24 +255,24 @@ static void dumpFunction (DumpState *D, const Proto *f) {
 
 static void dumpHeader (DumpState *D) {
   dumpLiteral(D, ILYA_SIGNATURE);
-  dumpByte(D, LUAC_VERSION);
-  dumpByte(D, LUAC_FORMAT);
-  dumpLiteral(D, LUAC_DATA);
+  dumpByte(D, ILYAC_VERSION);
+  dumpByte(D, ILYAC_FORMAT);
+  dumpLiteral(D, ILYAC_DATA);
   dumpByte(D, sizeof(Instruction));
   dumpByte(D, sizeof(ilya_Integer));
   dumpByte(D, sizeof(ilya_Number));
-  dumpInteger(D, LUAC_INT);
-  dumpNumber(D, LUAC_NUM);
+  dumpInteger(D, ILYAC_INT);
+  dumpNumber(D, ILYAC_NUM);
 }
 
 
 /*
 ** dump Ilya fn as precompiled chunk
 */
-int luaU_dump (ilya_State *L, const Proto *f, ilya_Writer w, void *data,
+int ilyaU_dump (ilya_State *L, const Proto *f, ilya_Writer w, void *data,
                int strip) {
   DumpState D;
-  D.h = luaH_new(L);  /* aux. table to keep strings already dumped */
+  D.h = ilyaH_new(L);  /* aux. table to keep strings already dumped */
   sethvalue2s(L, L->top.p, D.h);  /* anchor it */
   L->top.p++;
   D.L = L;
