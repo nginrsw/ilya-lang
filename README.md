@@ -6,7 +6,7 @@ Ilya is a Lua forked / Lua dialect Programming language, This modification has
 been made to simplify learning, writing, and personalizing the language for my
 own use.
 
-For nowon, two main changes have been implemented:
+For now, two main changes have been implemented:
 
 - The reserved word `local` has been replaced with `lock`.
 - The reserved word `function` has been replaced with `fn`.
