@@ -1,8 +1,6 @@
 ## Ilya Programming Language
 
-Ilya is a personal fork of Lua, Its name is inspired by the anime characters
-[Ilya Ilyukhin](https://renai-flops.fandom.com/wiki/Ilya_Ilyukhin) and
-[Illyasviel von Einzbern](https://typemoon.fandom.com/wiki/Illyasviel_von_Einzbern_(Fate/kaleid)).
+Ilya is a personal fork of Lua,
 This modification has been made to simplify learning, writing, and personalizing
 the language for my own use.
 
