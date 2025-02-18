@@ -2,8 +2,9 @@
 
 <img src="img/ilya.png" alt="Ilya" width="200"/>
 
-Ilya is a Lua forked / Lua dialect, This modification has been made to simplify
-learning, writing, and personalizing the language for my own use.
+Ilya is a Lua forked / Lua dialect Programming language, This modification has
+been made to simplify learning, writing, and personalizing the language for my
+own use.
 
 For now, two main changes have been implemented:
 
