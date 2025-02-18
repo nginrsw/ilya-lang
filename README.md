@@ -1,6 +1,6 @@
 ## Ilya Programming Language
 
-<img src="img/ilyastars.png" alt="Ilya" width="200"/>
+<img src="img/ilya.png" alt="Ilya" width="200"/>
 
 Ilya is a Lua forked / Lua dialect, This modification has been made to simplify
 learning, writing, and personalizing the language for my own use.

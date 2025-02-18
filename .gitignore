@@ -1,5 +1,6 @@
 # Compiled Ilya sources
 luac.out
+ilya.out
 
 # luarocks build files
 *.src.rock
