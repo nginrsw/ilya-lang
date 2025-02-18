@@ -1,7 +1,7 @@
 /*
 ** $Id: ilya.h $
 ** Ilya - A Scripting Language
-** github.com/nginrsw/ilya, KRS-Bdg, Indonesia
+** github.com/nginrsw/ilya-lang, KRS-Bdg, Indonesia
 ** See Copyright Notice at the end of this file
 */
 
@@ -13,7 +13,7 @@
 #include <stddef.h>
 
 
-#define ILYA_COPYRIGHT	ILYA_RELEASE "  Copyright (C) 2025 github.com/nginrsw/ilya, KRS-Bdg"
+#define ILYA_COPYRIGHT	ILYA_RELEASE "  Copyright (C) 2025 github.com/nginrsw/ilya-lang, KRS-Bdg"
 #define ILYA_AUTHORS	"Gillar Ajie Prasatya"
 
 
@@ -528,7 +528,7 @@ struct ilya_Debug {
 
 
 /******************************************************************************
-* Copyright (C) 2025 github.com/nginrsw/ilya, KRS-Bdg.
+* Copyright (C) 2025 github.com/nginrsw/ilya-lang, KRS-Bdg.
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the

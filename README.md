@@ -20,7 +20,7 @@ language.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/nginrsw/ilya-lang.git
+   git clone https://github.com/nginrsw/ilya-lang-lang.git
    cd ilya
    ```
 
