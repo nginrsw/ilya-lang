@@ -1,5 +1,7 @@
 ## Ilya Programming Language
 
+![ilya](img/ilyastars.png)
+
 Ilya is a personal fork of Lua, This modification has been made to simplify
 learning, writing, and personalizing the language for my own use.
 
