@@ -1,6 +1,5 @@
 # Ilya Programming Language
-## **THIS PROJECT WILL NO LONGER BE UPDATED, AS DEVELOPMENT HAS MOVED TO [VMK](https://github.com/nginrsw/vmk-lang)
-.**
+## THIS PROJECT WILL NO LONGER BE UPDATED, AS DEVELOPMENT HAS MOVED TO [VMK](https://github.com/nginrsw/vmk-lang)
 
 <img src="img/ilya.png" alt="Ilya" width="200"/>
 
